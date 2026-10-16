@@ -10,7 +10,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSpacesApi } from '../api/spaces';
-import CampusMap, { INITIAL_ROOMS_SEED } from '../components/spaces/CampusMap';
+import CampusMap from '../components/spaces/CampusMap';
 import CampusRealFloorplan, {
   CAMPUS_FLOORPLAN_SPACES,
 } from '../components/spaces/CampusRealFloorplan';
@@ -35,7 +35,7 @@ export default function SpacesPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   // Estados de datos
-  const [spaces, setSpaces] = useState(INITIAL_ROOMS_SEED);
+  const [spaces, setSpaces] = useState([]);
   const [selectedSpaceId, setSelectedSpaceId] = useState('SAL-005');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -54,29 +54,13 @@ export default function SpacesPage() {
           end_at: endTime,
         });
         const list = Array.isArray(data) ? data : data?.spaces || data?.data || data?.items || [];
-        if (list.length > 0) {
-          const merged = INITIAL_ROOMS_SEED.map((seedRoom) => {
-            const apiRoom = list.find((s) => s.id === seedRoom.id || s.name?.toLowerCase() === seedRoom.name?.toLowerCase());
-            if (!apiRoom) return seedRoom;
-            let st = apiRoom.status || 'available';
-            if (st === 'incident') st = 'issue';
-            return {
-              ...seedRoom,
-              ...apiRoom,
-              status: st,
-            };
-          });
-          setSpaces(merged);
-        } else {
-          setSpaces(INITIAL_ROOMS_SEED);
-        }
+        setSpaces(list);
       } else {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        setSpaces(INITIAL_ROOMS_SEED);
+        throw new Error('El cliente de salas no está disponible.');
       }
     } catch (err) {
       setError(err?.message || 'No se pudo consultar la disponibilidad telemática de salas.');
-      setSpaces(INITIAL_ROOMS_SEED);
+      setSpaces([]);
     } finally {
       setIsLoading(false);
     }

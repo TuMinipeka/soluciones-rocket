@@ -41,3 +41,12 @@ export async function getLoansApi(params = {}) {
 export async function returnLoanApi(loanId, returnData = {}) {
   return api.post(`/resources/loans/${loanId}/return`, returnData)
 }
+
+/**
+ * Crea un nuevo recurso tecnológico (HU-08 / G-14).
+ * Solo para administradores.
+ * @param {Object} data - { id, name, category }
+ */
+export async function createResourceApi(data) {
+  return api.post('/resources', data)
+}

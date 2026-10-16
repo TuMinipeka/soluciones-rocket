@@ -311,57 +311,64 @@ export default function IncidentPage() {
           </div>
 
           <form onSubmit={handleAnalyze} className="space-y-4">
-            {/* Selector de Elemento (Sala / Equipo) */}
+            {/* Selector de Elemento (Sala / Equipo) - G-11 */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
                 Tipo de Elemento Afectado
               </label>
-              <div className="grid grid-cols-2 gap-2 bg-[#2a2a2c] p-1 rounded-xl border border-white/[0.06]">
+              <div className="grid grid-cols-2 gap-2 bg-[#2a2a2c] p-1.5 rounded-xl border border-white/[0.06]">
                 <button
                   type="button"
                   onClick={() => handleTargetTypeChange('space')}
-                  className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-bold transition-all ${
                     targetType === 'space'
-                      ? 'bg-[#1c1c1e] text-white shadow-sm border border-white/[0.08]'
+                      ? 'bg-[#2563eb] text-white shadow-md border border-[#2563eb]'
                       : 'text-[#a1a1a6] hover:text-white'
                   }`}
                 >
-                  🏛️ Sala o Espacio
+                  <span className="text-sm">🏛️</span>
+                  <span>Sala o Espacio</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleTargetTypeChange('resource')}
-                  className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-bold transition-all ${
                     targetType === 'resource'
-                      ? 'bg-[#1c1c1e] text-white shadow-sm border border-white/[0.08]'
+                      ? 'bg-[#2563eb] text-white shadow-md border border-[#2563eb]'
                       : 'text-[#a1a1a6] hover:text-white'
                   }`}
                 >
-                  💻 Equipo o Recurso
+                  <span className="text-sm">💻</span>
+                  <span>Equipo / Recurso</span>
                 </button>
               </div>
             </div>
 
-            {/* Dropdown específico */}
+            {/* Selector interactivo con metadatos del objetivo */}
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
-                {targetType === 'space' ? 'Sala afectada' : 'Equipo afectado'} *
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]">
+                  {targetType === 'space' ? 'Sala afectada' : 'Equipo o activo afectado'} *
+                </label>
+                <span className="text-[10px] font-mono text-[#22d3ee]">
+                  {targetType === 'space' ? `${spaces.length} salas disponibles` : `${resources.length} equipos`}
+                </span>
+              </div>
               <select
                 value={targetId}
                 onChange={(e) => setTargetId(e.target.value)}
-                className="w-full h-11 px-3.5 rounded-[12px] bg-[#2c2c2e] text-[#f5f5f7] text-sm border border-white/[0.08] focus:outline-none focus:ring-2 focus:ring-[#2563eb] transition-all cursor-pointer"
+                className="w-full h-11 px-3.5 rounded-[12px] bg-[#2c2c2e] text-[#f5f5f7] text-sm font-medium border border-white/[0.12] focus:outline-none focus:ring-2 focus:ring-[#2563eb] transition-all cursor-pointer"
                 disabled={isLoadingOptions || isAnalyzing}
               >
                 {targetType === 'space'
                   ? spaces.map((sp) => (
                       <option key={sp.id} value={sp.id} className="bg-[#1c1c1e] text-white">
-                        {sp.name} · Capacidad: {sp.capacity} personas
+                        {sp.name} ({sp.id}) · Aforo: {sp.capacity} personas
                       </option>
                     ))
                   : resources.map((res) => (
                       <option key={res.id} value={res.id} className="bg-[#1c1c1e] text-white">
-                        {res.name} {res.serial_number ? `(${res.serial_number})` : ''}
+                        {res.name} [{res.id}] {res.category ? `· ${res.category}` : ''} {res.serial_number ? `· S/N: ${res.serial_number}` : ''}
                       </option>
                     ))}
               </select>

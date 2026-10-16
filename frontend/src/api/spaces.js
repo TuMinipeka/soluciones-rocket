@@ -21,3 +21,7 @@ export async function getSpacesApi(params = {}) {
 export async function getSpaceByIdApi(spaceId) {
   return api.get(`/spaces/${spaceId}`)
 }
+
+export async function getSpaceReservationsApi(spaceId, date) {
+  return api.get(`/spaces/${spaceId}/reservations`, { date })
+}

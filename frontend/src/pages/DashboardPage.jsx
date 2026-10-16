@@ -7,32 +7,6 @@ import LoadingState from '../components/feedback/LoadingState';
 import EmptyState from '../components/feedback/EmptyState';
 import ErrorMessage from '../components/feedback/ErrorMessage';
 
-// Fallback temporal estructurado según especificación técnica
-const FALLBACK_DASHBOARD_DATA = {
-  spaces_free: 6,
-  spaces_occupied: 4,
-  spaces_total: 10,
-  active_loans: 14,
-  disabled_resources: 2,
-  open_incidents: 2,
-  in_progress_incidents: 1,
-  total_operations_today: 48,
-  ai_recommendation_pending: true,
-  contingency_alert: {
-    room_id: 'SAL-005',
-    room_name: 'Apolo',
-    target_id: 'SAL-004',
-    target_name: 'Spooki',
-    reason: 'Falla térmica en Apolo. Spooki cuenta con 38 puestos disponibles y climatización óptima.',
-  },
-  recent_events: [
-    { id: '1', time: '10:05', text: 'Reserva confirmada en Cosmos (SAL-002)', user: 'Prof. Carlos Silva' },
-    { id: '2', time: '09:40', text: 'Incidencia reportada en Apolo (SAL-005)', user: 'Soporte Técnico' },
-    { id: '3', time: '09:15', text: 'Préstamo de 2x Workstations', user: 'Laura Méndez' },
-    { id: '4', time: '08:30', text: 'Apertura de Auditorio para Hackatón', user: 'Coordinación' },
-  ],
-};
-
 /**
  * DashboardPage: Panel de control operativo conectado a GET /dashboard/summary (HU-19).
  * Incluye auto-refresco por foco/pestaña, selector dinámico y manejo defensivo de estados.
@@ -65,27 +39,15 @@ export default function DashboardPage() {
           setSummary(null);
         } else {
           const data = response?.data !== undefined ? response.data : response;
-          if (data && typeof data === 'object' && Object.keys(data).length > 0) {
-            setSummary(data);
-          } else if (data === null) {
-            setSummary(null);
-          } else {
-            setSummary(FALLBACK_DASHBOARD_DATA);
-          }
+          setSummary(data && typeof data === 'object' && Object.keys(data).length > 0 ? data : null);
         }
       } else {
-        // Fallback defensivo si la API aún no está disponible
-        await new Promise((resolve) => setTimeout(resolve, 350));
-        setSummary(FALLBACK_DASHBOARD_DATA);
+        throw new Error('El cliente de indicadores no está disponible.');
       }
       setLastRefreshedAt(new Date().toLocaleTimeString());
     } catch (err) {
-      if (err?.status === 404 || err?.response?.status === 404) {
-        setSummary(FALLBACK_DASHBOARD_DATA);
-      } else {
-        const errMsg = err?.message || 'Error al actualizar las métricas operativas.';
-        setError(errMsg);
-      }
+      setSummary(null);
+      setError(err?.message || 'Error al actualizar las métricas operativas.');
     } finally {
       if (!isSilent) setIsLoading(false);
     }
@@ -110,12 +72,12 @@ export default function DashboardPage() {
   // Valores normalizados entre los diferentes formatos devueltos por backend
   const spacesFree = summary ? (summary.spaces_free ?? summary.available_spaces ?? 0) : 0;
   const spacesOccupied = summary ? (summary.spaces_occupied ?? summary.occupied_spaces ?? 0) : 0;
-  const spacesTotal = summary ? (summary.spaces_total ?? (spacesFree + spacesOccupied) ?? 10) : 10;
+  const spacesTotal = summary ? (summary.spaces_total ?? (spacesFree + spacesOccupied + (summary.disabled_spaces ?? 0))) : 0;
   const activeLoans = summary ? (summary.active_loans ?? 0) : 0;
   const disabledResources = summary ? (summary.disabled_resources ?? 0) : 0;
   const openIncidents = summary ? (summary.open_incidents ?? 0) : 0;
   const inProgressIncidents = summary ? (summary.in_progress_incidents ?? 0) : 0;
-  const totalOperations = summary ? (summary.total_operations_today ?? (spacesOccupied + activeLoans + openIncidents) ?? 0) : 0;
+  const totalOperations = summary?.total_operations_today;
 
   return (
     <div className="space-y-8 animate-fluid-enter" role="region" aria-label="Dashboard Operativo Campus Control">
@@ -237,7 +199,7 @@ export default function DashboardPage() {
               color="ok"
               trend={{
                 positive: spacesFree >= 5,
-                label: `${spacesFree * 10}% libres`,
+                label: `${spacesTotal ? Math.round(spacesFree * 100 / spacesTotal) : 0}% libres`,
               }}
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -280,8 +242,8 @@ export default function DashboardPage() {
             {/* 4. Total de operaciones del día */}
             <StatCard
               title="Operaciones del Día"
-              value={`${totalOperations}`}
-              subtitle="Reservas, préstamos e incidencias"
+              value={totalOperations == null ? '—' : `${totalOperations}`}
+              subtitle={totalOperations == null ? 'Métrica no disponible en la API' : 'Reservas, préstamos e incidencias'}
               color="primary"
               trend={{ positive: true, label: 'Actividad OK' }}
               icon={
@@ -332,7 +294,7 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="p-6 rounded-[1.25rem] bg-[#2C2C2E]/30 border border-[rgba(255,255,255,0.04)] text-center text-xs text-[#A1A1A6]">
-                    ✓ No existen contingencias pendientes ni salas bloqueadas en este momento.
+                    Consulta las incidencias para conocer las contingencias pendientes.
                   </div>
                 )}
 
@@ -340,7 +302,7 @@ export default function DashboardPage() {
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   <div className="p-3 rounded-[0.75rem] bg-[#2C2C2E]/40 border border-[rgba(255,255,255,0.04)]">
                     <span className="text-[#A1A1A6] block">Aforo Global Campus</span>
-                    <span className="text-base font-bold text-[#F5F5F7] mt-0.5 block">263 plazas</span>
+                    <span className="text-base font-bold text-[#F5F5F7] mt-0.5 block">Consultar salas</span>
                   </div>
                   <div className="p-3 rounded-[0.75rem] bg-[#2C2C2E]/40 border border-[rgba(255,255,255,0.04)]">
                     <span className="text-[#A1A1A6] block">Base de Datos</span>
