@@ -7,9 +7,6 @@ import LoadingState from '../components/feedback/LoadingState';
 import EmptyState from '../components/feedback/EmptyState';
 import ErrorMessage from '../components/feedback/ErrorMessage';
 
-// Resolver la función API de Guerra de forma segura
-const getSpacesClient = spacesApi.getSpaces || spacesApi.getSpacesApi;
-
 /**
  * SpacesPage: Conexión dinámica del Mapa de Salas con API y gestión de estados (HU-18).
  * Consume GET /spaces con filtros de franja (date, start_at, end_at) y maneja carga, error y vacío.
@@ -34,7 +31,8 @@ export default function SpacesPage() {
     setError(null);
 
     try {
-      if (typeof getSpacesClient === 'function') {
+      const client = spacesApi.getSpacesApi || spacesApi.getSpaces;
+      if (typeof client === 'function') {
         const params = {
           date,
           start_at: startAt,

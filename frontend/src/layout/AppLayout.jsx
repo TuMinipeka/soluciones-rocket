@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import SuccessMessage from '../components/feedback/SuccessMessage';
 import ErrorMessage from '../components/feedback/ErrorMessage';
+import ErrorBoundary from '../components/feedback/ErrorBoundary';
 
 /**
  * AppLayout: Contenedor principal con fondo #000000, Navbar superior fija y <Outlet />.
@@ -68,8 +69,10 @@ export default function AppLayout() {
             </div>
           )}
 
-          {/* Renderizado de rutas hijas con contexto compartido */}
-          <Outlet context={{ setGlobalFeedback, userRole: currentUser.role || 'ADMIN' }} />
+          {/* Renderizado de rutas hijas protegido contra pantallas blancas de error */}
+          <ErrorBoundary>
+            <Outlet context={{ setGlobalFeedback, userRole: currentUser.role || 'ADMIN' }} />
+          </ErrorBoundary>
         </div>
       </main>
 

@@ -18,6 +18,7 @@ export default function Navbar({ userRole = 'ADMIN', userName = 'Mafe' }) {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('campus_auth_token');
     localStorage.removeItem('user');
     navigate('/login');
   };

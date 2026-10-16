@@ -11,13 +11,6 @@ import LoadingState from '../components/feedback/LoadingState';
 import SuccessMessage from '../components/feedback/SuccessMessage';
 import ErrorMessage from '../components/feedback/ErrorMessage';
 
-// Clientes API desacoplados de Guerra
-const getIncidentsClient = incidentsApi.getIncidents || incidentsApi.getIncidentsApi;
-const relocateReservationClient =
-  incidentsApi.relocateReservation ||
-  reservationsApi.confirmReallocationApi ||
-  reservationsApi.relocateReservation;
-
 // Hook defensivo de autenticación para roles y tokens
 function useCurrentAuth() {
   try {
@@ -166,6 +159,7 @@ export default function IncidentsListPage() {
     setErrorMessage(null);
 
     try {
+      const getIncidentsClient = incidentsApi.getIncidentsApi || incidentsApi.getIncidents;
       if (typeof getIncidentsClient === 'function') {
         const response = await getIncidentsClient();
         const data = Array.isArray(response) ? response : response?.data || response?.items;
@@ -235,6 +229,10 @@ export default function IncidentsListPage() {
     const targetSpaceId = recommendation.targetRoomId || recommendation.target_room_id || 'SAL-004';
 
     try {
+      const relocateReservationClient =
+        reservationsApi.confirmReallocationApi ||
+        reservationsApi.relocateReservation ||
+        incidentsApi.relocateReservation;
       if (typeof relocateReservationClient === 'function') {
         try {
           await relocateReservationClient(reservationId, {
