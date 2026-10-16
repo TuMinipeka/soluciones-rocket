@@ -1,35 +1,57 @@
-import { useEffect, useState } from 'react'
+/**
+ * Enrutador principal de la aplicación y proveedor de autenticación.
+ * Conecta los flujos funcionales de Guerra y los placeholders acordados con Mafe.
+ */
+
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './auth/AuthContext'
+import ProtectedRoute from './auth/ProtectedRoute'
+
+// Layout
+import AppLayout from './layout/AppLayout'
+
+// Páginas de Guerra (HU-21 a HU-24)
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import ReservationPage from './pages/ReservationPage'
+import LoansPage from './pages/LoansPage'
+import IncidentPage from './pages/IncidentPage'
+
+// Páginas de Mafe (Placeholders HU-18, HU-19, HU-20)
+import SpacesPage from './pages/SpacesPage'
+import DashboardPage from './pages/DashboardPage'
+import IncidentsListPage from './pages/IncidentsListPage'
 
 export default function App() {
-  const [apiStatus, setApiStatus] = useState('Comprobando conexión…')
-
-  useEffect(() => {
-    let active = true
-    fetch('/api/health')
-      .then((response) => {
-        if (!response.ok) throw new Error('API no disponible')
-        return response.json()
-      })
-      .then((result) => {
-        if (active) setApiStatus(result.status === 'ok' ? 'API y base de datos disponibles' : 'Estado inesperado')
-      })
-      .catch(() => {
-        if (active) setApiStatus('API no disponible')
-      })
-    return () => { active = false }
-  }, [])
-
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-6 px-6 py-12">
-      <p className="text-sm font-semibold uppercase tracking-widest text-blue-700">Campuslands</p>
-      <h1 className="text-4xl font-bold tracking-tight">Gestión operativa</h1>
-      <p className="text-lg text-slate-600">
-        Base del proyecto preparada. Los flujos de espacios, reservas, recursos e incidencias
-        se incorporarán según los contratos y criterios del reto.
-      </p>
-      <p role="status" className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-        {apiStatus}
-      </p>
-    </main>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          {/* Rutas públicas */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+
+          {/* Rutas protegidas con AppLayout */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/" element={<Navigate to="/spaces" replace />} />
+            <Route path="/spaces" element={<SpacesPage />} />
+            <Route path="/reservations" element={<ReservationPage />} />
+            <Route path="/loans" element={<LoansPage />} />
+            <Route path="/incidents" element={<IncidentPage />} />
+            <Route path="/incidents-list" element={<IncidentsListPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+          </Route>
+
+          {/* Redirección por defecto */}
+          <Route path="*" element={<Navigate to="/spaces" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }

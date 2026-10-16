@@ -6,16 +6,19 @@ Repositorio oficial del hackatón «El campus bajo presión». El sistema unific
 
 ## Estado Actual del Proyecto
 
-El backend se encuentra completamente integrado y probado en sus capas operativas fundamentales (**62 pruebas automáticas pasando**):
+El sistema se encuentra integrado entre los módulos de Diego (autenticación, incidencias, triaje IA y seguridad), Conde (disponibilidad y ciclo de vida de reservas), Mayorga (persistencia, SEED, inventario, importación y Compose) y Guerra/Mafe (frontend React interactivo):
 - **Infraestructura Base (HU-01, HU-06, HU-07, HU-10):** FastAPI, SQLite persistente en volumen, SEED idempotente de las 10 salas oficiales y Docker Compose.
 - **Autenticación y Permisos (HU-11, HU-12, HU-13):** Registro forzado a `teacher`, contraseñas con Argon2id, JWT con vencimiento, timing-safe login y matriz RBAC centralizada.
 - **Operaciones de Salas y Reservas (HU-02, HU-03, HU-04):** Consulta de disponibilidad en tiempo real por franja horaria, validación atómica de solapamientos (`new_start < existing_end and existing_start < new_end`), control de aforo y ciclo de vida de reservas.
 - **Inventario y Préstamos (HU-08):** Catálogo de recursos y préstamos trazables con estados de devolución.
+- **Importación de Dataset Oficial (HU-09):** Script adaptable a CSV, JSON y Excel con validación estricta y reporte de filas importadas/rechazadas.
 - **Incidencias y Triaje con IA (HU-14, HU-15, HU-16):** Reporte de fallas con bloqueo transaccional de espacios y equipos, análisis asistido por LLM con defensas anti-prompt injection, y fallback determinista local por reglas con cálculo de alternativas reales.
 
 ---
 
-## Ejecutar el Proyecto con Docker Compose
+## Ejecutar el Proyecto
+
+### Opción 1: Con Docker Compose (Recomendado)
 
 Requisito: Docker Desktop / Docker con Compose. No se requiere instalar Python ni Node en la máquina anfitriona.
 
@@ -42,11 +45,43 @@ Compose inicia `db-init` para crear las tablas de forma explícita en el volumen
 
 Para detener preservando datos: `docker compose down`. *(No uses `docker compose down -v` para evitar borrar la base de datos persistida).*
 
+### Opción 2: Ejecución Local en Windows (sin Docker)
+
+Para trabajar **sin Docker en Windows**, crea un entorno virtual con Python 3.11+, instala dependencias con `pip install -r backend/requirements.txt`, copia `.env.example` a `.env` y ejecuta:
+
+```powershell
+./scripts/start_backend_local.ps1
+```
+
+Este script lee el `.env`, inicializa las tablas SQLite en local y levanta FastAPI en `http://127.0.0.1:8000`.
+
+---
+
+## Importar Datos Autorizados (HU-09)
+
+El importador acepta `.csv`, `.json` y `.xlsx`. Para equipos exige columnas `id,name,category` y admite `condition` (`operational` o `damaged`). Para salas exige `id,name,capacity` y valida que coincidan exactamente con el catálogo oficial.
+
+Guarda el archivo recibido en `official-data/` (ignorado por Git). Con Compose en ejecución:
+
+```powershell
+docker compose cp .\official-data\inventario.csv backend:/tmp/inventario.csv
+docker compose exec backend python -m app.scripts.import_dataset /tmp/inventario.csv --kind resources --dry-run --report /app/data/import-dry-run.json
+docker compose exec backend python -m app.scripts.import_dataset /tmp/inventario.csv --kind resources --report /app/data/import-report.json
+New-Item -ItemType Directory -Force import-reports | Out-Null
+docker compose cp backend:/app/data/import-report.json .\import-reports\import-report.json
+```
+
+Para cargar escenarios de demostración opcionales tras registrar equipos autorizados:
+
+```powershell
+docker compose exec backend python -m app.scripts.seed_scenarios --date 2026-11-20 --resource-ids EQ-001,EQ-002,EQ-003
+```
+
 ---
 
 ## Ejecución de Pruebas Unitarias y de Integración
 
-Para ejecutar la suite completa de 62 pruebas dentro del entorno virtual de Python:
+Para ejecutar la suite completa de pruebas en el entorno de backend:
 
 ```bash
 cd backend
