@@ -10,6 +10,8 @@ Esta rama integra autenticación e incidencias de Diego, disponibilidad y creaci
 
 Requisito: Docker con Compose. No se requiere instalar Python ni Node en el equipo anfitrión.
 
+Para trabajar **sin Docker en Windows**, crea `.venv` con Python 3.11, instala `backend/requirements.txt`, copia `.env.example` a `.env` y configura `DATABASE_URL=sqlite:///./data/campus-local.db`, `JWT_SECRET_KEY` y las seis variables de las cuentas demo. Luego ejecuta `./scripts/start_backend_local.ps1` desde PowerShell. Este comando lee el `.env` ignorado por Git, crea las tablas y las diez salas y cuentas faltantes, y deja FastAPI en `http://127.0.0.1:8000`. El frontend local puede usar el proxy `/api` de Vite; su configuración actual escucha en el puerto 5180. Detén FastAPI con `Ctrl+C`. No uses el `DATABASE_URL` absoluto del ejemplo de Compose para ejecutar Python directamente en Windows.
+
 ```powershell
 Copy-Item .env.example .env
 # Asigna en .env una clave JWT aleatoria de al menos 32 caracteres.
