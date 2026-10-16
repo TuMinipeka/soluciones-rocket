@@ -1,8 +1,150 @@
 @import "tailwindcss";
 
-body {
-  min-width: 320px;
-  background: #f8fafc;
-  color: #0f172a;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+    background-color: #0e0e10;
+  }
+
+  body {
+    min-width: 320px;
+    background-color: #0e0e10;
+    color: #e4e2e4;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+  }
+
+  ::selection {
+    background-color: #2563eb;
+    color: #ffffff;
+  }
+
+  /* Scrollbars minimalistas oscuros */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a2c;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #434655;
+  }
+}
+
+/* Microinteracciones y animaciones físicas (Emil Kowalski / Apple design) */
+@keyframes fluidFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-fluid-enter {
+  animation: fluidFadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-modal-pop {
+  animation: modalPopIn 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-float {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+/* Estilos de paneles de vidrio Apple Dark Enclave */
+.glass-header {
+  background: rgba(14, 14, 16, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dark-surface-card {
+  background-color: #1c1c1e;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.dark-elevated-card {
+  background-color: #2c2c2e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Textura para salas inhabilitadas (tipo cine / evacuación) */
+.hatch-disabled-dark {
+  background-color: #1a1517;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 69, 58, 0.12) 0,
+    rgba(255, 69, 58, 0.12) 8px,
+    rgba(28, 28, 30, 0.9) 8px,
+    rgba(28, 28, 30, 0.9) 16px
+  );
+}
+
+/* Resplandores Apple Dark Enclave */
+.glow-cyan {
+  box-shadow: 0 0 20px -2px rgba(34, 211, 238, 0.28);
+}
+
+.glow-blue {
+  box-shadow: 0 0 24px -2px rgba(37, 99, 235, 0.35);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px -2px rgba(48, 209, 88, 0.25);
+}
+
+.glow-amber {
+  box-shadow: 0 0 20px -2px rgba(255, 159, 10, 0.25);
 }
