@@ -1,6 +1,6 @@
 /**
  * RecommendationCard: Tarjeta de recomendación de triaje y reubicación inteligente (HU-15, HU-16, HU-20, HU-24).
- * - Distingue 'ai' (chip cian #0891B2 "Clasificación IA / Inteligencia Artificial") vs 'rules' (#A1A1A6 "Fallback por Reglas Locales").
+ * - Distingue 'ai' (chip cian #0891B2 "Clasificación IA") vs 'rules' (#A1A1A6 "Reglas Locales (Fallback)").
  * - Caso borde: Si no hay alternativas disponibles, renderiza alerta explícita en texto claro.
  * - Restricción por rol: El botón "Confirmar Reubicación" SOLO es visible y ejecutable si el usuario tiene rol de Administrador.
  * Área: MAFE & GUERRA
@@ -17,12 +17,13 @@ export default function RecommendationCard({
   onConfirm,
   isConfirming = false,
   className = '',
-  // Props complementarias de Guerra
+  // Props complementarias de Guerra y Daniel
   source,
   explanation,
   suggestsBlocking = false,
   alternatives: propAlternatives,
   aiModel,
+  fallbackReason,
   latencyMs,
   isConfirmed = false,
   onConfirmReallocation,
@@ -89,6 +90,7 @@ export default function RecommendationCard({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
                 <span>Clasificación IA</span>
+                {aiModel && <span className="text-[10px] font-mono text-[#22D3EE]/80">({aiModel})</span>}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#2C2C2E] border border-[rgba(255,255,255,0.15)] text-[#A1A1A6]">
@@ -109,6 +111,10 @@ export default function RecommendationCard({
               <span className="text-[10px] font-mono text-[#8d90a0]">
                 {latencyMs}ms
               </span>
+            )}
+
+            {!isAi && fallbackReason && (
+              <span className="text-[10px] font-mono text-[#ff9f0a]">Motivo: {fallbackReason}</span>
             )}
 
             {isConfirmed ? (

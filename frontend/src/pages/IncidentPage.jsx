@@ -115,7 +115,7 @@ export default function IncidentPage() {
     try {
       const payload = {
         description: description.trim(),
-        context: `Reportado desde Campus Control por ${user?.name || user?.email}`,
+        context: 'Reporte de falla desde Campus Control.',
         space_id: targetType === 'space' ? targetId : null,
         resource_id: targetType === 'resource' ? targetId : null,
       }
@@ -136,6 +136,10 @@ export default function IncidentPage() {
   // Paso 2: Registrar formalmente la incidencia tras revisar el análisis
   const handleConfirmIncident = async () => {
     if (!analysisResult) return
+    if (analysisResult.is_reportable === false || !analysisResult.analysis_token) {
+      setError('Describe una falla verificable del campus y vuelve a analizarla antes de registrar el reporte.')
+      return
+    }
 
     setIsSubmitting(true)
     setError(null)
@@ -144,7 +148,7 @@ export default function IncidentPage() {
     try {
       const payload = {
         description: description.trim(),
-        context: `Reportado desde Campus Control por ${user?.name || user?.email}`,
+        context: 'Reporte de falla desde Campus Control.',
         space_id: targetType === 'space' ? targetId : null,
         resource_id: targetType === 'resource' ? targetId : null,
         category: analysisResult.category || 'technology',
@@ -443,11 +447,7 @@ export default function IncidentPage() {
             <h3 className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]">
               Diagnóstico y Clasificación
             </h3>
-            {analysisResult && (
-              <span className="text-[11px] font-mono text-[#22d3ee] flex items-center gap-1">
-                Token verificado ✓
-              </span>
-            )}
+            {analysisResult?.analysis_token && <span className="text-[11px] font-mono text-[#22d3ee] flex items-center gap-1">Token verificado ✓</span>}
           </div>
 
           {isAnalyzing ? (
@@ -465,6 +465,11 @@ export default function IncidentPage() {
             </div>
           ) : (
             <div className="space-y-4 animate-fluid-enter">
+              {analysisResult.is_reportable === false && (
+                <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-950/30 text-sm text-amber-200">
+                  El texto no describe una incidencia operativa verificable. Aclara qué falla ocurrió antes de registrarla.
+                </div>
+              )}
               {/* Resumen de Métricas del Análisis */}
               <Card title="Resultado del Análisis" subtitle="Clasificación táctica generada">
                 <div className="space-y-3">
@@ -501,6 +506,7 @@ export default function IncidentPage() {
                 suggestsBlocking={analysisResult.suggests_blocking}
                 alternatives={analysisResult.alternatives}
                 aiModel={analysisResult.ai_model}
+                fallbackReason={analysisResult.fallback_reason}
                 latencyMs={analysisResult.latency_ms}
                 onConfirmReallocation={handleConfirmReallocation}
                 canConfirm={user?.role === 'admin'}
@@ -514,6 +520,7 @@ export default function IncidentPage() {
                   className="w-full h-12 rounded-full font-semibold text-sm tracking-wide shadow-lg shadow-blue-600/20"
                   isLoading={isSubmitting}
                   onClick={handleConfirmIncident}
+                  disabled={analysisResult.is_reportable === false || !analysisResult.analysis_token}
                 >
                   Confirmar y Registrar Incidencia
                 </Button>

@@ -73,18 +73,17 @@ export default function LoginPage({ initialMode }) {
   }
 
   const handlePasswordChange = (e) => {
-    const raw = e.target.value
-    // Restringir a letras, números y símbolos seguros para contraseñas (! @ # $ % & _ - + .)
-    // Bloquea comillas, corchetes, llaves, asteriscos, espacios y caracteres de inyección
-    const sanitized = raw.replace(/[^a-zA-Z0-9!@#$%&_+\-.]/g, '').slice(0, 64)
-    setPassword(sanitized)
+    const val = e.target.value
+    if (val.length <= 128) {
+      setPassword(val)
+    }
   }
 
   const handleConfirmPasswordChange = (e) => {
-    const raw = e.target.value
-    // Restringir con la misma regla estricta de sanitización
-    const sanitized = raw.replace(/[^a-zA-Z0-9!@#$%&_+\-.]/g, '').slice(0, 64)
-    setConfirmPassword(sanitized)
+    const val = e.target.value
+    if (val.length <= 128) {
+      setConfirmPassword(val)
+    }
   }
 
   // Validación reactiva de correo con dominio normal y legítimo (.edu, .co, .com, .org, etc.)
@@ -390,7 +389,7 @@ export default function LoginPage({ initialMode }) {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  maxLength={64}
+                  maxLength={128}
                   autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                   placeholder="••••••••••••"
                   value={password}
@@ -441,7 +440,7 @@ export default function LoginPage({ initialMode }) {
                   <input
                     id="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
-                    maxLength={64}
+                    maxLength={128}
                     autoComplete="new-password"
                     placeholder="••••••••••••"
                     value={confirmPassword}
@@ -568,7 +567,7 @@ export default function LoginPage({ initialMode }) {
         {/* Badge flotante inferior en glassmorphism */}
         <div className="absolute bottom-8 left-8 z-20 flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/50 backdrop-blur-xl border border-white/10 text-xs font-mono shadow-2xl animate-fade-in">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="tracking-wide text-white/90">Sistemas Telemáticos Online • <strong className="text-[#22d3ee] font-semibold">IA Groq Activa</strong></span>
+          <span className="tracking-wide text-white/90">Campus Control • <strong className="text-[#22d3ee] font-semibold">Triaje de incidencias disponible</strong></span>
         </div>
       </div>
     </div>

@@ -50,7 +50,7 @@ def test_incident_listing_privacy_by_role(client, teacher_token, admin_token, db
     # Crear incidencia para docente 1
     client.post(
         "/incidents",
-        json={"description": "Incidencia del docente uno", "space_id": "SAL-002"},
+        json={"description": "El proyector del docente uno no enciende", "space_id": "SAL-002"},
         headers={"Authorization": f"Bearer {teacher_token}"},
     )
 

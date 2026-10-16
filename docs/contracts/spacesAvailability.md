@@ -41,6 +41,12 @@ Sin parámetros de fecha y hora, la respuesta conserva las diez salas y solo dif
 
 `GET /spaces/{space_id}` devuelve la sala persistida con el mismo esquema base. Un identificador inexistente devuelve `404 NOT_FOUND`.
 
+## Recomendar una sala
+
+`POST /spaces/recommend` requiere autenticación. Acepta `attendees`, `activityTitle`, `requiredFeatures` y, opcionalmente como conjunto, `date`, `startTime`, `endTime`. El backend filtra salas persistidas por aforo, bloqueo y conflictos de la franja antes de consultar a la IA. La IA solo puede ordenar identificadores elegibles; cualquier identificador inventado provoca fallback local con `classification_source="rules"` y `fallback_reason="invalid_response"`.
+
+La respuesta incluye `recommended_space`, `alternatives`, `classification_source`, `ai_model`, `fallback_reason`, `latency_ms`, `is_relevant` y `warnings`. Un título ajeno a reservas puede devolver `is_relevant=false` y ninguna sala. Si se solicita equipamiento, `warnings` informa que aún no hay inventario de equipamiento por sala para comprobarlo. El porcentaje mostrado corresponde al uso del aforo, no a la confianza de la IA. La confirmación de la reserva sigue pasando por `POST /reservations`, que revalida disponibilidad en la transacción.
+
 ## Crear una reserva
 
 `POST /reservations` requiere un usuario autenticado con rol `admin` o `teacher`. El rol `support` recibe `403 FORBIDDEN`.

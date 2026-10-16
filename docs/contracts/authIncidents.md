@@ -174,6 +174,8 @@ Todos estos endpoints requieren cabecera `Authorization: Bearer <token>` y rol *
 - **Método y Ruta:** `POST /incidents/analyze`
 - **Rol Requerido:** Autenticado (`admin`, `teacher`, `support`).
 - **Descripción:** Analiza el texto reportado usando la API del LLM configurado o el clasificador local de reglas por palabras clave si la IA está desconectada/falla. Retorna procedencia honesta (`ai` o `rules`), sugiere si amerita bloqueo de espacio/recurso, consulta alternativas reales y genera un `analysis_token` firmado criptográficamente.
+- **Pertinencia:** `is_reportable=false` indica que el texto no describe una falla operativa verificable. En ese caso no hay `analysis_token` ni alternativas, y el formulario no permite confirmarlo. El fallback local solicita aclaración cuando no reconoce ninguna señal de falla.
+- **Registro directo:** Si `POST /incidents` llega sin un token válido y las reglas no encuentran ninguna señal de falla, devuelve `422` y solicita análisis o aclaración. Una clasificación por IA válida conserva su procedencia mediante el token firmado.
 - **Cuerpo de Solicitud:**
 ```json
 {

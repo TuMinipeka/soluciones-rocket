@@ -11,6 +11,84 @@ from app.modules.recommendations.service import RecommendationService
 
 
 @pytest.mark.asyncio
+async def test_groq_provider_uses_endpoint_and_strict_json_schema(monkeypatch):
+    monkeypatch.setattr(settings, "AI_PROVIDER", "groq")
+    monkeypatch.setattr(settings, "AI_BASE_URL", None)
+    monkeypatch.setattr(settings, "AI_MODEL", "openai/gpt-oss-20b")
+    requests = []
+
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps({
+            "category": "electrical",
+            "priority": "high",
+            "responsible_team": "maintenance",
+            "recommendation": "Desconectar el circuito.",
+            "explanation": "Hay riesgo eléctrico.",
+            "suggests_blocking": True,
+        })}}]})
+
+    provider = ChatCompletionsAIProvider(transport=httpx.MockTransport(mock_handler))
+    result, model, _, fallback = await provider.classify("El tomacorriente echa chispas.", None)
+
+    assert result is not None
+    assert result.category == "electrical"
+    assert model == "openai/gpt-oss-20b"
+    assert fallback is None
+    assert str(requests[0].url) == "https://api.groq.com/openai/v1/chat/completions"
+    payload = json.loads(requests[0].content)
+    assert payload["response_format"]["type"] == "json_schema"
+    assert payload["response_format"]["json_schema"]["strict"] is True
+    assert payload["reasoning_effort"] == "low"
+
+
+@pytest.mark.asyncio
+async def test_irrelevant_story_is_not_reportable_or_signed(db_session):
+    ai_payload = {"choices": [{"message": {"content": json.dumps({
+        "category": "safety", "priority": "critical", "responsible_team": "security",
+        "recommendation": "Evacuar.", "explanation": "Relato inverosímil.",
+        "suggests_blocking": True, "is_reportable": False,
+    })}}]}
+    provider = ChatCompletionsAIProvider(transport=httpx.MockTransport(
+        lambda _request: httpx.Response(200, json=ai_payload)
+    ))
+    result = await RecommendationService(ai_provider=provider).analyze_incident(
+        "En el auditorio explotó un volcán y todos se murieron.", None, "SAL-001", None, db_session
+    )
+    assert result.classification_source == ClassificationSource.AI
+    assert result.is_reportable is False
+    assert result.category == "other"
+    assert result.priority == "low"
+    assert result.suggests_blocking is False
+    assert result.analysis_token is None
+    assert result.alternatives == []
+
+
+@pytest.mark.asyncio
+async def test_rules_fallback_requests_clarification_for_unmatched_story(db_session):
+    provider = ChatCompletionsAIProvider(transport=httpx.MockTransport(
+        lambda _request: httpx.Response(503)
+    ))
+    result = await RecommendationService(ai_provider=provider).analyze_incident(
+        "En la sala del auditorio explotó un volcán y todos se murieron.",
+        None, "SAL-001", None, db_session,
+    )
+    assert result.classification_source == ClassificationSource.RULES
+    assert result.is_reportable is False
+    assert result.analysis_token is None
+    assert result.priority == "low"
+
+
+@pytest.mark.asyncio
+async def test_unknown_provider_without_base_url_falls_back(monkeypatch):
+    monkeypatch.setattr(settings, "AI_PROVIDER", "unknown")
+    monkeypatch.setattr(settings, "AI_BASE_URL", None)
+    provider = ChatCompletionsAIProvider()
+    result, model, latency, fallback = await provider.classify("El tomacorriente echa chispas.", None)
+    assert (result, model, latency, fallback) == (None, None, 0, FallbackReason.NOT_CONFIGURED)
+
+
+@pytest.mark.asyncio
 async def test_ai_classification_valid_response(db_session):
     """HU-15: Respuesta válida del modelo se valida con Pydantic y retorna classification_source='ai'."""
     ai_response_payload = {
@@ -161,3 +239,12 @@ def test_tampered_analysis_token_does_not_spoof_ai(client, teacher_token):
     data = res.json()
     # Debe ser clasificado por rules y no por ai falsificado
     assert data["classification_source"] == "rules"
+
+
+def test_direct_absurd_report_without_ai_token_is_rejected(client, teacher_token):
+    response = client.post(
+        "/incidents",
+        json={"description": "En el auditorio explotó un volcán y todos se murieron.", "space_id": "SAL-001"},
+        headers={"Authorization": f"Bearer {teacher_token}"},
+    )
+    assert response.status_code == 422

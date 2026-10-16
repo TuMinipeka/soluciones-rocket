@@ -47,3 +47,10 @@ def test_classifier_rules_fallback_when_no_match():
     assert res["category"] == IncidentCategory.OTHER
     assert res["responsible_team"] == ResponsibleTeam.ADMINISTRATION
     assert res["suggests_blocking"] is False
+    assert res["priority"] == IncidentPriority.LOW
+
+
+def test_classifier_does_not_match_partial_words_in_absurd_story():
+    res = classify_by_rules("En la sala del auditorio explotó un volcán y todos se murieron.")
+    assert res["category"] == IncidentCategory.OTHER
+    assert res["matched_keywords"] == []

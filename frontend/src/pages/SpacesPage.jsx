@@ -283,7 +283,7 @@ export default function SpacesPage() {
         <CampusRealFloorplan
           spaces={spaces}
           selectedSpaceId={selectedSpaceId}
-          onSelectSpace={(s) => setSelectedSpaceId(s.id)}
+          onSelectSpace={(room) => setSelectedSpaceId(room.id)}
           onBook={handleBookRoom}
           onReportIncident={handleReportIncident}
         />

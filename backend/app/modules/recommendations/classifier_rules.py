@@ -1,6 +1,7 @@
 """Local deterministic rules-based incident classifier and keyword dictionary."""
 
 import unicodedata
+import re
 from app.modules.incidents.enums import (
     IncidentCategory,
     IncidentPriority,
@@ -11,6 +12,11 @@ from app.modules.incidents.enums import (
 def strip_accents(text: str) -> str:
     nfkd = unicodedata.normalize("NFKD", text)
     return "".join(c for c in nfkd if not unicodedata.combining(c)).lower()
+
+
+def _contains_keyword(text: str, keyword: str) -> bool:
+    """Evita coincidencias parciales como 'red' dentro de 'pared'."""
+    return re.search(rf"(?<!\w){re.escape(keyword)}(?!\w)", text) is not None
 
 
 # Diccionario único de reglas y palabras clave. Modificable en caliente en < 1 minuto.
@@ -106,14 +112,13 @@ def classify_by_rules(text: str) -> dict:
     """
     normalized_text = strip_accents(text)
     # Tokenizar en palabras
-    tokens = set("".join(c if c.isalnum() else " " for c in normalized_text).split())
 
     best_category: IncidentCategory | None = None
     best_matches: list[str] = []
     max_score = 0
 
     for category, rule in KEYWORD_RULES.items():
-        matches = [kw for kw in rule["keywords"] if kw in tokens or kw in normalized_text]
+        matches = [kw for kw in rule["keywords"] if _contains_keyword(normalized_text, kw)]
         score = len(matches)
         if score > max_score:
             max_score = score
@@ -124,11 +129,11 @@ def classify_by_rules(text: str) -> dict:
     if best_category is None:
         return {
             "category": IncidentCategory.OTHER,
-            "priority": IncidentPriority.MEDIUM,
+            "priority": IncidentPriority.LOW,
             "responsible_team": ResponsibleTeam.ADMINISTRATION,
             "suggests_blocking": False,
-            "recommendation": "Revisar descripción manualmente para determinar área correspondiente.",
-            "explanation": "No se detectaron palabras clave de dominios técnicos; clasificado como general.",
+            "recommendation": "Describe una falla concreta y verificable del campus antes de registrar el reporte.",
+            "explanation": "No se detectó una falla operativa reconocible; se requiere aclaración.",
             "matched_keywords": [],
         }
 
@@ -137,8 +142,8 @@ def classify_by_rules(text: str) -> dict:
     suggests_blocking = rule_info["suggests_blocking"]
 
     # Evaluar si contiene palabras críticas que elevan la prioridad
-    has_critical = any(kw in tokens or kw in normalized_text for kw in CRITICAL_OVERRIDE_KEYWORDS)
-    has_high = any(kw in tokens or kw in normalized_text for kw in HIGH_OVERRIDE_KEYWORDS)
+    has_critical = any(_contains_keyword(normalized_text, kw) for kw in CRITICAL_OVERRIDE_KEYWORDS)
+    has_high = any(_contains_keyword(normalized_text, kw) for kw in HIGH_OVERRIDE_KEYWORDS)
 
     if has_critical:
         priority = IncidentPriority.CRITICAL
