@@ -7,6 +7,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.auth.users_router import router as users_router
 from app.modules.incidents.router import router as incidents_router
 from app.modules.resources.router import router as resources_router
+from app.modules.spaces.router import router as spaces_router
 from app.modules.system.router import router as system_router
 
 
@@ -34,6 +35,7 @@ def create_app() -> FastAPI:
     application.include_router(users_router)
     application.include_router(incidents_router)
     application.include_router(resources_router)
+    application.include_router(spaces_router)
     return application
 
 
