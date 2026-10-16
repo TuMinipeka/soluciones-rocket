@@ -1,0 +1,22 @@
+# Local secrets and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local development artifacts
+.venv/
+venv/
+__pycache__/
+*.pyc
+node_modules/
+dist/
+build/
+target/
+.idea/
+.vscode/
+
+# Operating system files
+.DS_Store
+Thumbs.db
