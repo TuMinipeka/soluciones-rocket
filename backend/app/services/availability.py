@@ -6,8 +6,10 @@ incidencia crítica bloquea o libera un espacio.
 """
 
 import unicodedata
+from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 
+from app.modules.reservations.models import Reservation
 from app.modules.spaces.models import Space
 
 
@@ -106,3 +108,39 @@ def get_space_alternatives(space_id: str, _db: Session) -> list[dict]:
         del item["capacity_diff"]
 
     return alternatives[:3]
+
+
+def find_relocation_alternatives(reservation: Reservation, db: Session) -> list[dict]:
+    """Return real compatible rooms for one reservation, ordered deterministically."""
+    overlap = exists(
+        select(Reservation.id).where(
+            Reservation.space_id == Space.id,
+            Reservation.id != reservation.id,
+            Reservation.date == reservation.date,
+            Reservation.status == "confirmed",
+            Reservation.start_time < reservation.end_time,
+            Reservation.end_time > reservation.start_time,
+        )
+    )
+    candidates = db.scalars(
+        select(Space)
+        .where(
+            Space.id != reservation.space_id,
+            Space.is_blocked.is_(False),
+            Space.capacity >= reservation.attendees,
+            ~overlap,
+        )
+        .order_by((Space.capacity - reservation.attendees), Space.id)
+    ).all()
+    return [
+        {
+            "id": space.id,
+            "name": space.name,
+            "capacity": space.capacity,
+            "reason": (
+                f"Sala operativa, sin conflictos y con aforo suficiente "
+                f"({space.capacity} para {reservation.attendees} asistentes)."
+            ),
+        }
+        for space in candidates
+    ]
