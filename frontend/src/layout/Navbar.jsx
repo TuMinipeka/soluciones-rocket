@@ -38,19 +38,17 @@ export default function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand / Logo */}
         <div className="flex items-center gap-6 lg:gap-8">
-          <NavLink to="/spaces" className="flex items-center gap-2 group select-none">
+          <NavLink to="/spaces" className="flex items-center gap-2.5 group select-none">
             <img
               src="/campuslands_helmet.png"
               alt="Campuslands Helmet"
               className="h-8 w-auto object-contain drop-shadow-[0_0_10px_rgba(34,211,238,0.3)] group-hover:scale-105 transition-transform"
             />
-            <div className="flex items-center gap-1.5">
-              <img
-                src="/campuslands_wordmark.png"
-                alt="campuslands"
-                className="h-[18px] w-auto object-contain"
-              />
-              <span className="text-base font-bold tracking-tight text-[#22d3ee] font-sans lowercase">
+            <div className="flex items-baseline gap-1.5 font-brand leading-none">
+              <span className="text-[20px] font-bold text-white tracking-normal lowercase">
+                campuslands
+              </span>
+              <span className="text-[20px] font-bold text-[#22d3ee] tracking-normal lowercase">
                 control
               </span>
             </div>
