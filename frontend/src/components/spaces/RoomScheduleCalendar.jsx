@@ -58,7 +58,7 @@ export default function RoomScheduleCalendar({
         return {
           isOccupied: true,
           reservation: res,
-          displayTitle: canViewDetails ? (res.title || res.user_name || 'Reservado') : 'Ocupado',
+          displayTitle: canViewDetails ? (res.user_name || res.title || 'Reservado') : 'Ocupado',
           start: res.start_time,
           end: res.end_time,
         }

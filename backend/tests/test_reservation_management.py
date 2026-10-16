@@ -49,6 +49,11 @@ def test_teacher_lists_only_own_reservations_and_admin_lists_all(
     assert [item["id"] for item in teacher_list.json()] == [own["id"]]
     assert {item["id"] for item in admin_list.json()} == {own["id"], other["id"]}
     assert all(item["user_id"] == teacher_user.id for item in teacher_list.json())
+    assert teacher_list.json()[0]["user_name"] == teacher_user.name
+    assert {item["user_name"] for item in admin_list.json()} == {
+        teacher_user.name, teacher_user_two.name
+    }
+    assert all(item["user_name"] != teacher_user_two.name for item in teacher_list.json())
     assert support_list.status_code == 403
 
 
