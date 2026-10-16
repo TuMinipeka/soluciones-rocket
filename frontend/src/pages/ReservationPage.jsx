@@ -74,32 +74,47 @@ export default function ReservationPage() {
     setSuccess(`Sala sugerida aplicada: ${matched?.name || recSpaceId} (${recAttendees || attendees} asistentes).`)
   }
 
-  // Cargar salas y reservas actuales
-  const loadInitialData = async () => {
+  // La disponibilidad requiere fecha y ambas horas; el historial se carga por separado.
+  const loadInitialData = async (isCurrent) => {
     setIsLoading(true)
     setError(null)
     try {
-      const [spacesData, resData] = await Promise.all([
-        getSpacesApi({ date }),
+      const [spacesResult, reservationsResult] = await Promise.allSettled([
+        getSpacesApi(startTime < endTime ? { date, start_time: startTime, end_time: endTime } : {}),
         getReservationsApi(),
       ])
+      if (!isCurrent()) return
 
-      const spaceList = Array.isArray(spacesData) ? spacesData : spacesData?.spaces || []
-      setSpaces(spaceList)
+      if (spacesResult.status === 'fulfilled') {
+        const data = spacesResult.value
+        setSpaces(Array.isArray(data) ? data : data?.spaces || [])
+      }
 
-      const resList = Array.isArray(resData) ? resData : resData?.reservations || []
-      setMyReservations(resList)
-    } catch (err) {
-      setError(err?.message || 'No fue posible cargar las salas y reservas.')
-      setSpaces([])
+      if (reservationsResult.status === 'fulfilled') {
+        const data = reservationsResult.value
+        setMyReservations(Array.isArray(data) ? data : data?.reservations || [])
+      }
+
+      const failures = [spacesResult, reservationsResult]
+        .filter((result) => result.status === 'rejected')
+        .map((result) => result.reason?.message || 'Error de comunicación con el servidor')
+      if (failures.length) setError(failures.join(' '))
     } finally {
-      setIsLoading(false)
+      if (isCurrent()) setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    loadInitialData()
-  }, [date])
+    let active = true
+    loadInitialData(() => active)
+    return () => { active = false }
+  }, [date, startTime, endTime])
+
+  useEffect(() => {
+    if (spaces.length && !spaces.some((space) => String(space.id) === String(spaceId))) {
+      setSpaceId(String(spaces[0].id))
+    }
+  }, [spaces, spaceId])
 
   useEffect(() => {
     let active = true
@@ -120,6 +135,12 @@ export default function ReservationPage() {
 
   const selectedSpace = spaces.find((s) => String(s.id) === String(spaceId)) || spaces[0]
   const isOverCapacity = selectedSpace && Number(attendees) > Number(selectedSpace.capacity)
+  const visibleRoomReservations = roomReservations
+    .filter((slot) => slot.status === 'confirmed')
+    .map((slot) => {
+      const detail = myReservations.find((reservation) => reservation.id === slot.id)
+      return detail ? { ...slot, title: detail.title, user_name: detail.user_name } : slot
+    })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -127,7 +148,7 @@ export default function ReservationPage() {
     setSuccess(null)
 
     // Validaciones visuales y de negocio inmediatas (HU-03 / HU-22)
-    if (!spaceId) {
+    if (!spaceId || !spaces.some((space) => String(space.id) === String(spaceId))) {
       setError('Por favor selecciona una sala para la reserva.')
       return
     }
@@ -203,6 +224,11 @@ export default function ReservationPage() {
           {r.space_name || r.space_id || 'Sala'}
         </span>
       ),
+    },
+    {
+      header: 'Reservó',
+      accessor: 'user_name',
+      render: (r) => <span className="text-[#e4e2e4]">{r.user_name || `Usuario #${r.user_id}`}</span>,
     },
     {
       header: 'Fecha y Horario',
@@ -335,8 +361,9 @@ export default function ReservationPage() {
                 value={spaceId}
                 onChange={(e) => setSpaceId(e.target.value)}
                 className="w-full h-11 px-3.5 rounded-[12px] bg-[#2c2c2e] text-[#f5f5f7] text-sm border border-white/[0.08] focus:outline-none focus:ring-2 focus:ring-[#2563eb] transition-all cursor-pointer"
-                disabled={isSubmitting || isLoading}
+                disabled={isSubmitting || isLoading || !spaces.length}
               >
+                {!spaces.length && <option value="">No hay salas disponibles</option>}
                 {spaces.map((space) => (
                   <option key={space.id} value={space.id} className="bg-[#1c1c1e] text-white">
                     {space.name} · {space.capacity} personas
@@ -567,7 +594,7 @@ export default function ReservationPage() {
           <RoomScheduleCalendar
             room={selectedSpace}
             date={date}
-            reservations={roomReservations}
+            reservations={visibleRoomReservations}
             availabilityKnown={calendarKnown}
             userRole={user?.role || 'teacher'}
             selectedStart={startTime}
@@ -577,6 +604,26 @@ export default function ReservationPage() {
               setEndTime(slotEnd)
             }}
           />
+
+          <div className="rounded-2xl border border-white/[0.08] bg-[#1c1c1e] p-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-3">
+              Reservas de {selectedSpace?.name || 'la sala'} para {date}
+            </h3>
+            {!calendarKnown ? (
+              <p className="text-sm text-zinc-400">No se pudo verificar el horario de esta sala.</p>
+            ) : visibleRoomReservations.length === 0 ? (
+              <p className="text-sm text-zinc-400">No hay reservas confirmadas para esta fecha.</p>
+            ) : (
+              <ul className="space-y-2">
+                {visibleRoomReservations.map((reservation) => (
+                  <li key={reservation.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[#2a2a2c] px-3 py-2 text-sm text-zinc-200">
+                    <span className="font-mono">{reservation.start_time.slice(0, 5)} – {reservation.end_time.slice(0, 5)}</span>
+                    <span>{reservation.user_name || 'Ocupado'}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           {/* Listado de reservas registradas */}
           <div className="space-y-3">

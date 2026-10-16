@@ -34,6 +34,7 @@ def reservation_response(
     db: Session,
 ) -> ReservationResponse:
     space = db.get(Space, reservation.space_id)
+    owner = db.get(User, reservation.user_id)
     events = db.scalars(
         select(ReservationEvent)
         .where(ReservationEvent.reservation_id == reservation.id)
@@ -44,6 +45,7 @@ def reservation_response(
         space_id=reservation.space_id,
         space_name=space.name,
         user_id=reservation.user_id,
+        user_name=owner.name,
         date=reservation.date,
         start_time=reservation.start_time,
         end_time=reservation.end_time,

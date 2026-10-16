@@ -67,6 +67,7 @@ class ReservationResponse(BaseModel):
     space_id: str
     space_name: str
     user_id: int
+    user_name: str
     date: DateType
     start_time: TimeType
     end_time: TimeType

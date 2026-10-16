@@ -72,6 +72,7 @@ Una reserva válida se persiste inmediatamente con estado `confirmed` y responde
   "space_id": "SAL-002",
   "space_name": "Cosmos",
   "user_id": 2,
+  "user_name": "Docente Uno",
   "date": "2026-10-20",
   "start_time": "08:00:00",
   "end_time": "10:00:00",
@@ -97,7 +98,7 @@ Las rutas de gestión aceptan únicamente roles `admin` y `teacher`:
 
 | Ruta | Comportamiento |
 | --- | --- |
-| `GET /reservations` | Un docente recibe únicamente sus reservas; un administrador puede consultar todas. Acepta filtros `date`, `space_id`, `user_id` y `status`. |
+| `GET /reservations` | Un docente recibe únicamente sus reservas; un administrador puede consultar todas. Cada registro incluye `user_name` del titular. Acepta filtros `date`, `space_id`, `user_id` y `status`. |
 | `PUT /reservations/{id}` | Modifica uno o varios campos editables y vuelve a validar sala, aforo, intervalo y solapamientos. |
 | `DELETE /reservations/{id}` | Cancela lógicamente la reserva y devuelve el registro con `status: "cancelled"`; no elimina información. |
 
