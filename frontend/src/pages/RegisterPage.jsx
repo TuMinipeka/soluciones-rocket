@@ -301,33 +301,20 @@ export default function RegisterPage() {
         <div className="absolute w-[500px] h-[500px] rounded-full border border-blue-500/15 pointer-events-none animate-orbit" />
         <div className="absolute w-[360px] h-[360px] rounded-full border border-cyan-400/10 pointer-events-none animate-orbit" style={{ animationDirection: 'reverse', animationDuration: '32s' }} />
 
+        {/* Resplandor cósmico difuso */}
         <div className="absolute w-[460px] h-[460px] rounded-full bg-gradient-to-tr from-blue-600/20 via-cyan-500/15 to-purple-600/10 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col items-center justify-between h-[85vh] max-w-[500px] w-full py-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#161821]/90 backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_24px_rgba(0,0,0,0.6)] text-xs font-semibold text-white/95 animate-pulse-subtle">
-            <span className="text-cyan-300 font-bold text-sm">∞</span>
-            <span>Campus Control • Misión Espacial</span>
-          </div>
+        {/* Astronauta interactuando con paneles holográficos limpio y centrado */}
+        <div className="relative z-10 flex items-center justify-center">
+          {/* Resplandor cian reactivo al holograma */}
+          <div className="absolute top-[28%] left-[25%] w-36 h-36 bg-cyan-400/20 rounded-full blur-2xl pointer-events-none animate-pulse-subtle" />
 
-          <div className="relative my-auto flex items-center justify-center">
-            <div className="absolute top-[28%] left-[25%] w-36 h-36 bg-cyan-400/20 rounded-full blur-2xl pointer-events-none animate-pulse-subtle" />
-
-            <div className="relative animate-astronaut group cursor-pointer transition-transform duration-700">
-              <img
-                src="/astronaut_hologram_interactive.png"
-                alt="Astronauta interactuando con consola holográfica"
-                className="max-h-[460px] xl:max-h-[510px] w-auto object-contain drop-shadow-[0_25px_50px_rgba(34,211,238,0.3)] transition-transform duration-500 group-hover:scale-[1.03]"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-[#161821]/90 backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.7)] text-[11px] font-medium text-white/95">
-            <span className="flex items-center gap-1.5 text-[#30d158]">
-              <span className="w-2 h-2 rounded-full bg-[#30d158] animate-pulse shadow-[0_0_8px_#30d158]" />
-              <span>Sistemas Telemáticos Online</span>
-            </span>
-            <span className="text-[#717684]">•</span>
-            <span className="text-cyan-300 font-mono">IA Groq Activa</span>
+          <div className="relative animate-astronaut group cursor-pointer transition-transform duration-700">
+            <img
+              src="/astronaut_hologram_interactive.png"
+              alt="Astronauta interactuando con consola holográfica"
+              className="max-h-[490px] xl:max-h-[540px] w-auto object-contain drop-shadow-[0_25px_50px_rgba(34,211,238,0.3)] transition-transform duration-500 group-hover:scale-[1.03]"
+            />
           </div>
         </div>
       </div>
