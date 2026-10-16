@@ -123,12 +123,15 @@ Para la sustentación frente al jurado, cualquier cambio de regla se encuentra c
 ## 5. Demostración en Vivo para el Jurado
 
 ### Demostración 1: Probar que la IA es Real
-1. Asegurarse de tener configuradas las variables en `.env`:
+1. Configurar el proveedor Groq en el `.env` local (ignorado por Git):
    ```dotenv
-   AI_PROVIDER=openai
-   AI_MODEL=gpt-4o-mini
-   AI_API_KEY=tu_api_key_real
+   AI_PROVIDER=groq
+   AI_MODEL=openai/gpt-oss-20b
+   AI_API_KEY=<clave local de Groq>
+   AI_BASE_URL=
    ```
+   El adaptador selecciona `https://api.groq.com/openai/v1` automáticamente.
+   Reiniciar `backend` para cargar los cambios de entorno. La clave no se incluye en commits.
 2. Ejecutar petición en Swagger `/docs` a `POST /incidents/analyze`:
    ```json
    {
@@ -138,13 +141,13 @@ Para la sustentación frente al jurado, cualquier cambio de regla se encuentra c
    ```
 3. **Evidencia que revisará el jurado:**
    - `"classification_source": "ai"`
-   - `"ai_model": "gpt-4o-mini"`
-   - `"latency_ms": 320` (tiempo real de respuesta de red del modelo)
-   - `"category": "safety"`, `"priority": "critical"`, `"suggests_blocking": true`
+   - `"ai_model": "openai/gpt-oss-20b"`
+   - `"latency_ms"` con la duración real de la petición
+   - Categoría, prioridad y recomendación sujetas a la respuesta validada del modelo
    - `"analysis_token"` con firma HMAC válida.
 
 ### Demostración 2: Probar el Fallback Honesto sin IA
-1. Simular caída o desconexión del proveedor borrando `AI_API_KEY` o dejando `AI_PROVIDER=""` en `.env`:
+1. Simular caída o desconexión del proveedor quitando temporalmente `AI_API_KEY` del `.env` local y reiniciando `backend`:
    ```dotenv
    AI_API_KEY=
    ```
