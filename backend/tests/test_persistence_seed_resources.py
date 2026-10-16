@@ -117,6 +117,39 @@ def test_incident_resource_block_is_persisted(client, db_session, admin_token, s
     assert db_session.get(Resource, "EQ-002").is_blocked is False
 
 
+def test_confirming_and_returning_loan_updates_resource_availability(
+    client, admin_token, teacher_token
+):
+    headers = auth(admin_token)
+    created = client.post(
+        "/resources",
+        json={"id": "EQ-STATUS", "name": "Equipo de estado", "category": "laptop"},
+        headers=headers,
+    )
+    assert created.status_code == 201
+    assert created.json()["status"] == "available"
+
+    start = datetime.now(timezone.utc) + timedelta(minutes=5)
+    loan = client.post(
+        "/resources/loans",
+        json={
+            "resource_id": "EQ-STATUS",
+            "start_time": start.isoformat(),
+            "expected_return": (start + timedelta(hours=1)).isoformat(),
+        },
+        headers=auth(teacher_token),
+    )
+    assert loan.status_code == 201
+    assert client.get("/resources/EQ-STATUS", headers=headers).json()["status"] == "loaned"
+
+    returned = client.post(
+        f"/resources/loans/{loan.json()['id']}/return",
+        headers=auth(teacher_token),
+    )
+    assert returned.status_code == 200
+    assert client.get("/resources/EQ-STATUS", headers=headers).json()["status"] == "available"
+
+
 def test_incident_rejects_unknown_equipment(client, support_token):
     response = client.post(
         "/incidents",
