@@ -14,7 +14,7 @@ La política sobre qué roles pueden reservar salas queda pendiente. No la vamos
 
 > Punto de control obligatorio: a las 2 horas y 30 minutos deberán tener persistencia, reservas, préstamos y registro de incidencias. Si algo de esto no funciona, se suspende cualquier mejora visual adicional para corregirlo.
 
-![Responsabilidades de Conde, Mayorga, Diego, Mafe y Guerra](resources/team-responsibilities.png)
+![Responsabilidades de Conde, Mayorga, Diego, Mafe y Guerra](resources/teamResponsibilities.png)
 
 ## Capacidad
 

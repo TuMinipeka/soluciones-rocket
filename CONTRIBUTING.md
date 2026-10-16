@@ -1,6 +1,6 @@
 # Guía de contribución
 
-Este repositorio corresponde al hackatón descrito en [contexto.md](contexto.md). Somos cinco integrantes y usamos agentes para desarrollar; cada integrante sigue siendo responsable de revisar y poder explicar el código que entrega.
+Este repositorio corresponde al hackatón descrito en [docs/hackathonRubrics.md](docs/hackathonRubrics.md) y [docs/userStories.md](docs/userStories.md). Somos cinco integrantes y usamos agentes para desarrollar; cada integrante sigue siendo responsable de revisar y poder explicar el código que entrega.
 
 ## Flujo de trabajo
 

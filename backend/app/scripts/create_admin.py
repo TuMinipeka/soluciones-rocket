@@ -7,8 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.security import hash_password
-from app.db.base import Base
-from app.db.session import SessionLocal, engine
+from app.db.session import SessionLocal
 from app.modules.auth.enums import Role
 from app.modules.auth.models import User
 from app.modules.auth.schemas import UserRegisterRequest
@@ -20,6 +19,8 @@ def ensure_user(
     password: str,
     role: Role,
     db: Session,
+    *,
+    commit: bool = True,
 ) -> tuple[User, bool]:
     """Crea un usuario de forma idempotente.
     
@@ -40,8 +41,11 @@ def ensure_user(
         is_active=True,
     )
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    if commit:
+        db.commit()
+        db.refresh(user)
+    else:
+        db.flush()
     return user, True
 
 
@@ -72,7 +76,8 @@ def create_initial_admin() -> int:
         return 1
 
     # Asegurar que las tablas existan si no han sido creadas
-    Base.metadata.create_all(bind=engine)
+    from app.scripts.init_db import init_db
+    init_db()
 
     with SessionLocal() as db:
         admin_user, created = ensure_user(

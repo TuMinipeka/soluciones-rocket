@@ -1,45 +1,125 @@
 # Sistema Central de Gestión Operativa de Campuslands
 
-Repositorio de trabajo del hackatón «El campus bajo presión». El enunciado completo y los criterios de evaluación están en [contexto.md](contexto.md).
+Repositorio oficial del hackatón «El campus bajo presión». El sistema unifica la gestión de **espacios**, **recursos tecnológicos** e **incidencias con triaje inteligente asistido por IA** en un monolito modular seguro, probado y de alta disponibilidad.
 
-## Estado
+---
 
-Existe una **base de desarrollo**, no el MVP funcional: Docker Compose define frontend React/Vite/Tailwind y backend FastAPI/SQLAlchemy/SQLite. `GET /health` consulta la base de datos y la pantalla inicial refleja esa conexión. Todavía no se implementaron autenticación, reservas, préstamos, incidencias ni IA.
+## Estado Actual del Proyecto
 
-## Ejecutar el proyecto
+El sistema se encuentra integrado entre los módulos de Diego (autenticación, incidencias, triaje IA y seguridad), Conde (disponibilidad y ciclo de vida de reservas), Mayorga (persistencia, SEED, inventario, importación y Compose) y Guerra/Mafe (frontend React interactivo):
+- **Infraestructura Base (HU-01, HU-06, HU-07, HU-10):** FastAPI, SQLite persistente en volumen, SEED idempotente de las 10 salas oficiales y Docker Compose.
+- **Autenticación y Permisos (HU-11, HU-12, HU-13):** Registro forzado a `teacher`, contraseñas con Argon2id, JWT con vencimiento, timing-safe login y matriz RBAC centralizada.
+- **Operaciones de Salas y Reservas (HU-02, HU-03, HU-04):** Consulta de disponibilidad en tiempo real por franja horaria, validación atómica de solapamientos (`new_start < existing_end and existing_start < new_end`), control de aforo y ciclo de vida de reservas.
+- **Inventario y Préstamos (HU-08):** Catálogo de recursos y préstamos trazables con estados de devolución.
+- **Importación de Dataset Oficial (HU-09):** Script adaptable a CSV, JSON y Excel con validación estricta y reporte de filas importadas/rechazadas.
+- **Incidencias y Triaje con IA (HU-14, HU-15, HU-16):** Reporte de fallas con bloqueo transaccional de espacios y equipos, análisis asistido por LLM con defensas anti-prompt injection, y fallback determinista local por reglas con cálculo de alternativas reales.
 
-Requisito: Docker con Compose. No se requiere instalar Python ni Node en el equipo anfitrión.
+---
+
+## Ejecutar el Proyecto
+
+### Opción 1: Con Docker Compose (Recomendado)
+
+Requisito: Docker Desktop / Docker con Compose. No se requiere instalar Python ni Node en la máquina anfitriona.
 
 ```powershell
+# 1. Copiar y configurar variables de entorno
 Copy-Item .env.example .env
+
+# 2. Levantar la plataforma completa
 docker compose up --build -d
+
+# 3. Comprobar servicios y registros
 docker compose ps
+docker compose logs db-init backend frontend
+
+# 4. Probar endpoints de salud
+Invoke-RestMethod http://localhost:8000/health
+Invoke-RestMethod http://localhost:5173/api/health
+
+# 5. Ejecutar el SEED idempotente de demostración
+docker compose exec backend python -m app.scripts.seed_demo
 ```
 
-Abre `http://localhost:5173` para la pantalla inicial, `http://localhost:8000/health` para el estado de API y SQLite y `http://localhost:8000/docs` para la documentación de los endpoints disponibles. Los cambios del código fuente se montan en los contenedores para desarrollo. Para ver registros: `docker compose logs -f backend` o `docker compose logs -f frontend`. Para detener: `docker compose down`; el volumen `campus_data` conserva SQLite. **No uses `docker compose down -v` si necesitas conservar esos datos.**
+Compose inicia `db-init` para crear las tablas de forma explícita en el volumen `campus_data`. Luego inicia `backend` (FastAPI en `http://localhost:8000`) y `frontend` (React + Vite en `http://localhost:5173`). La documentación interactiva OpenAPI está disponible en `http://localhost:8000/docs`.
 
-`.env.example` no contiene credenciales. Antes de implementar o probar autenticación y servicios de IA, asigna valores locales a las variables requeridas en `.env` sin confirmarlo en Git. Las configuraciones de IA y JWT están preparadas como variables, pero esos servicios aún no están implementados. El frontend usa un proxy de Vite a `/api`, que apunta al backend dentro de Compose.
+Para detener preservando datos: `docker compose down`. *(No uses `docker compose down -v` para evitar borrar la base de datos persistida).*
 
-La [estructura y límites de módulos](docs/architecture.md) indican dónde incorporar cada capacidad y qué contratos debe acordar el equipo. No cargues inventario ni datos de muestra como si fueran oficiales: la importación autorizada sigue pendiente.
+### Opción 2: Ejecución Local en Windows (sin Docker)
 
-Consulta la [matriz de versiones y las comprobaciones de reproducibilidad](docs/versions.md) antes de instalar dependencias o preparar un despliegue. Las versiones directas están fijadas; los lockfiles transitivos y digest de imágenes aún son requisitos pendientes para producción.
+Para trabajar **sin Docker en Windows**, crea un entorno virtual con Python 3.11+, instala dependencias con `pip install -r backend/requirements.txt`, copia `.env.example` a `.env` y ejecuta:
 
-## Documentación del reto
+```powershell
+./scripts/start_backend_local.ps1
+```
 
-- [Enunciado general](contexto.md).
-- [Historias de usuario y criterios de aceptación (ES)](docs/trabajo-x-hacer.md) | [Backlog (EN)](docs/user-stories.md).
-- [Información técnica, salas y decisiones pendientes](docs/hackaton-rubricas-informacion.md).
-- [Responsabilidades y trabajo en equipo](docs/team-responsibilities.md).
-- [Contrato de API: Auth e Incidencias](docs/contracts/auth_incidents.md).
-- [Arquitectura de Seguridad, IA y Fallback](docs/AUTH_IA.md).
+Este script lee el `.env`, inicializa las tablas SQLite en local y levanta FastAPI en `http://127.0.0.1:8000`.
 
-## Trabajo en equipo
+---
 
-Los cinco integrantes y sus agentes siguen las [reglas para agentes](AGENTS.md) y la [guía de contribución](CONTRIBUTING.md). Cada integrante mantiene una rama `developer/NombreDelDeveloper`; sus cambios se integran mediante pull requests. Después de cada pull, su agente informa qué implementó cada rama. Ejemplo de commit y título de PR: `feat: :sparkles: AddSpaceBooking`.
+## Importar Datos Autorizados (HU-09)
 
-## Información pendiente para la entrega
+El importador acepta `.csv`, `.json` y `.xlsx`. Para equipos exige columnas `id,name,category` y admite `condition` (`operational` o `damaged`). Para salas exige `id,name,capacity` y valida que coincidan exactamente con el catálogo oficial.
 
-- Fuente y procedimiento de carga de los datos oficiales autorizados.
-- Flujo principal, función real de IA y sus límites.
-- Tres reglas de negocio implementadas y forma de demostrar casos válidos e inválidos.
-- Pruebas ejecutadas y pasos de la demostración en vivo.
+Guarda el archivo recibido en `official-data/` (ignorado por Git). Con Compose en ejecución:
+
+```powershell
+docker compose cp .\official-data\inventario.csv backend:/tmp/inventario.csv
+docker compose exec backend python -m app.scripts.import_dataset /tmp/inventario.csv --kind resources --dry-run --report /app/data/import-dry-run.json
+docker compose exec backend python -m app.scripts.import_dataset /tmp/inventario.csv --kind resources --report /app/data/import-report.json
+New-Item -ItemType Directory -Force import-reports | Out-Null
+docker compose cp backend:/app/data/import-report.json .\import-reports\import-report.json
+```
+
+Para cargar escenarios de demostración opcionales tras registrar equipos autorizados:
+
+```powershell
+docker compose exec backend python -m app.scripts.seed_scenarios --date 2026-11-20 --resource-ids EQ-001,EQ-002,EQ-003
+```
+
+---
+
+## Ejecución de Pruebas Unitarias y de Integración
+
+Para ejecutar la suite completa de pruebas en el entorno de backend:
+
+```bash
+cd backend
+python -m pytest tests -v
+```
+
+---
+
+## Estructura de Documentación del Repositorio
+
+Toda la documentación técnica y operativa está organizada en la carpeta `docs/` con nomenclatura estandarizada:
+
+### 1. Requisitos, Backlog y Rúbricas
+- [Historias de Usuario y Criterios de Aceptación (HU-01 a HU-24)](docs/userStories.md)
+- [Roadmap Técnico y Puertas de Control](docs/campusControlRoadmap.md)
+- [Rúbricas de Evaluación y Directrices del Hackatón](docs/hackathonRubrics.md)
+- [Matriz de Responsabilidades del Equipo](docs/teamResponsibilities.md)
+
+### 2. Arquitectura y Seguridad
+- [Estructura y Límites Modulares](docs/architecture.md)
+- [Arquitectura de Seguridad, JWT, Incidencias y Triaje con IA](docs/authIa.md)
+- [Matriz de Versiones y Dependencias](docs/versions.md)
+
+### 3. Contratos de API
+- [Contrato: Autenticación, Usuarios e Incidencias](docs/contracts/authIncidents.md)
+- [Contrato: Salas, Disponibilidad y Reservas](docs/contracts/spacesAvailability.md)
+- [Contrato: Recursos Tecnológicos y Préstamos](docs/contracts/resourcesLoans.md)
+
+### 4. Guías de Handoff y Escalabilidad
+- [Handoff: Estado Operativo y Cobertura del Backend](docs/handoffs/backendStatus.md)
+- [Handoff: Guía de Integración para el Frontend (Mafe y Guerra)](docs/handoffs/frontendIntegration.md)
+- [Handoff: Estrategia de Arquitectura y Escalabilidad en Producción](docs/handoffs/scalabilityAndArchitecture.md)
+
+---
+
+## Convenciones de Trabajo en Equipo
+
+Los integrantes siguen las [instrucciones para agentes](AGENTS.md) y la [guía de contribución](CONTRIBUTING.md):
+- Cada desarrollador mantiene su rama persistente `developer/NombreDelDeveloper`.
+- Commits atómicos con formato Conventional Commits (`tipo: :gitmoji: EnglishActionInUpperCamelCase`), validados mediante `scripts/validate_commit_messages.py`.
+- Integraciones a `main` exclusivamente mediante Pull Requests revisados.
