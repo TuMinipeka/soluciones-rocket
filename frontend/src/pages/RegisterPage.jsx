@@ -52,21 +52,21 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans selection:bg-zinc-900 selection:text-white">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
-        <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-900 text-white font-bold text-lg shadow-sm mb-4">
+    <div className="min-h-screen bg-[#fafaf9] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans selection:bg-zinc-900 selection:text-white">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8">
+        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-900 text-white font-bold text-lg shadow-[0_4px_16px_rgba(0,0,0,0.12)] mb-4 select-none">
           CL
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
-          Crear cuenta docente
+        <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900">
+          Registro Docente
         </h2>
-        <p className="mt-1 text-xs uppercase tracking-wider text-zinc-500 font-semibold">
-          Registro Oficial Campuslands
+        <p className="mt-1.5 text-xs uppercase tracking-widest text-zinc-400 font-bold">
+          Acceso a Salas y Recursos Académicos
         </p>
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Card className="shadow-lg border-zinc-200">
+        <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.03)] border-zinc-200/80 rounded-3xl p-6 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             {(localError || authError) && (
               <ErrorMessage message={localError || authError} />
@@ -77,7 +77,7 @@ export default function RegisterPage() {
               type="text"
               required
               autoComplete="name"
-              placeholder="Prof. María González"
+              placeholder="Prof. Carlos Pérez"
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isSubmitting}
@@ -88,7 +88,7 @@ export default function RegisterPage() {
               type="email"
               required
               autoComplete="email"
-              placeholder="maria@campuslands.com"
+              placeholder="carlos.perez@campuslands.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isSubmitting}
@@ -118,29 +118,32 @@ export default function RegisterPage() {
             />
 
             {/* Aviso de rol predeterminado conforme a HU-11 */}
-            <div className="rounded-lg bg-zinc-50 p-3 border border-zinc-200/80 text-[11px] text-zinc-600">
-              ℹ️ Toda cuenta pública recibe automáticamente permisos de <strong className="text-zinc-900">docente</strong> para reservar salas y solicitar recursos.
+            <div className="rounded-2xl bg-zinc-50 p-3.5 border border-zinc-200/60 text-xs text-zinc-600 flex items-start gap-2.5">
+              <span className="text-base">ℹ️</span>
+              <span className="leading-relaxed">
+                Toda cuenta pública creada recibe automáticamente permisos de <strong className="text-zinc-900">docente</strong> para reservar espacios y solicitar equipos.
+              </span>
             </div>
 
             <div className="pt-2">
               <Button
                 type="submit"
                 variant="primary"
-                size="md"
-                className="w-full"
+                size="lg"
+                className="w-full shadow-sm"
                 isLoading={isSubmitting}
               >
-                {isSubmitting ? 'Registrando cuenta…' : 'Crear cuenta'}
+                {isSubmitting ? 'Registrando cuenta…' : 'Crear Cuenta'}
               </Button>
             </div>
           </form>
 
-          <div className="mt-6 border-t border-zinc-100 pt-4 text-center">
+          <div className="mt-6 border-t border-zinc-100 pt-5 text-center">
             <p className="text-xs text-zinc-500">
               ¿Ya tienes una cuenta?{' '}
               <Link
                 to="/login"
-                className="font-semibold text-zinc-900 hover:underline"
+                className="font-bold text-zinc-900 hover:underline"
               >
                 Iniciar sesión
               </Link>

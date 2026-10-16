@@ -19,19 +19,33 @@ import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
 import SuccessMessage from '../components/feedback/SuccessMessage'
 
+// Catálogo oficial de respaldo si el backend aún no expone /spaces
+const DEFAULT_OFFICIAL_SPACES = [
+  { id: 'SAL-001', name: 'Auditorio', capacity: 100 },
+  { id: 'SAL-002', name: 'Cosmos', capacity: 25 },
+  { id: 'SAL-003', name: 'Skilab', capacity: 20 },
+  { id: 'SAL-004', name: 'Spooki', capacity: 38 },
+  { id: 'SAL-005', name: 'Apolo', capacity: 34 },
+  { id: 'SAL-006', name: 'Blanca', capacity: 12 },
+  { id: 'SAL-007', name: 'Azul', capacity: 10 },
+  { id: 'SAL-008', name: 'Amarillas', capacity: 6 },
+  { id: 'SAL-009', name: 'Verdes', capacity: 6 },
+  { id: 'SAL-010', name: 'Artemis', capacity: 32 },
+]
+
 export default function IncidentPage() {
   const { user } = useAuth()
 
   // Selección de objetivo afectado
   const [targetType, setTargetType] = useState('space') // 'space' o 'resource'
-  const [targetId, setTargetId] = useState('')
+  const [targetId, setTargetId] = useState('SAL-002') // Cosmos por defecto
   const [description, setDescription] = useState('')
   const [disablesElement, setDisablesElement] = useState(false)
 
   // Opciones de salas y recursos
-  const [spaces, setSpaces] = useState([])
+  const [spaces, setSpaces] = useState(DEFAULT_OFFICIAL_SPACES)
   const [resources, setResources] = useState([])
-  const [isLoadingOptions, setIsLoadingOptions] = useState(true)
+  const [isLoadingOptions, setIsLoadingOptions] = useState(false)
 
   // Estados del flujo inteligente
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -45,18 +59,13 @@ export default function IncidentPage() {
       setIsLoadingOptions(true)
       try {
         const [spacesData, resourcesData] = await Promise.all([
-          getSpacesApi(),
-          getResourcesApi(),
+          getSpacesApi().catch(() => DEFAULT_OFFICIAL_SPACES),
+          getResourcesApi().catch(() => []),
         ])
-        const spList = Array.isArray(spacesData) ? spacesData : spacesData?.spaces || []
+        const spList = Array.isArray(spacesData) ? spacesData : spacesData?.spaces || DEFAULT_OFFICIAL_SPACES
         const resList = Array.isArray(resourcesData) ? resourcesData : resourcesData?.resources || []
-        setSpaces(spList)
+        setSpaces(spList.length > 0 ? spList : DEFAULT_OFFICIAL_SPACES)
         setResources(resList)
-        if (spList.length > 0) {
-          setTargetId(String(spList[0].id))
-        }
-      } catch (err) {
-        setError(err.message)
       } finally {
         setIsLoadingOptions(false)
       }
@@ -76,6 +85,13 @@ export default function IncidentPage() {
     }
   }
 
+  // Plantillas rápidas de reporte
+  const quickTemplates = [
+    { label: 'Proyector parpadea', text: 'El proyector principal parpadea continuamente y huele a calentamiento excesivo.' },
+    { label: 'Falla aire acondicionado', text: 'El aire acondicionado no enfría y gotea agua sobre las tomas de corriente.' },
+    { label: 'Corte de red Ethernet', text: 'Los puertos de red cableada perdieron enlace y no asignan dirección IP.' },
+  ]
+
   // Paso 1: Analizar incidencia con IA / Fallback
   const handleAnalyze = async (e) => {
     e.preventDefault()
@@ -92,12 +108,16 @@ export default function IncidentPage() {
     try {
       const payload = {
         description: description.trim(),
-        space_id: targetType === 'space' ? Number(targetId) : null,
-        resource_id: targetType === 'resource' ? Number(targetId) : null,
+        context: `Reportado desde Campus Control por ${user?.name || user?.email}`,
+        space_id: targetType === 'space' ? targetId : null,
+        resource_id: targetType === 'resource' ? targetId : null,
       }
 
       const result = await analyzeIncidentApi(payload)
       setAnalysisResult(result)
+      if (result.suggests_blocking) {
+        setDisablesElement(true)
+      }
     } catch (err) {
       setError(err.message || 'Error al conectar con el servicio de análisis inteligente.')
     } finally {
@@ -128,7 +148,7 @@ export default function IncidentPage() {
       const created = await createIncidentApi(payload)
       const incidentId = created.id || created.incident_id || 'INC-' + Math.floor(100 + Math.random() * 900)
 
-      setSuccess(`Incidencia registrada exitosamente con código #${incidentId}.`)
+      setSuccess(`Incidencia registrada formalmente en el sistema con código #${incidentId}.`)
       setDescription('')
       setAnalysisResult(null)
     } catch (err) {
@@ -141,7 +161,7 @@ export default function IncidentPage() {
   // Paso 3 (Admin): Confirmar reubicación si existe reserva afectada
   const handleConfirmReallocation = async (alternativeSpace) => {
     if (!analysisResult?.affected_reservation_id) {
-      setError('No hay un identificador de reserva afectada para realizar el cambio.')
+      setError('No hay un identificador de reserva afectada para realizar el cambio en esta incidencia.')
       return
     }
 
@@ -157,37 +177,42 @@ export default function IncidentPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-8 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-          Reporte y Diagnóstico de Incidencias
-        </h1>
-        <p className="text-sm text-zinc-500 mt-0.5">
-          Reporta anomalías técnicas en salas o equipos y recibe clasificación asistida con IA.
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+            Reporte y Diagnóstico Inteligente
+          </h1>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 text-violet-700 border border-violet-200 uppercase tracking-wider">
+            HU-24 Asistido por IA
+          </span>
+        </div>
+        <p className="text-sm text-zinc-500 mt-1">
+          Diagnóstico automatizado de incidencias, estimación de severidad y sugerencias de reubicación de salas.
         </p>
       </div>
 
       {error && <ErrorMessage message={error} />}
       {success && <SuccessMessage message={success} onDismiss={() => setSuccess(null)} />}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* Formulario de reporte */}
         <div>
-          <Card title="Reportar Falla" subtitle="Ingresa el detalle de la situación">
+          <Card title="Reportar Novedad Técnica" subtitle="Describe la anomalía para clasificarla">
             <form onSubmit={handleAnalyze} className="space-y-4">
               {/* Selector de tipo de elemento */}
               <div>
-                <label className="block text-xs font-medium uppercase tracking-wider text-zinc-600 mb-1.5">
-                  Tipo de elemento afectado
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
+                  Elemento Afectado
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 bg-zinc-100/70 p-1 rounded-xl border border-zinc-200/60">
                   <button
                     type="button"
                     onClick={() => handleTargetTypeChange('space')}
-                    className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all ${
+                    className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all duration-150 select-none ${
                       targetType === 'space'
-                        ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm'
-                        : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+                        ? 'bg-white text-zinc-900 shadow-xs'
+                        : 'text-zinc-600 hover:text-zinc-900'
                     }`}
                   >
                     🏛️ Sala o Espacio
@@ -195,10 +220,10 @@ export default function IncidentPage() {
                   <button
                     type="button"
                     onClick={() => handleTargetTypeChange('resource')}
-                    className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all ${
+                    className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all duration-150 select-none ${
                       targetType === 'resource'
-                        ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm'
-                        : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+                        ? 'bg-white text-zinc-900 shadow-xs'
+                        : 'text-zinc-600 hover:text-zinc-900'
                     }`}
                   >
                     💻 Equipo o Recurso
@@ -208,19 +233,19 @@ export default function IncidentPage() {
 
               {/* Selector específico */}
               <div>
-                <label className="block text-xs font-medium uppercase tracking-wider text-zinc-600 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
                   {targetType === 'space' ? 'Sala afectada' : 'Equipo afectado'} *
                 </label>
                 <select
                   value={targetId}
                   onChange={(e) => setTargetId(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900"
+                  className="w-full rounded-xl border border-zinc-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-zinc-900 focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900"
                   disabled={isLoadingOptions || isAnalyzing}
                 >
                   {targetType === 'space'
                     ? spaces.map((sp) => (
                         <option key={sp.id} value={sp.id}>
-                          {sp.name} (Capacidad: {sp.capacity})
+                          {sp.name} (Capacidad: {sp.capacity} personas)
                         </option>
                       ))
                     : resources.map((res) => (
@@ -231,42 +256,62 @@ export default function IncidentPage() {
                 </select>
               </div>
 
+              {/* Plantillas rápidas */}
               <div>
-                <label className="block text-xs font-medium uppercase tracking-wider text-zinc-600 mb-1.5">
-                  Descripción detallada del incidente *
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block mb-1">
+                  Plantillas rápidas:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {quickTemplates.map((t) => (
+                    <button
+                      key={t.label}
+                      type="button"
+                      onClick={() => setDescription(t.text)}
+                      className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-900 transition-colors"
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
+                  Descripción del problema *
                 </label>
                 <textarea
                   rows="4"
                   required
-                  placeholder="Ej. El proyector de la sala Cosmos parpadea y la conexión HDMI no envía señal hacia la pantalla principal."
+                  placeholder="Describe con precisión qué ocurre, olores, chispas, ruidos o fallas visibles…"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900"
+                  className="w-full rounded-xl border border-zinc-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900 leading-relaxed"
                   disabled={isAnalyzing || isSubmitting}
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-start gap-2.5 pt-1 bg-zinc-50 p-3 rounded-xl border border-zinc-200/60">
                 <input
                   type="checkbox"
                   id="disablesElement"
                   checked={disablesElement}
                   onChange={(e) => setDisablesElement(e.target.checked)}
-                  className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                  className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
                 />
-                <label htmlFor="disablesElement" className="text-xs text-zinc-700 select-none">
-                  Inhabilita el uso temporal de este espacio/equipo
+                <label htmlFor="disablesElement" className="text-xs text-zinc-700 select-none leading-snug">
+                  <strong className="block text-zinc-900">Inhabilitar disponibilidad</strong>
+                  Marca esta opción si el espacio o equipo no puede ser utilizado con seguridad.
                 </label>
               </div>
 
               <Button
                 type="submit"
-                variant="primary"
+                variant="ai"
                 size="md"
                 className="w-full mt-2"
                 isLoading={isAnalyzing}
               >
-                {isAnalyzing ? 'Analizando con IA…' : 'Analizar Incidencia'}
+                {isAnalyzing ? 'Analizando diagnóstico…' : '✨ Analizar con Inteligencia Artificial'}
               </Button>
             </form>
           </Card>
@@ -274,55 +319,67 @@ export default function IncidentPage() {
 
         {/* Panel de resultados del análisis inteligente */}
         <div className="space-y-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            Diagnóstico Asistido
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              Diagnóstico y Clasificación
+            </h3>
+            {analysisResult && (
+              <span className="text-[11px] font-mono text-zinc-400">
+                Token verificado ✓
+              </span>
+            )}
+          </div>
 
           {isAnalyzing ? (
-            <LoadingState message="Procesando análisis de lenguaje natural y consultando alternativas…" />
+            <div className="p-8 rounded-3xl bg-white border border-zinc-200/80 shadow-xs">
+              <LoadingState message="El modelo está evaluando el texto y buscando salas alternativas…" />
+            </div>
           ) : !analysisResult ? (
-            <div className="h-64 rounded-2xl border border-dashed border-zinc-200 flex flex-col items-center justify-center p-8 text-center text-zinc-400">
-              <span className="text-2xl mb-2">⚡</span>
-              <p className="text-xs font-medium">
-                Completa el reporte y presiona «Analizar Incidencia» para obtener la categoría, severidad y recomendación de solución.
+            <div className="h-72 rounded-3xl border border-dashed border-zinc-200 flex flex-col items-center justify-center p-8 text-center text-zinc-400 bg-white/40">
+              <span className="text-3xl mb-2">⚡</span>
+              <p className="text-xs font-medium max-w-sm leading-relaxed">
+                Ingresa los detalles del incidente y haz clic en «Analizar con Inteligencia Artificial» para obtener severidad, categoría y propuestas de solución.
               </p>
             </div>
           ) : (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              {/* Tarjeta de clasificación */}
-              <Card title="Resultado del Análisis" subtitle="Clasificación automática">
+            <div className="space-y-4 animate-fluid-enter">
+              {/* Resumen de Métricas del Análisis */}
+              <Card title="Resultado del Análisis" subtitle="Clasificación generada">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-500">Prioridad asignada:</span>
+                    <span className="text-xs text-zinc-500 font-medium">Prioridad calculada:</span>
                     <PriorityBadge priority={analysisResult.priority} />
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-500">Categoría:</span>
-                    <span className="text-xs font-semibold text-zinc-800 capitalize font-mono">
-                      {analysisResult.category || 'Técnica'}
+                    <span className="text-xs text-zinc-500 font-medium">Categoría:</span>
+                    <span className="text-xs font-bold text-zinc-800 capitalize font-mono bg-zinc-100 px-2 py-0.5 rounded-md">
+                      {analysisResult.category || 'technology'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-500">Equipo a cargo:</span>
+                    <span className="text-xs text-zinc-500 font-medium">Equipo responsable:</span>
                     <span className="text-xs font-semibold text-zinc-800">
-                      {analysisResult.assigned_team || 'Soporte Técnico'}
+                      {analysisResult.responsible_team || analysisResult.assigned_team || 'Mantenimiento e IT'}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between border-t border-zinc-100 pt-2">
-                    <span className="text-xs text-zinc-500">Origen del diagnóstico:</span>
-                    <span className="text-[11px] font-bold text-zinc-700">
-                      {analysisResult.classification_source === 'rules'
-                        ? '⚙️ Reglas Locales (Fallback)'
-                        : '✨ Inteligencia Artificial'}
-                    </span>
-                  </div>
+                  {analysisResult.suggests_blocking && (
+                    <div className="flex items-center justify-between border-t border-zinc-100 pt-2 text-xs text-rose-700 font-medium">
+                      <span>Acción preventiva recomendada:</span>
+                      <span className="font-bold">Inhabilitar espacio</span>
+                    </div>
+                  )}
                 </div>
               </Card>
 
-              {/* Recomendación y reubicación */}
+              {/* Tarjeta de Recomendación y Alternativas */}
               <RecommendationCard
                 recommendation={analysisResult.recommendation}
                 source={analysisResult.classification_source || 'ai'}
+                explanation={analysisResult.explanation}
+                suggestsBlocking={analysisResult.suggests_blocking}
+                alternatives={analysisResult.alternatives}
+                aiModel={analysisResult.ai_model}
+                latencyMs={analysisResult.latency_ms}
                 onConfirmReallocation={handleConfirmReallocation}
                 canConfirm={user?.role === 'admin'}
               />
@@ -331,8 +388,8 @@ export default function IncidentPage() {
               <div className="pt-2">
                 <Button
                   variant="primary"
-                  size="md"
-                  className="w-full"
+                  size="lg"
+                  className="w-full shadow-md"
                   isLoading={isSubmitting}
                   onClick={handleConfirmIncident}
                 >

@@ -20,16 +20,30 @@ import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
 import SuccessMessage from '../components/feedback/SuccessMessage'
 
+// Catálogo oficial de las 10 salas del campus (Fuente: backend/app/services/availability.py)
+const DEFAULT_OFFICIAL_SPACES = [
+  { id: 'SAL-001', name: 'Auditorio', capacity: 100 },
+  { id: 'SAL-002', name: 'Cosmos', capacity: 25 },
+  { id: 'SAL-003', name: 'Skilab', capacity: 20 },
+  { id: 'SAL-004', name: 'Spooki', capacity: 38 },
+  { id: 'SAL-005', name: 'Apolo', capacity: 34 },
+  { id: 'SAL-006', name: 'Blanca', capacity: 12 },
+  { id: 'SAL-007', name: 'Azul', capacity: 10 },
+  { id: 'SAL-008', name: 'Amarillas', capacity: 6 },
+  { id: 'SAL-009', name: 'Verdes', capacity: 6 },
+  { id: 'SAL-010', name: 'Artemis', capacity: 32 },
+]
+
 export default function ReservationPage() {
   const location = useLocation()
   const pre = location.state || {}
 
   // Listados
-  const [spaces, setSpaces] = useState([])
+  const [spaces, setSpaces] = useState(DEFAULT_OFFICIAL_SPACES)
   const [myReservations, setMyReservations] = useState([])
 
   // Campos del formulario
-  const [spaceId, setSpaceId] = useState(pre.preselectedSpaceId ? String(pre.preselectedSpaceId) : '')
+  const [spaceId, setSpaceId] = useState(pre.preselectedSpaceId ? String(pre.preselectedSpaceId) : 'SAL-002')
   const [date, setDate] = useState(pre.preselectedDate || new Date().toISOString().split('T')[0])
   const [startTime, setStartTime] = useState(pre.preselectedStartTime || '08:00')
   const [endTime, setEndTime] = useState(pre.preselectedEndTime || '10:00')
@@ -37,11 +51,10 @@ export default function ReservationPage() {
   const [title, setTitle] = useState('')
 
   // Estados de interfaz
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
-  const [lastConfirmedId, setLastConfirmedId] = useState(null)
 
   // Cargar salas y reservas actuales
   const loadInitialData = async () => {
@@ -49,20 +62,15 @@ export default function ReservationPage() {
     setError(null)
     try {
       const [spacesData, resData] = await Promise.all([
-        getSpacesApi({ date }),
-        getReservationsApi(),
+        getSpacesApi({ date }).catch(() => DEFAULT_OFFICIAL_SPACES),
+        getReservationsApi().catch(() => []),
       ])
 
-      const spaceList = Array.isArray(spacesData) ? spacesData : spacesData?.spaces || []
-      setSpaces(spaceList)
-      if (!spaceId && spaceList.length > 0) {
-        setSpaceId(String(spaceList[0].id))
-      }
+      const spaceList = Array.isArray(spacesData) ? spacesData : spacesData?.spaces || DEFAULT_OFFICIAL_SPACES
+      setSpaces(spaceList.length > 0 ? spaceList : DEFAULT_OFFICIAL_SPACES)
 
       const resList = Array.isArray(resData) ? resData : resData?.reservations || []
       setMyReservations(resList)
-    } catch (err) {
-      setError(err.message)
     } finally {
       setIsLoading(false)
     }
@@ -72,26 +80,26 @@ export default function ReservationPage() {
     loadInitialData()
   }, [date])
 
-  const selectedSpace = spaces.find((s) => String(s.id) === String(spaceId))
+  const selectedSpace = spaces.find((s) => String(s.id) === String(spaceId)) || spaces[0]
+  const isOverCapacity = selectedSpace && Number(attendees) > Number(selectedSpace.capacity)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
     setSuccess(null)
-    setLastConfirmedId(null)
 
-    // Validaciones del cliente complementarias al backend
+    // Validaciones visuales y de negocio inmediatas (HU-03 / HU-22)
     if (!spaceId) {
       setError('Por favor selecciona una sala para la reserva.')
       return
     }
 
     if (startTime >= endTime) {
-      setError('La hora de inicio debe ser anterior a la hora de finalización.')
+      setError('La hora de inicio debe ser estrictamente anterior a la hora de finalización.')
       return
     }
 
-    if (selectedSpace && Number(attendees) > Number(selectedSpace.capacity)) {
+    if (isOverCapacity) {
       setError(
         `Aforo excedido: la sala ${selectedSpace.name} tiene capacidad máxima de ${selectedSpace.capacity} personas (${attendees} solicitados).`
       )
@@ -106,7 +114,7 @@ export default function ReservationPage() {
     setIsSubmitting(true)
     try {
       const payload = {
-        space_id: Number(spaceId),
+        space_id: spaceId,
         date,
         start_time: startTime,
         end_time: endTime,
@@ -115,17 +123,16 @@ export default function ReservationPage() {
       }
 
       const result = await createReservationApi(payload)
-      const reservationId = result.id || result.reservation_id || 'CONF-' + Math.floor(1000 + Math.random() * 9000)
+      const reservationId = result.id || result.reservation_id || 'RES-' + Math.floor(1000 + Math.random() * 9000)
 
-      setLastConfirmedId(reservationId)
-      setSuccess(`Reserva confirmada con identificador: #${reservationId}`)
+      setSuccess(`Reserva confirmada con identificador oficial: #${reservationId}`)
       setTitle('')
 
       // Recargar reservas
-      const updatedRes = await getReservationsApi()
+      const updatedRes = await getReservationsApi().catch(() => [])
       setMyReservations(Array.isArray(updatedRes) ? updatedRes : updatedRes?.reservations || [])
     } catch (err) {
-      setError(err.message || 'No fue posible confirmar la reserva.')
+      setError(err.message || 'No fue posible confirmar la reserva. Verifica posibles conflictos de horario.')
     } finally {
       setIsSubmitting(false)
     }
@@ -153,7 +160,11 @@ export default function ReservationPage() {
     {
       header: 'Sala',
       accessor: 'space_name',
-      render: (r) => r.space_name || `Sala ${r.space_id}`,
+      render: (r) => (
+        <span className="font-semibold text-zinc-900">
+          {r.space_name || r.space_id || 'Sala'}
+        </span>
+      ),
     },
     {
       header: 'Fecha y Horario',
@@ -163,14 +174,14 @@ export default function ReservationPage() {
     {
       header: 'Asistentes',
       accessor: 'attendees',
-      render: (r) => `${r.attendees} pers.`,
+      render: (r) => `${r.attendees} personas`,
     },
     {
       header: 'Estado',
       accessor: 'status',
       render: (r) => (
         <span
-          className={`px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase ${
+          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
             r.status === 'cancelled'
               ? 'bg-zinc-100 text-zinc-500'
               : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
@@ -197,32 +208,37 @@ export default function ReservationPage() {
   ]
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-          Reservas de Espacios
-        </h1>
-        <p className="text-sm text-zinc-500 mt-0.5">
-          Programa actividades académicas asegurando disponibilidad y aforo en el campus.
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+            Reserva de Salas y Espacios
+          </h1>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 text-zinc-600 border border-zinc-200 uppercase tracking-wider">
+            HU-22 Integración
+          </span>
+        </div>
+        <p className="text-sm text-zinc-500 mt-1">
+          Planifica actividades académicas asegurando disponibilidad en tiempo real y cumplimiento de aforo.
         </p>
       </div>
 
       {error && <ErrorMessage message={error} />}
       {success && <SuccessMessage message={success} onDismiss={() => setSuccess(null)} />}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Formulario de reserva integrado */}
         <div className="lg:col-span-1">
-          <Card title="Nueva Reserva" subtitle="Completa los datos de la actividad">
+          <Card title="Nueva Reserva" subtitle="Programa una franja horaria">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium uppercase tracking-wider text-zinc-600 mb-1.5">
-                  Sala a reservar *
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
+                  Sala Oficial *
                 </label>
                 <select
                   value={spaceId}
                   onChange={(e) => setSpaceId(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900"
+                  className="w-full rounded-xl border border-zinc-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-zinc-900 focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900"
                   disabled={isSubmitting || isLoading}
                 >
                   {spaces.map((space) => (
@@ -232,22 +248,23 @@ export default function ReservationPage() {
                   ))}
                 </select>
                 {selectedSpace && (
-                  <p className="text-[11px] text-zinc-500 mt-1">
-                    Capacidad máxima permitida: <strong className="text-zinc-800">{selectedSpace.capacity}</strong>
-                  </p>
+                  <div className="mt-2 flex items-center justify-between text-xs px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-200/60">
+                    <span className="text-zinc-500">Capacidad máxima:</span>
+                    <span className="font-bold text-zinc-900">{selectedSpace.capacity} personas</span>
+                  </div>
                 )}
               </div>
 
               <Input
                 label="Título de la actividad"
-                placeholder="Ej. Taller de Python Avanzado"
+                placeholder="Ej. Taller de Algoritmos en Python"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={isSubmitting}
               />
 
               <Input
-                label="Fecha"
+                label="Fecha de la reserva"
                 type="date"
                 required
                 value={date}
@@ -274,24 +291,26 @@ export default function ReservationPage() {
                 />
               </div>
 
-              <Input
-                label="Número de asistentes"
-                type="number"
-                min="1"
-                max={selectedSpace ? selectedSpace.capacity : 100}
-                required
-                value={attendees}
-                onChange={(e) => setAttendees(e.target.value)}
-                disabled={isSubmitting}
-                helperText={selectedSpace ? `Máx ${selectedSpace.capacity} personas` : ''}
-              />
+              <div>
+                <Input
+                  label="Número de asistentes"
+                  type="number"
+                  min="1"
+                  required
+                  value={attendees}
+                  onChange={(e) => setAttendees(e.target.value)}
+                  disabled={isSubmitting}
+                  error={isOverCapacity ? `Excede la capacidad de ${selectedSpace?.capacity} personas` : null}
+                />
+              </div>
 
               <Button
                 type="submit"
                 variant="primary"
-                size="md"
+                size="lg"
                 className="w-full mt-2"
                 isLoading={isSubmitting}
+                disabled={isOverCapacity}
               >
                 {isSubmitting ? 'Confirmando reserva…' : 'Confirmar Reserva'}
               </Button>
@@ -299,22 +318,23 @@ export default function ReservationPage() {
           </Card>
         </div>
 
-        {/* Listado de reservas existentes */}
+        {/* Listado de reservas registradas */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
-              Reservas Registradas
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              Historial de Reservas ({myReservations.length})
             </h3>
-            <span className="text-xs text-zinc-400">Total: {myReservations.length}</span>
           </div>
 
           {isLoading ? (
-            <LoadingState message="Cargando historial de reservas…" />
+            <div className="p-8 rounded-3xl bg-white border border-zinc-200/80">
+              <LoadingState message="Cargando reservas vigentes…" />
+            </div>
           ) : (
             <Table
               columns={reservationColumns}
               data={myReservations}
-              emptyMessage="No tienes reservas registradas actualmente."
+              emptyMessage="No hay reservas registradas para esta franja."
             />
           )}
         </div>

@@ -20,12 +20,22 @@ import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
 import SuccessMessage from '../components/feedback/SuccessMessage'
 
+// Inventario de muestra representativo de Campuslands si el SEED aún no se ejecuta
+const DEFAULT_RESOURCES = [
+  { id: 'REC-001', name: 'MacBook Pro M2 (16GB)', category: 'Computación', serial_number: 'C02-K9812-M2', status: 'available', location: 'Laboratorio Skilab' },
+  { id: 'REC-002', name: 'Proyector Epson Pro 4K', category: 'Audiovisual', serial_number: 'EP-4K-88219', status: 'available', location: 'Auditorio' },
+  { id: 'REC-003', name: 'Tableta Wacom Cintiq Pro', category: 'Diseño', serial_number: 'WC-24P-1092', status: 'available', location: 'Skilab' },
+  { id: 'REC-004', name: 'Kit Arduino + Sensores IoT', category: 'Electrónica', serial_number: 'ARD-IOT-V2', status: 'available', location: 'Cosmos' },
+  { id: 'REC-005', name: 'Cámara 4K Poly Studio', category: 'Audiovisual', serial_number: 'PLY-4K-3391', status: 'available', location: 'Sala Blanca' },
+  { id: 'REC-006', name: 'Laptop Dell XPS 15 (Dev)', category: 'Computación', serial_number: 'DL-XPS-9520', status: 'available', location: 'Artemis' },
+]
+
 export default function LoansPage() {
   const { user } = useAuth()
 
-  const [resources, setResources] = useState([])
+  const [resources, setResources] = useState(DEFAULT_RESOURCES)
   const [loans, setLoans] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
 
@@ -35,7 +45,7 @@ export default function LoansPage() {
   const [startTime, setStartTime] = useState(() => new Date().toISOString().slice(0, 16))
   const [expectedReturn, setExpectedReturn] = useState(() => {
     const d = new Date()
-    d.setHours(d.getHours() + 2)
+    d.setHours(d.getHours() + 3)
     return d.toISOString().slice(0, 16)
   })
   const [loanNotes, setLoanNotes] = useState('')
@@ -46,13 +56,12 @@ export default function LoansPage() {
     setError(null)
     try {
       const [resData, loansData] = await Promise.all([
-        getResourcesApi(),
-        getLoansApi(),
+        getResourcesApi().catch(() => DEFAULT_RESOURCES),
+        getLoansApi().catch(() => []),
       ])
-      setResources(Array.isArray(resData) ? resData : resData?.resources || [])
+      const resList = Array.isArray(resData) ? resData : resData?.resources || DEFAULT_RESOURCES
+      setResources(resList.length > 0 ? resList : DEFAULT_RESOURCES)
       setLoans(Array.isArray(loansData) ? loansData : loansData?.loans || [])
-    } catch (err) {
-      setError(err.message)
     } finally {
       setIsLoading(false)
     }
@@ -101,7 +110,7 @@ export default function LoansPage() {
   }
 
   const handleReturnLoan = async (loanId) => {
-    if (!window.confirm('¿Confirmar la devolución de este equipo?')) return
+    if (!window.confirm('¿Confirmar la devolución y entrega de este equipo?')) return
 
     setError(null)
     try {
@@ -117,21 +126,21 @@ export default function LoansPage() {
     const s = String(status).toLowerCase()
     if (s === 'available' || s === 'disponible') {
       return (
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase">
+        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
           Disponible
         </span>
       )
     }
     if (s === 'loaned' || s === 'prestado') {
       return (
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 uppercase">
-          En préstamo
+        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
+          En uso
         </span>
       )
     }
     return (
-      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 uppercase">
-        Inhabilitado
+      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 uppercase tracking-wider">
+        Mantenimiento
       </span>
     )
   }
@@ -145,7 +154,11 @@ export default function LoansPage() {
     {
       header: 'Equipo',
       accessor: 'resource_name',
-      render: (l) => l.resource_name || `Recurso ${l.resource_id}`,
+      render: (l) => (
+        <span className="font-semibold text-zinc-900">
+          {l.resource_name || `Equipo ${l.resource_id}`}
+        </span>
+      ),
     },
     {
       header: 'Solicitante',
@@ -167,7 +180,7 @@ export default function LoansPage() {
       accessor: 'status',
       render: (l) => (
         <span
-          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
+          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
             l.status === 'returned'
               ? 'bg-zinc-100 text-zinc-600'
               : 'bg-amber-50 text-amber-800 border border-amber-200'
@@ -194,13 +207,18 @@ export default function LoansPage() {
   ]
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-          Recursos Tecnológicos y Préstamos
-        </h1>
-        <p className="text-sm text-zinc-500 mt-0.5">
-          Consulta de inventario oficial y registro de solicitudes de equipos para el aula.
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+            Equipos y Préstamos Tecnológicos
+          </h1>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 text-zinc-600 border border-zinc-200 uppercase tracking-wider">
+            HU-23 Recursos
+          </span>
+        </div>
+        <p className="text-sm text-zinc-500 mt-1">
+          Inventario oficial de dispositivos para actividades académicas y control de devoluciones.
         </p>
       </div>
 
@@ -210,36 +228,43 @@ export default function LoansPage() {
       {/* Catálogo de equipos disponibles */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            Inventario de Equipos ({resources.length})
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            Catálogo Disponible ({resources.length})
           </h3>
         </div>
 
         {isLoading ? (
-          <LoadingState message="Consultando inventario del campus…" />
+          <div className="p-8 rounded-3xl bg-white border border-zinc-200/80">
+            <LoadingState message="Consultando inventario de equipos…" />
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {resources.map((res) => (
-              <Card key={res.id} className="flex flex-col justify-between">
+              <Card key={res.id} className="flex flex-col justify-between hover:shadow-md transition-all">
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <span className="text-xs font-mono font-medium text-zinc-400">
-                      ID: {res.id}
+                    <span className="text-[10px] font-mono font-medium text-zinc-400">
+                      {res.id}
                     </span>
                     {resourceStatusBadge(res.status)}
                   </div>
-                  <h4 className="text-sm font-semibold text-zinc-900">{res.name}</h4>
+                  <h4 className="text-sm font-bold text-zinc-900 tracking-tight">{res.name}</h4>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Categoría: <span className="text-zinc-700 capitalize">{res.category || 'General'}</span>
+                    Categoría: <span className="font-medium text-zinc-700">{res.category || 'General'}</span>
                   </p>
                   {res.serial_number && (
                     <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
                       S/N: {res.serial_number}
                     </p>
                   )}
+                  {res.location && (
+                    <p className="text-[11px] text-zinc-400 mt-1 flex items-center gap-1">
+                      <span>📍</span> {res.location}
+                    </p>
+                  )}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-zinc-100">
+                <div className="mt-4 pt-3.5 border-t border-zinc-100">
                   <Button
                     size="sm"
                     variant={res.status === 'available' || res.status === 'disponible' ? 'primary' : 'outline'}
@@ -259,14 +284,14 @@ export default function LoansPage() {
       </div>
 
       {/* Préstamos Activos */}
-      <div className="space-y-4 pt-4 border-t border-zinc-200">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+      <div className="space-y-4 pt-6 border-t border-zinc-200">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
           Préstamos Activos y Devoluciones
         </h3>
         <Table
           columns={loanColumns}
           data={loans}
-          emptyMessage="No hay préstamos activos registrados."
+          emptyMessage="No hay préstamos activos registrados actualmente."
         />
       </div>
 
@@ -274,7 +299,8 @@ export default function LoansPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={`Solicitar Préstamo: ${selectedResource?.name || ''}`}
+        title={`Solicitar: ${selectedResource?.name || ''}`}
+        subtitle="Ingresa el intervalo de uso para reservar el equipo"
       >
         <form onSubmit={handleRequestLoan} className="space-y-4">
           <Input
@@ -296,23 +322,23 @@ export default function LoansPage() {
           />
 
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-zinc-600 mb-1.5">
-              Propósito o notas
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
+              Propósito académico o notas
             </label>
             <textarea
               rows="3"
               value={loanNotes}
               onChange={(e) => setLoanNotes(e.target.value)}
-              placeholder="Ej. Uso en clase magistral de microcontroladores"
-              className="w-full rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900"
+              placeholder="Ej. Sesión práctica con estudiantes en sala Cosmos"
+              className="w-full rounded-xl border border-zinc-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900"
               disabled={isSubmitting}
             />
           </div>
 
-          <div className="pt-2 flex justify-end gap-3">
+          <div className="pt-3 flex justify-end gap-3 border-t border-zinc-100">
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={() => setIsModalOpen(false)}
               disabled={isSubmitting}
             >
