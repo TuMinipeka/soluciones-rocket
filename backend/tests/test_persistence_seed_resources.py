@@ -7,6 +7,7 @@ from threading import Barrier
 import pytest
 from sqlalchemy import create_engine, event, func, select, text
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
@@ -221,6 +222,34 @@ def test_teacher_can_list_and_request_support_authorized_resource(
     )
     assert requested.status_code == 201
     assert requested.json()["resource_id"] == "EQ-AUTHORIZED"
+
+
+def test_failed_loan_commit_never_reports_success_or_persists_partial_row(
+    client, db_session, teacher_token, monkeypatch
+):
+    db_session.add(Resource(id="EQ-ROLLBACK", name="Equipo transaccional", category="laptop"))
+    db_session.commit()
+
+    def fail_commit():
+        raise OperationalError("COMMIT", {}, RuntimeError("disk unavailable"))
+
+    monkeypatch.setattr(db_session, "commit", fail_commit)
+    start = datetime.now(timezone.utc) + timedelta(minutes=5)
+    response = client.post(
+        "/resources/loans",
+        json={
+            "resource_id": "EQ-ROLLBACK",
+            "start_time": start.isoformat(),
+            "expected_return": (start + timedelta(hours=1)).isoformat(),
+        },
+        headers=auth(teacher_token),
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "DATABASE_UNAVAILABLE"
+    assert db_session.scalar(
+        select(func.count()).select_from(Loan).where(Loan.resource_id == "EQ-ROLLBACK")
+    ) == 0
 
 
 def test_incident_rejects_unknown_equipment(client, support_token):
