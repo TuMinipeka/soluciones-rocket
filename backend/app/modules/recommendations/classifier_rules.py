@@ -13,12 +13,19 @@ def strip_accents(text: str) -> str:
     return "".join(c for c in nfkd if not unicodedata.combining(c)).lower()
 
 
+def _kw_in(kw: str, tokens: set, normalized_text: str) -> bool:
+    """Palabras sueltas solo coinciden como token completo (evita 'red' en 'pared')."""
+    if " " in kw:
+        return kw in normalized_text
+    return kw in tokens
+
+
 # Diccionario único de reglas y palabras clave. Modificable en caliente en < 1 minuto.
 KEYWORD_RULES = {
     IncidentCategory.SAFETY: {
         "keywords": [
             "humo", "fuego", "incendio", "fuga", "escape", "gas", "descarga",
-            "electrocucion", "peligro", "emergencia", "chispa", "chispas", "quemado"
+            "electrocucion", "pelado", "cable pelado", "olor a quemado", "peligro", "emergencia", "chispa", "chispas", "quemado"
         ],
         "priority": IncidentPriority.CRITICAL,
         "team": ResponsibleTeam.SECURITY,
@@ -113,7 +120,7 @@ def classify_by_rules(text: str) -> dict:
     max_score = 0
 
     for category, rule in KEYWORD_RULES.items():
-        matches = [kw for kw in rule["keywords"] if kw in tokens or kw in normalized_text]
+        matches = [kw for kw in rule["keywords"] if _kw_in(kw, tokens, normalized_text)]
         score = len(matches)
         if score > max_score:
             max_score = score
@@ -137,8 +144,8 @@ def classify_by_rules(text: str) -> dict:
     suggests_blocking = rule_info["suggests_blocking"]
 
     # Evaluar si contiene palabras críticas que elevan la prioridad
-    has_critical = any(kw in tokens or kw in normalized_text for kw in CRITICAL_OVERRIDE_KEYWORDS)
-    has_high = any(kw in tokens or kw in normalized_text for kw in HIGH_OVERRIDE_KEYWORDS)
+    has_critical = any(_kw_in(kw, tokens, normalized_text) for kw in CRITICAL_OVERRIDE_KEYWORDS)
+    has_high = any(_kw_in(kw, tokens, normalized_text) for kw in HIGH_OVERRIDE_KEYWORDS)
 
     if has_critical:
         priority = IncidentPriority.CRITICAL

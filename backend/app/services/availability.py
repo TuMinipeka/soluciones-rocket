@@ -144,3 +144,42 @@ def find_relocation_alternatives(reservation: Reservation, db: Session) -> list[
         }
         for space in candidates
     ]
+
+
+def recommend_spaces_for_request(
+    attendees: int,
+    reservation_date,
+    start_time,
+    end_time,
+    db: Session,
+) -> list[dict]:
+    """Recommend spaces from the DB: enough capacity, not blocked and free in the slot.
+
+    Capacity comes from the database, never from hardcoded values. A recommendation
+    is NOT a confirmed reservation.
+    """
+    statement = select(Space).where(
+        Space.is_blocked.is_(False),
+        Space.capacity >= attendees,
+    )
+    if reservation_date and start_time and end_time:
+        overlap = exists(
+            select(Reservation.id).where(
+                Reservation.space_id == Space.id,
+                Reservation.date == reservation_date,
+                Reservation.status == "confirmed",
+                Reservation.start_time < end_time,
+                Reservation.end_time > start_time,
+            )
+        )
+        statement = statement.where(~overlap)
+    spaces = db.scalars(statement.order_by(Space.capacity - attendees, Space.id)).all()
+    return [
+        {
+            "id": s.id,
+            "name": s.name,
+            "capacity": s.capacity,
+            "reason": f"Aforo suficiente ({s.capacity} para {attendees} asistentes), sala operativa y libre en el horario.",
+        }
+        for s in spaces
+    ]

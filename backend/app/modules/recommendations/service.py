@@ -58,7 +58,7 @@ class RecommendationService:
         detected_resource_id = resource_id
         if detected_resource_id and not is_valid_resource(detected_resource_id, db):
             warnings.append(
-                f"El identificador de recurso '{detected_resource_id}' no cumple con el formato válido y fue descartado."
+                f"El identificador de recurso '{detected_resource_id}' no existe en el inventario registrado y fue descartado."
             )
             detected_resource_id = None
 
@@ -89,6 +89,11 @@ class RecommendationService:
             explanation = rules_result["explanation"]
             suggests_blocking = rules_result["suggests_blocking"]
             ai_model = None
+            warnings.append(
+                "El servicio de IA no estuvo disponible ("
+                f"{fallback_reason.value if fallback_reason else 'sin_configurar'}); "
+                "el diagnóstico fue generado por reglas locales."
+            )
             if latency_ms == 0:
                 latency_ms = int((time.perf_counter() - start_time) * 1000)
 

@@ -20,6 +20,9 @@ from app.modules.reservations.schemas import (
 from app.modules.spaces.models import Space
 from app.services.availability import find_relocation_alternatives
 
+CAMPUS_OPEN_TIME = time(6, 0)
+CAMPUS_CLOSE_TIME = time(22, 0)
+
 
 def _lock_writer(db: Session) -> None:
     """Serialize the availability check and insert across SQLite connections."""
@@ -72,6 +75,11 @@ def _validate_values(
 ) -> Space:
     if start_time >= end_time:
         raise ValidationError("La hora inicial debe ser anterior a la hora final.")
+    if start_time < CAMPUS_OPEN_TIME or end_time > CAMPUS_CLOSE_TIME:
+        raise ValidationError(
+            "Las reservas solo se permiten entre las 06:00 y las 22:00 "
+            f"(solicitado {start_time:%H:%M} a {end_time:%H:%M})."
+        )
     space = db.get(Space, space_id)
     if space is None:
         raise NotFoundError("Sala no encontrada en el catálogo autorizado.")
@@ -79,7 +87,8 @@ def _validate_values(
         raise ConflictError("La sala está inhabilitada y no admite reservas.")
     if attendees > space.capacity:
         raise ConflictError(
-            f"El aforo solicitado ({attendees}) supera la capacidad de la sala ({space.capacity})."
+            f"El aforo solicitado ({attendees}) supera la capacidad máxima de la sala "
+            f"'{space.name}' ({space.capacity} personas)."
         )
 
     statement = select(Reservation.id).where(
