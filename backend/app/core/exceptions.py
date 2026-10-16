@@ -4,6 +4,7 @@ from typing import Any
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
@@ -155,6 +156,19 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=exc.status_code,
             content=content,
             headers=exc.headers,
+        )
+
+    @app.exception_handler(SQLAlchemyError)
+    async def database_error_handler(_request: Request, _exc: SQLAlchemyError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "error": {
+                    "code": "DATABASE_UNAVAILABLE",
+                    "message": "La base de datos no está disponible temporalmente.",
+                    "details": None,
+                }
+            },
         )
 
     @app.exception_handler(Exception)
