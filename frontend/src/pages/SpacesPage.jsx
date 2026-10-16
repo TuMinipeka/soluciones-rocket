@@ -78,14 +78,14 @@ export default function SpacesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+            <h1 className="text-3xl font-bold tracking-tight text-white">
               Salas y Espacios del Campus
             </h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 text-zinc-600 border border-zinc-200 uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#1c1c1e] text-[#22d3ee] border border-white/[0.08] uppercase tracking-wider">
               10 Salas Oficiales
             </span>
           </div>
-          <p className="text-sm text-zinc-500 mt-1">
+          <p className="text-sm text-[#a1a1a6] mt-1">
             Visualización interactiva tipo cine por fecha y franja horaria.
           </p>
         </div>
@@ -136,8 +136,8 @@ export default function SpacesPage() {
                 onClose={() => setSelectedRoom(null)}
               />
             ) : (
-              <div className="h-64 flex flex-col items-center justify-center p-8 rounded-3xl border border-dashed border-zinc-200 text-center text-xs text-zinc-400 bg-white/50">
-                <span className="text-2xl mb-2">🏛️</span>
+              <div className="h-64 flex flex-col items-center justify-center p-8 rounded-[20px] border border-dashed border-white/[0.1] text-center text-xs text-[#8d90a0] bg-[#141416]/60">
+                <span className="text-2xl mb-2 text-[#22d3ee]">🏛️</span>
                 <span>Selecciona una sala del mapa para inspeccionar sus características y aforo.</span>
               </div>
             )}

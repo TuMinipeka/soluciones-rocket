@@ -65,10 +65,10 @@ export default function IncidentsListPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+        <h1 className="text-3xl font-bold tracking-tight text-white">
           Historial de Incidencias y Resoluciones
         </h1>
-        <p className="text-sm text-zinc-500 mt-0.5">
+        <p className="text-sm text-[#a1a1a6] mt-1">
           Seguimiento de fallas reportadas, recomendaciones generadas y alternativas de reubicación.
         </p>
       </div>
@@ -87,7 +87,7 @@ export default function IncidentsListPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Lista de incidentes */}
           <div className="space-y-3 lg:col-span-1">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]">
               Reportes activos ({incidents.length})
             </h3>
             <div className="space-y-2.5 max-h-[70vh] overflow-y-auto pr-1">
@@ -111,24 +111,24 @@ export default function IncidentsListPage() {
                 >
                   <div className="space-y-3 text-sm">
                     <div>
-                      <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block mb-1">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] block mb-1">
                         Descripción reportada:
                       </span>
-                      <p className="text-zinc-800 bg-zinc-50 p-3 rounded-lg border border-zinc-100">
+                      <p className="text-[#f5f5f7] bg-[#2c2c2e] p-3 rounded-xl border border-white/[0.08]">
                         {selectedIncident.description}
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 text-xs pt-2">
+                    <div className="grid grid-cols-2 gap-4 text-xs pt-2 border-t border-white/[0.06]">
                       <div>
-                        <span className="text-zinc-400 block">Elemento afectado:</span>
-                        <span className="font-semibold text-zinc-700">
+                        <span className="text-[#8d90a0] block">Elemento afectado:</span>
+                        <span className="font-semibold text-white">
                           {selectedIncident.space_name || selectedIncident.resource_name || 'No especificado'}
                         </span>
                       </div>
                       <div>
-                        <span className="text-zinc-400 block">Reportado por:</span>
-                        <span className="font-semibold text-zinc-700">
+                        <span className="text-[#8d90a0] block">Reportado por:</span>
+                        <span className="font-semibold text-white">
                           {selectedIncident.reported_by || 'Docente'}
                         </span>
                       </div>

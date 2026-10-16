@@ -85,11 +85,15 @@ export default function IncidentPage() {
     }
   }
 
+  const [currentStep, setCurrentStep] = useState(1) // 1: Describir, 2: Revisar análisis, 3: Registrado
+  const [createdIncidentId, setCreatedIncidentId] = useState(null)
+
   // Plantillas rápidas de reporte
   const quickTemplates = [
-    { label: 'Proyector parpadea', text: 'El proyector principal parpadea continuamente y huele a calentamiento excesivo.' },
-    { label: 'Falla aire acondicionado', text: 'El aire acondicionado no enfría y gotea agua sobre las tomas de corriente.' },
-    { label: 'Corte de red Ethernet', text: 'Los puertos de red cableada perdieron enlace y no asignan dirección IP.' },
+    { label: '+ Falla de colorimetría', text: 'El proyector principal parpadea y muestra tono magenta tras 10 minutos de encendido.' },
+    { label: '+ Sobrecalentamiento', text: 'El equipo emite un zumbido irregular y la temperatura superficial excede los límites normales.' },
+    { label: '+ Pérdida de enlace de red', text: 'Los puertos de red cableada perdieron enlace y no asignan dirección IP en el rack.' },
+    { label: '+ Falla climatización', text: 'El aire acondicionado no enfría y gotea agua sobre las tomas de corriente del lateral.' },
   ]
 
   // Paso 1: Analizar incidencia con IA / Fallback
@@ -115,6 +119,7 @@ export default function IncidentPage() {
 
       const result = await analyzeIncidentApi(payload)
       setAnalysisResult(result)
+      setCurrentStep(2)
       if (result.suggests_blocking) {
         setDisablesElement(true)
       }
@@ -148,9 +153,10 @@ export default function IncidentPage() {
       const created = await createIncidentApi(payload)
       const incidentId = created.id || created.incident_id || 'INC-' + Math.floor(100 + Math.random() * 900)
 
+      setCreatedIncidentId(incidentId)
+      setCurrentStep(3)
       setSuccess(`Incidencia registrada formalmente en el sistema con código #${incidentId}.`)
       setDescription('')
-      setAnalysisResult(null)
     } catch (err) {
       setError(err.message || 'Error al registrar la incidencia.')
     } finally {
@@ -176,196 +182,309 @@ export default function IncidentPage() {
     }
   }
 
+  const handleResetFlow = () => {
+    setCurrentStep(1)
+    setAnalysisResult(null)
+    setCreatedIncidentId(null)
+    setDescription('')
+    setError(null)
+    setSuccess(null)
+  }
+
+  const stepProgress = currentStep === 1 ? '33.33%' : currentStep === 2 ? '66.66%' : '100%'
+
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
-      <div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-            Reporte y Diagnóstico Inteligente
-          </h1>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 text-violet-700 border border-violet-200 uppercase tracking-wider">
-            HU-24 Asistido por IA
-          </span>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Dynamic Glow & Ambient Canvas Backdrop */}
+      <div className="flex flex-col gap-3">
+        {/* Top Breadcrumb & Metadata Pill */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <nav aria-label="Ruta de navegación" className="flex items-center gap-1.5 text-xs text-[#8d90a0]">
+            <span className="hover:text-white transition-colors cursor-pointer">Inicio</span>
+            <span className="text-white/20">/</span>
+            <span className="hover:text-white transition-colors cursor-pointer">Incidencias</span>
+            <span className="text-white/20">/</span>
+            <span className="text-white font-semibold">Reporte institucional asistido</span>
+          </nav>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1c1c1e] text-xs font-mono border border-white/[0.08]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#2fd9f4] animate-pulse" />
+              <span className="text-[#8d90a0]">Expediente:</span>
+              <span className="text-[#22d3ee] font-medium">CC-TICK-2025</span>
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-zinc-500 mt-1">
-          Diagnóstico automatizado de incidencias, estimación de severidad y sugerencias de reubicación de salas.
-        </p>
+
+        {/* Main Header & Step Controller */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pt-1">
+          <div>
+            <div className="inline-flex items-center gap-1.5 text-[#22d3ee] text-xs font-mono uppercase tracking-wider mb-1">
+              <span>🛡️</span>
+              <span>Sistema Táctico de Resolución Técnica</span>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              Reportar incidencia
+            </h1>
+            <p className="text-sm text-[#a1a1a6] mt-1 max-w-2xl leading-relaxed">
+              Monitoreo en tiempo real con triage híbrido: análisis de fallas con derivación de brigadas y contingencia de campus.
+            </p>
+          </div>
+
+          {/* Segmented Step Controller */}
+          <div className="bg-[#1c1c1e] p-1.5 rounded-full border border-white/[0.08] flex items-center shadow-inner self-start lg:self-auto">
+            <button
+              type="button"
+              onClick={() => setCurrentStep(1)}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                currentStep === 1
+                  ? 'bg-[#2563eb] text-white shadow-sm'
+                  : 'text-[#a1a1a6] hover:text-white'
+              }`}
+            >
+              <span>1. Describir</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => analysisResult && setCurrentStep(2)}
+              disabled={!analysisResult}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                currentStep === 2
+                  ? 'bg-[#2563eb] text-white shadow-sm'
+                  : !analysisResult
+                  ? 'text-[#636366] cursor-not-allowed'
+                  : 'text-[#a1a1a6] hover:text-white'
+              }`}
+            >
+              <span>2. Revisar análisis</span>
+            </button>
+            <button
+              type="button"
+              disabled={currentStep !== 3}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                currentStep === 3
+                  ? 'bg-[#2563eb] text-white shadow-sm'
+                  : 'text-[#636366] cursor-not-allowed'
+              }`}
+            >
+              <span>3. Registrado</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Linear Stepper Progress Bar */}
+        <div className="w-full bg-[#1c1c1e] rounded-full h-1 overflow-hidden mt-1">
+          <div
+            className="h-full bg-gradient-to-r from-[#2563eb] via-[#2fd9f4] to-[#6cd3f7] transition-all duration-500 ease-out"
+            style={{ width: stepProgress }}
+          />
+        </div>
       </div>
 
       {error && <ErrorMessage message={error} />}
       {success && <SuccessMessage message={success} onDismiss={() => setSuccess(null)} />}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        {/* Formulario de reporte */}
-        <div>
-          <Card title="Reportar Novedad Técnica" subtitle="Describe la anomalía para clasificarla">
-            <form onSubmit={handleAnalyze} className="space-y-4">
-              {/* Selector de tipo de elemento */}
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
-                  Elemento Afectado
-                </label>
-                <div className="grid grid-cols-2 gap-2 bg-zinc-100/70 p-1 rounded-xl border border-zinc-200/60">
-                  <button
-                    type="button"
-                    onClick={() => handleTargetTypeChange('space')}
-                    className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all duration-150 select-none ${
-                      targetType === 'space'
-                        ? 'bg-white text-zinc-900 shadow-xs'
-                        : 'text-zinc-600 hover:text-zinc-900'
-                    }`}
-                  >
-                    🏛️ Sala o Espacio
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleTargetTypeChange('resource')}
-                    className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all duration-150 select-none ${
-                      targetType === 'resource'
-                        ? 'bg-white text-zinc-900 shadow-xs'
-                        : 'text-zinc-600 hover:text-zinc-900'
-                    }`}
-                  >
-                    💻 Equipo o Recurso
-                  </button>
-                </div>
-              </div>
+      {/* Flujo de 2 columnas */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Columna Izquierda: Formulario de Entrada */}
+        <div className="lg:col-span-6 bg-[#1c1c1e] rounded-[20px] p-6 sm:p-7 border-t border-white/[0.09] border-x border-white/[0.04] border-b border-black/50 shadow-[0_12px_32px_rgba(0,0,0,0.45)]">
+          <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.06] mb-5">
+            <div className="flex items-center gap-2.5">
+              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[#2563eb] text-white text-xs font-bold font-mono">
+                1
+              </span>
+              <h2 className="text-base font-semibold text-white tracking-tight">
+                Identificación y Síntomas
+              </h2>
+            </div>
+            <span className="text-xs text-[#22d3ee] font-mono flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#30d158] animate-pulse" />
+              Sensor Activo
+            </span>
+          </div>
 
-              {/* Selector específico */}
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
-                  {targetType === 'space' ? 'Sala afectada' : 'Equipo afectado'} *
-                </label>
-                <select
-                  value={targetId}
-                  onChange={(e) => setTargetId(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-zinc-900 focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900"
-                  disabled={isLoadingOptions || isAnalyzing}
+          <form onSubmit={handleAnalyze} className="space-y-4">
+            {/* Selector de Elemento (Sala / Equipo) */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
+                Tipo de Elemento Afectado
+              </label>
+              <div className="grid grid-cols-2 gap-2 bg-[#2a2a2c] p-1 rounded-xl border border-white/[0.06]">
+                <button
+                  type="button"
+                  onClick={() => handleTargetTypeChange('space')}
+                  className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+                    targetType === 'space'
+                      ? 'bg-[#1c1c1e] text-white shadow-sm border border-white/[0.08]'
+                      : 'text-[#a1a1a6] hover:text-white'
+                  }`}
                 >
-                  {targetType === 'space'
-                    ? spaces.map((sp) => (
-                        <option key={sp.id} value={sp.id}>
-                          {sp.name} (Capacidad: {sp.capacity} personas)
-                        </option>
-                      ))
-                    : resources.map((res) => (
-                        <option key={res.id} value={res.id}>
-                          {res.name} {res.serial_number ? `(${res.serial_number})` : ''}
-                        </option>
-                      ))}
-                </select>
+                  🏛️ Sala o Espacio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTargetTypeChange('resource')}
+                  className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+                    targetType === 'resource'
+                      ? 'bg-[#1c1c1e] text-white shadow-sm border border-white/[0.08]'
+                      : 'text-[#a1a1a6] hover:text-white'
+                  }`}
+                >
+                  💻 Equipo o Recurso
+                </button>
               </div>
+            </div>
 
-              {/* Plantillas rápidas */}
-              <div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block mb-1">
-                  Plantillas rápidas:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {quickTemplates.map((t) => (
-                    <button
-                      key={t.label}
-                      type="button"
-                      onClick={() => setDescription(t.text)}
-                      className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-900 transition-colors"
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {/* Dropdown específico */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
+                {targetType === 'space' ? 'Sala afectada' : 'Equipo afectado'} *
+              </label>
+              <select
+                value={targetId}
+                onChange={(e) => setTargetId(e.target.value)}
+                className="w-full h-11 px-3.5 rounded-[12px] bg-[#2c2c2e] text-[#f5f5f7] text-sm border border-white/[0.08] focus:outline-none focus:ring-2 focus:ring-[#2563eb] transition-all cursor-pointer"
+                disabled={isLoadingOptions || isAnalyzing}
+              >
+                {targetType === 'space'
+                  ? spaces.map((sp) => (
+                      <option key={sp.id} value={sp.id} className="bg-[#1c1c1e] text-white">
+                        {sp.name} · Capacidad: {sp.capacity} personas
+                      </option>
+                    ))
+                  : resources.map((res) => (
+                      <option key={res.id} value={res.id} className="bg-[#1c1c1e] text-white">
+                        {res.name} {res.serial_number ? `(${res.serial_number})` : ''}
+                      </option>
+                    ))}
+              </select>
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
+            {/* Textarea con contador de caracteres */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]">
                   Descripción del problema *
                 </label>
-                <textarea
-                  rows="4"
-                  required
-                  placeholder="Describe con precisión qué ocurre, olores, chispas, ruidos o fallas visibles…"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900 leading-relaxed"
-                  disabled={isAnalyzing || isSubmitting}
-                />
+                <span className="text-[11px] font-mono text-[#8d90a0]">
+                  {description.length} / 1000 caracteres
+                </span>
               </div>
+              <textarea
+                rows="4"
+                required
+                maxLength={1000}
+                placeholder="Describe con precisión qué ocurre: ruidos, chispas, olores, sobrecalentamiento o fallas…"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full p-3.5 rounded-[12px] bg-[#2c2c2e] text-[#f5f5f7] text-sm placeholder-[#636366] border border-white/[0.08] focus:outline-none focus:ring-2 focus:ring-[#2563eb] leading-relaxed transition-all resize-y"
+                disabled={isAnalyzing || isSubmitting}
+              />
+            </div>
 
-              <div className="flex items-start gap-2.5 pt-1 bg-zinc-50 p-3 rounded-xl border border-zinc-200/60">
-                <input
-                  type="checkbox"
-                  id="disablesElement"
-                  checked={disablesElement}
-                  onChange={(e) => setDisablesElement(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
-                />
-                <label htmlFor="disablesElement" className="text-xs text-zinc-700 select-none leading-snug">
-                  <strong className="block text-zinc-900">Inhabilitar disponibilidad</strong>
-                  Marca esta opción si el espacio o equipo no puede ser utilizado con seguridad.
-                </label>
+            {/* Atajos de síntomas frecuentes */}
+            <div>
+              <span className="text-[11px] font-mono text-[#8d90a0] block mb-1.5">
+                Atajos de síntomas frecuentes:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {quickTemplates.map((t) => (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => setDescription(t.text)}
+                    className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#2a2a2c] text-[#a1a1a6] hover:text-white hover:bg-[#353437] border border-white/[0.06] transition-all active:scale-95"
+                  >
+                    {t.label}
+                  </button>
+                ))}
               </div>
+            </div>
 
+            {/* Opción de inhabilitación inmediata */}
+            <div className="flex items-start gap-2.5 p-3 rounded-[12px] bg-[#2a2a2c] border border-white/[0.08]">
+              <input
+                type="checkbox"
+                id="disablesElement"
+                checked={disablesElement}
+                onChange={(e) => setDisablesElement(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-white/20 bg-[#1c1c1e] text-[#2563eb] focus:ring-[#2563eb]"
+              />
+              <label htmlFor="disablesElement" className="text-xs text-[#a1a1a6] select-none leading-snug cursor-pointer">
+                <strong className="block text-white">Inhabilitar disponibilidad operativa</strong>
+                Marca esta opción si el espacio o equipo no puede ser operado con seguridad.
+              </label>
+            </div>
+
+            {/* Footer de acción y modelo */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <span className="text-[11px] font-mono text-[#8d90a0]">
+                Triage Híbrido: IA + Reglas Locales
+              </span>
               <Button
                 type="submit"
                 variant="ai"
                 size="md"
-                className="w-full mt-2"
+                className="w-full sm:w-auto px-6 h-11 rounded-full font-semibold text-xs tracking-wide"
                 isLoading={isAnalyzing}
               >
                 {isAnalyzing ? 'Analizando diagnóstico…' : '✨ Analizar con Inteligencia Artificial'}
               </Button>
-            </form>
-          </Card>
+            </div>
+          </form>
         </div>
 
-        {/* Panel de resultados del análisis inteligente */}
-        <div className="space-y-4">
+        {/* Columna Derecha: Panel de Diagnóstico y Contingencia */}
+        <div className="lg:col-span-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]">
               Diagnóstico y Clasificación
             </h3>
             {analysisResult && (
-              <span className="text-[11px] font-mono text-zinc-400">
+              <span className="text-[11px] font-mono text-[#22d3ee] flex items-center gap-1">
                 Token verificado ✓
               </span>
             )}
           </div>
 
           {isAnalyzing ? (
-            <div className="p-8 rounded-3xl bg-white border border-zinc-200/80 shadow-xs">
-              <LoadingState message="El modelo está evaluando el texto y buscando salas alternativas…" />
+            <div className="p-8 rounded-[20px] bg-[#1c1c1e] border border-white/[0.08]">
+              <LoadingState message="El modelo está evaluando la falla y buscando contingencias…" />
             </div>
           ) : !analysisResult ? (
-            <div className="h-72 rounded-3xl border border-dashed border-zinc-200 flex flex-col items-center justify-center p-8 text-center text-zinc-400 bg-white/40">
-              <span className="text-3xl mb-2">⚡</span>
-              <p className="text-xs font-medium max-w-sm leading-relaxed">
-                Ingresa los detalles del incidente y haz clic en «Analizar con Inteligencia Artificial» para obtener severidad, categoría y propuestas de solución.
+            <div className="h-80 rounded-[20px] border border-dashed border-white/[0.1] bg-[#141416]/60 flex flex-col items-center justify-center p-8 text-center text-[#8d90a0]">
+              <div className="w-12 h-12 rounded-2xl bg-[#2a2a2c] flex items-center justify-center text-xl mb-3 text-[#22d3ee]">
+                ⚡
+              </div>
+              <p className="text-xs font-medium max-w-sm leading-relaxed text-[#a1a1a6]">
+                Ingresa los síntomas en el formulario y haz clic en «Analizar con Inteligencia Artificial» para obtener severidad, categoría y propuestas de reubicación instantáneas.
               </p>
             </div>
           ) : (
             <div className="space-y-4 animate-fluid-enter">
               {/* Resumen de Métricas del Análisis */}
-              <Card title="Resultado del Análisis" subtitle="Clasificación generada">
+              <Card title="Resultado del Análisis" subtitle="Clasificación táctica generada">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-500 font-medium">Prioridad calculada:</span>
+                    <span className="text-xs text-[#a1a1a6] font-medium">Prioridad estimada:</span>
                     <PriorityBadge priority={analysisResult.priority} />
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-500 font-medium">Categoría:</span>
-                    <span className="text-xs font-bold text-zinc-800 capitalize font-mono bg-zinc-100 px-2 py-0.5 rounded-md">
+                    <span className="text-xs text-[#a1a1a6] font-medium">Categoría de falla:</span>
+                    <span className="text-xs font-bold text-white capitalize font-mono bg-[#2c2c2e] px-2.5 py-1 rounded-lg border border-white/[0.08]">
                       {analysisResult.category || 'technology'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-500 font-medium">Equipo responsable:</span>
-                    <span className="text-xs font-semibold text-zinc-800">
+                    <span className="text-xs text-[#a1a1a6] font-medium">Brigada responsable:</span>
+                    <span className="text-xs font-semibold text-white">
                       {analysisResult.responsible_team || analysisResult.assigned_team || 'Mantenimiento e IT'}
                     </span>
                   </div>
                   {analysisResult.suggests_blocking && (
-                    <div className="flex items-center justify-between border-t border-zinc-100 pt-2 text-xs text-rose-700 font-medium">
+                    <div className="flex items-center justify-between border-t border-white/[0.06] pt-2 text-xs text-[#ffb4ab] font-medium">
                       <span>Acción preventiva recomendada:</span>
-                      <span className="font-bold">Inhabilitar espacio</span>
+                      <span className="font-bold uppercase tracking-wider text-[#ff453a]">Inhabilitar espacio</span>
                     </div>
                   )}
                 </div>
@@ -385,16 +504,26 @@ export default function IncidentPage() {
               />
 
               {/* Botón de confirmación final */}
-              <div className="pt-2">
+              <div className="pt-2 flex gap-3">
                 <Button
                   variant="primary"
                   size="lg"
-                  className="w-full shadow-md"
+                  className="w-full h-12 rounded-full font-semibold text-sm tracking-wide shadow-lg shadow-blue-600/20"
                   isLoading={isSubmitting}
                   onClick={handleConfirmIncident}
                 >
                   Confirmar y Registrar Incidencia
                 </Button>
+                {currentStep === 3 && (
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    className="h-12 rounded-full"
+                    onClick={handleResetFlow}
+                  >
+                    Nuevo Reporte
+                  </Button>
+                )}
               </div>
             </div>
           )}

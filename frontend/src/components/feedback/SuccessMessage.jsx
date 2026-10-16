@@ -14,23 +14,23 @@ export default function SuccessMessage({
   return (
     <div
       role="status"
-      className={`rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 text-emerald-900 transition-all ${className}`}
+      className={`rounded-xl border border-[#30d158]/30 bg-[#30d158]/15 p-4 text-[#30d158] transition-all ${className}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2.5">
-          <span className="inline-block mt-0.5 text-emerald-600 font-bold">✓</span>
+          <span className="inline-block mt-0.5 text-[#30d158] font-bold">✓</span>
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-800">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#30d158]">
               {title}
             </h4>
-            <p className="mt-0.5 text-xs text-emerald-700 leading-relaxed">{message}</p>
+            <p className="mt-0.5 text-xs text-[#e4e2e4] leading-relaxed">{message}</p>
           </div>
         </div>
         {onDismiss && (
           <button
             type="button"
             onClick={onDismiss}
-            className="text-emerald-500 hover:text-emerald-800 text-sm font-semibold"
+            className="text-[#a1a1a6] hover:text-white text-sm font-semibold"
             aria-label="Cerrar mensaje"
           >
             ✕

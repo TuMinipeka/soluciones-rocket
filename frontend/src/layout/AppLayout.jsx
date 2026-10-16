@@ -9,7 +9,7 @@ import Navbar from './Navbar'
 
 export default function AppLayout() {
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col font-sans antialiased selection:bg-zinc-900 selection:text-white">
+    <div className="min-h-screen bg-[#0e0e10] text-[#e4e2e4] flex flex-col font-sans antialiased selection:bg-[#2563eb] selection:text-white">
       {/* Barra de navegación superior fija */}
       <Navbar />
 
@@ -18,9 +18,13 @@ export default function AppLayout() {
         <Outlet />
       </main>
 
-      {/* Pie sutil */}
-      <footer className="border-t border-zinc-200/80 bg-white py-6 text-center text-xs text-zinc-400">
-        <p>Campuslands Operations System • Sistema Central de Gestión Operativa</p>
+      {/* Pie sutil con estética Apple Dark Enclave */}
+      <footer className="border-t border-white/[0.08] bg-[#0e0e10] py-6 text-center text-xs text-[#8d90a0]">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+          <span>Campuslands Operations System</span>
+          <span className="hidden sm:inline text-white/20">•</span>
+          <span className="font-mono text-[11px] text-[#22d3ee]">Enclave Seguro v4.8</span>
+        </div>
       </footer>
     </div>
   )

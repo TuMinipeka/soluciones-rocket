@@ -30,23 +30,23 @@ export default function RoomDetails({
       }
     >
       <div className="space-y-3 text-sm">
-        <div className="flex justify-between py-1 border-b border-zinc-100">
-          <span className="text-zinc-500">Capacidad máxima:</span>
-          <span className="font-semibold text-zinc-900">{room.capacity} personas</span>
+        <div className="flex justify-between py-1 border-b border-white/[0.06]">
+          <span className="text-[#a1a1a6]">Capacidad máxima:</span>
+          <span className="font-semibold text-white font-mono">{room.capacity} personas</span>
         </div>
-        <div className="flex justify-between py-1 border-b border-zinc-100">
-          <span className="text-zinc-500">Estado actual:</span>
-          <span className="font-semibold capitalize text-zinc-900">{room.status || 'Disponible'}</span>
+        <div className="flex justify-between py-1 border-b border-white/[0.06]">
+          <span className="text-[#a1a1a6]">Estado actual:</span>
+          <span className="font-semibold capitalize text-[#22d3ee] font-mono">{room.status || 'Disponible'}</span>
         </div>
         {room.resources && (
           <div className="py-1">
-            <span className="text-zinc-500 block mb-1">Equipamiento fijo:</span>
-            <span className="text-zinc-700 text-xs">{room.resources.join(', ')}</span>
+            <span className="text-[#a1a1a6] block mb-1">Equipamiento fijo:</span>
+            <span className="text-[#c3c6d7] text-xs">{room.resources.join(', ')}</span>
           </div>
         )}
         {onBook && room.status !== 'disabled' && (
           <div className="pt-2">
-            <Button variant="primary" size="sm" className="w-full" onClick={() => onBook(room)}>
+            <Button variant="primary" size="sm" className="w-full h-10 rounded-xl" onClick={() => onBook(room)}>
               Reservar esta sala
             </Button>
           </div>

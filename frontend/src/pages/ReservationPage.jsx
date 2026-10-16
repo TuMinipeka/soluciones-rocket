@@ -155,13 +155,13 @@ export default function ReservationPage() {
     {
       header: 'ID',
       accessor: 'id',
-      render: (r) => <span className="font-mono font-bold text-zinc-900">#{r.id}</span>,
+      render: (r) => <span className="font-mono font-bold text-[#22d3ee]">#{r.id}</span>,
     },
     {
       header: 'Sala',
       accessor: 'space_name',
       render: (r) => (
-        <span className="font-semibold text-zinc-900">
+        <span className="font-semibold text-white">
           {r.space_name || r.space_id || 'Sala'}
         </span>
       ),
@@ -169,22 +169,26 @@ export default function ReservationPage() {
     {
       header: 'Fecha y Horario',
       accessor: 'date',
-      render: (r) => `${r.date} (${r.start_time} - ${r.end_time})`,
+      render: (r) => (
+        <span className="text-[#a1a1a6] font-mono text-xs">
+          {r.date} ({r.start_time} - {r.end_time})
+        </span>
+      ),
     },
     {
       header: 'Asistentes',
       accessor: 'attendees',
-      render: (r) => `${r.attendees} personas`,
+      render: (r) => <span className="text-[#e4e2e4]">{r.attendees} personas</span>,
     },
     {
       header: 'Estado',
       accessor: 'status',
       render: (r) => (
         <span
-          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
             r.status === 'cancelled'
-              ? 'bg-zinc-100 text-zinc-500'
-              : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              ? 'bg-[#2a2a2c] text-[#8d90a0] border border-white/[0.06]'
+              : 'bg-[#30d158]/15 text-[#30d158] border border-[#30d158]/30'
           }`}
         >
           {r.status || 'confirmada'}
@@ -198,7 +202,7 @@ export default function ReservationPage() {
           <Button
             size="sm"
             variant="ghost"
-            className="text-rose-600 hover:text-rose-800"
+            className="text-xs text-[#ff453a] hover:text-[#ffdad6] hover:bg-[#93000a]/20"
             onClick={() => handleCancelReservation(r.id)}
           >
             Cancelar
@@ -208,135 +212,196 @@ export default function ReservationPage() {
   ]
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
-      <div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-            Reserva de Salas y Espacios
-          </h1>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 text-zinc-600 border border-zinc-200 uppercase tracking-wider">
-            HU-22 Integración
-          </span>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* SECCIÓN 1: CABECERA Y TELEMETRÍA */}
+      <section className="flex flex-col gap-3">
+        {/* Breadcrumbs estilo macOS / SF */}
+        <nav aria-label="Ruta de navegación" className="flex items-center gap-1.5 text-xs text-[#8d90a0]">
+          <span className="hover:text-white transition-colors cursor-pointer">Inicio</span>
+          <span className="text-white/20">/</span>
+          <span className="hover:text-white transition-colors cursor-pointer">Reservas</span>
+          <span className="text-white/20">/</span>
+          <span className="text-white font-semibold">Nueva reserva telemática</span>
+        </nav>
+
+        {/* Encabezado de página */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight text-white">
+                Reservar sala
+              </h1>
+              <span className="px-2.5 py-0.5 rounded-full bg-[#2a2a2c] text-[#22d3ee] text-[11px] font-mono font-medium tracking-wide border border-white/[0.08]">
+                ID-EXP: MOD-RES-2025
+              </span>
+            </div>
+            <p className="text-sm text-[#a1a1a6] max-w-3xl leading-relaxed">
+              Gestión y reserva de espacios físicos para actividades académicas con asignación telemática instantánea.
+            </p>
+          </div>
+
+          {/* Acceso rápido y Gateway IoT */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1c1c1e] text-[#a1a1a6] text-xs font-mono border border-white/[0.08]">
+              <span className="w-2 h-2 rounded-full bg-[#30D158] animate-pulse" />
+              <span>Gateway IoT Activo</span>
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-zinc-500 mt-1">
-          Planifica actividades académicas asegurando disponibilidad en tiempo real y cumplimiento de aforo.
-        </p>
-      </div>
+      </section>
 
       {error && <ErrorMessage message={error} />}
       {success && <SuccessMessage message={success} onDismiss={() => setSuccess(null)} />}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Formulario de reserva integrado */}
-        <div className="lg:col-span-1">
-          <Card title="Nueva Reserva" subtitle="Programa una franja horaria">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
-                  Sala Oficial *
-                </label>
-                <select
-                  value={spaceId}
-                  onChange={(e) => setSpaceId(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-zinc-900 focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900"
-                  disabled={isSubmitting || isLoading}
-                >
-                  {spaces.map((space) => (
-                    <option key={space.id} value={space.id}>
-                      {space.name} (Capacidad: {space.capacity} personas)
-                    </option>
-                  ))}
-                </select>
-                {selectedSpace && (
-                  <div className="mt-2 flex items-center justify-between text-xs px-3 py-1.5 rounded-lg bg-zinc-50 border border-zinc-200/60">
-                    <span className="text-zinc-500">Capacidad máxima:</span>
-                    <span className="font-bold text-zinc-900">{selectedSpace.capacity} personas</span>
-                  </div>
-                )}
-              </div>
-
-              <Input
-                label="Título de la actividad"
-                placeholder="Ej. Taller de Algoritmos en Python"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                disabled={isSubmitting}
-              />
-
-              <Input
-                label="Fecha de la reserva"
-                type="date"
-                required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                disabled={isSubmitting}
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  label="Hora inicio"
-                  type="time"
-                  required
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  disabled={isSubmitting}
-                />
-                <Input
-                  label="Hora fin"
-                  type="time"
-                  required
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div>
-                <Input
-                  label="Número de asistentes"
-                  type="number"
-                  min="1"
-                  required
-                  value={attendees}
-                  onChange={(e) => setAttendees(e.target.value)}
-                  disabled={isSubmitting}
-                  error={isOverCapacity ? `Excede la capacidad de ${selectedSpace?.capacity} personas` : null}
-                />
-              </div>
-
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                className="w-full mt-2"
-                isLoading={isSubmitting}
-                disabled={isOverCapacity}
-              >
-                {isSubmitting ? 'Confirmando reserva…' : 'Confirmar Reserva'}
-              </Button>
-            </form>
-          </Card>
-        </div>
-
-        {/* Listado de reservas registradas */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              Historial de Reservas ({myReservations.length})
-            </h3>
+      {/* SECCIÓN 2: FORMULARIO PRINCIPAL DE RESERVA (Bento Grid 2 Columnas) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Columna Izquierda: Formulario Interactivo (5 cols) */}
+        <div className="lg:col-span-5 bg-[#1c1c1e] rounded-[20px] p-6 sm:p-7 border-t border-white/[0.09] border-x border-white/[0.04] border-b border-black/50 shadow-[0_12px_32px_rgba(0,0,0,0.45)]">
+          <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.06] mb-5">
+            <div className="flex items-center gap-2.5">
+              <span className="text-base text-[#22d3ee]">🏛️</span>
+              <h2 className="text-base font-semibold text-white tracking-tight">Detalles de la Reserva</h2>
+            </div>
+            <span className="text-xs text-[#8d90a0] font-mono">Campos obligatorios *</span>
           </div>
 
-          {isLoading ? (
-            <div className="p-8 rounded-3xl bg-white border border-zinc-200/80">
-              <LoadingState message="Cargando reservas vigentes…" />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Selector de Sala */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
+                Sala Académica *
+              </label>
+              <select
+                value={spaceId}
+                onChange={(e) => setSpaceId(e.target.value)}
+                className="w-full h-11 px-3.5 rounded-[12px] bg-[#2c2c2e] text-[#f5f5f7] text-sm border border-white/[0.08] focus:outline-none focus:ring-2 focus:ring-[#2563eb] transition-all cursor-pointer"
+                disabled={isSubmitting || isLoading}
+              >
+                {spaces.map((space) => (
+                  <option key={space.id} value={space.id} className="bg-[#1c1c1e] text-white">
+                    {space.name} · {space.capacity} personas
+                  </option>
+                ))}
+              </select>
+              {selectedSpace && (
+                <div className="mt-2 flex items-center justify-between text-xs px-3 py-1.5 rounded-lg bg-[#2a2a2c] border border-white/[0.06]">
+                  <span className="text-[#a1a1a6]">Capacidad máxima permitida:</span>
+                  <span className="font-bold text-[#22d3ee] font-mono">{selectedSpace.capacity} personas</span>
+                </div>
+              )}
             </div>
-          ) : (
-            <Table
-              columns={reservationColumns}
-              data={myReservations}
-              emptyMessage="No hay reservas registradas para esta franja."
+
+            <Input
+              label="Título o Propósito de la actividad"
+              placeholder="Ej. Taller de Algoritmos en Python"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={isSubmitting}
             />
-          )}
+
+            <Input
+              label="Fecha de la reserva"
+              type="date"
+              required
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              disabled={isSubmitting}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Hora inicio"
+                type="time"
+                required
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                disabled={isSubmitting}
+              />
+              <Input
+                label="Hora fin"
+                type="time"
+                required
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div>
+              <Input
+                label="Número de asistentes"
+                type="number"
+                min="1"
+                required
+                value={attendees}
+                onChange={(e) => setAttendees(e.target.value)}
+                disabled={isSubmitting}
+                error={isOverCapacity ? `Excede la capacidad de ${selectedSpace?.capacity} personas` : null}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="w-full h-12 rounded-full mt-2 text-sm font-semibold tracking-wide"
+              isLoading={isSubmitting}
+              disabled={isOverCapacity}
+            >
+              {isSubmitting ? 'Confirmando reserva…' : 'Confirmar Reserva en Sala'}
+            </Button>
+          </form>
+        </div>
+
+        {/* Columna Derecha: Mapa de Salas (Cinema) y Tabla de Reservas (7 cols) */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Card del Mapa Interactivo */}
+          <Card title="Mapa de Disponibilidad en Pabellón" subtitle="Selecciona un pod para auto-completar el formulario">
+            <div className="pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                {spaces.map((room) => {
+                  const isSelected = String(room.id) === String(spaceId)
+                  return (
+                    <button
+                      key={room.id}
+                      type="button"
+                      onClick={() => setSpaceId(String(room.id))}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        isSelected
+                          ? 'bg-[#222226] border-[#2563eb] ring-2 ring-[#2563eb]/50'
+                          : 'bg-[#141416] border-white/[0.06] hover:border-white/[0.15]'
+                      }`}
+                    >
+                      <span className="text-[10px] font-mono text-[#8d90a0] block">{room.code || room.id}</span>
+                      <span className="text-xs font-bold text-white block mt-0.5">{room.name}</span>
+                      <span className="text-[10px] text-[#22d3ee] font-mono block mt-1">{room.capacity} pers.</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </Card>
+
+          {/* Listado de reservas registradas */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]">
+                Historial de Reservas ({myReservations.length})
+              </h3>
+            </div>
+
+            {isLoading ? (
+              <div className="p-8 rounded-[20px] bg-[#1c1c1e] border border-white/[0.08]">
+                <LoadingState message="Cargando reservas vigentes…" />
+              </div>
+            ) : (
+              <Table
+                columns={reservationColumns}
+                data={myReservations}
+                emptyMessage="No hay reservas registradas para esta franja."
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

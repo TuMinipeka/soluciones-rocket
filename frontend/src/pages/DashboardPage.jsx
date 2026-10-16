@@ -35,10 +35,10 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+        <h1 className="text-3xl font-bold tracking-tight text-white">
           Dashboard Operativo
         </h1>
-        <p className="text-sm text-zinc-500 mt-0.5">
+        <p className="text-sm text-[#a1a1a6] mt-1">
           Resumen consolidado del estado de salas, inventario e incidencias en tiempo real.
         </p>
       </div>

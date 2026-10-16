@@ -19,17 +19,17 @@ export default function Button({
 
   const variants = {
     primary:
-      'bg-zinc-900 text-white hover:bg-zinc-800 active:bg-zinc-950 shadow-[0_1px_2px_rgba(0,0,0,0.12),0_2px_6px_rgba(0,0,0,0.06)] hover:shadow-[0_2px_5px_rgba(0,0,0,0.15),0_6px_14px_rgba(0,0,0,0.08)] focus-visible:ring-zinc-900',
+      'bg-[#2563eb] text-white hover:bg-blue-600 active:bg-blue-700 shadow-[0_2px_12px_rgba(37,99,235,0.3)] focus-visible:ring-[#2563eb]',
     secondary:
-      'bg-zinc-100 text-zinc-900 hover:bg-zinc-200 active:bg-zinc-300 border border-zinc-200/60 focus-visible:ring-zinc-400',
+      'bg-[#2c2c2e] text-[#f5f5f7] hover:bg-[#3a3a3c] active:bg-[#434655] border border-white/[0.08] focus-visible:ring-[#8d90a0]',
     outline:
-      'border border-zinc-200 text-zinc-800 bg-white/80 hover:bg-zinc-50 active:bg-zinc-100 shadow-[0_1px_2px_rgba(0,0,0,0.03)] focus-visible:ring-zinc-400',
+      'border border-white/[0.12] text-[#e4e2e4] bg-[#1c1c1e] hover:bg-[#2c2c2e] active:bg-[#353437] shadow-sm focus-visible:ring-[#8d90a0]',
     ghost:
-      'text-zinc-600 bg-transparent hover:bg-zinc-100/80 hover:text-zinc-900 active:bg-zinc-200/80 focus-visible:ring-zinc-400',
+      'text-[#a1a1a6] bg-transparent hover:bg-white/[0.06] hover:text-[#f5f5f7] active:bg-white/[0.1] focus-visible:ring-white/20',
     danger:
-      'bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800 shadow-[0_1px_2px_rgba(225,29,72,0.2)] focus-visible:ring-rose-600',
+      'bg-[#93000a] text-white hover:bg-rose-700 active:bg-rose-800 shadow-[0_2px_8px_rgba(225,29,72,0.25)] focus-visible:ring-rose-500',
     ai:
-      'bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 shadow-[0_2px_8px_rgba(124,58,237,0.25)] hover:shadow-[0_4px_16px_rgba(124,58,237,0.35)] focus-visible:ring-violet-500',
+      'bg-gradient-to-r from-[#2563eb] via-indigo-600 to-[#2fd9f4] text-white hover:opacity-95 shadow-[0_4px_20px_rgba(37,99,235,0.35)] focus-visible:ring-[#2fd9f4]',
   }
 
   const sizes = {

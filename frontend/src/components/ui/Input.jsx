@@ -25,10 +25,10 @@ const Input = forwardRef(function Input(
       {label && (
         <label
           htmlFor={inputId}
-          className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-zinc-500"
+          className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]"
         >
           <span>
-            {label} {required && <span className="text-rose-500 font-bold">*</span>}
+            {label} {required && <span className="text-[#ff453a] font-bold">*</span>}
           </span>
         </label>
       )}
@@ -37,20 +37,20 @@ const Input = forwardRef(function Input(
         id={inputId}
         type={type}
         required={required}
-        className={`w-full rounded-xl border bg-white/90 px-3.5 py-2.5 text-sm text-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-150 ease-out placeholder:text-zinc-400 focus:outline-none ${
+        className={`w-full rounded-[12px] border bg-[#2c2c2e] px-3.5 py-2.5 text-sm text-[#f5f5f7] shadow-inner transition-all duration-150 ease-out placeholder:text-[#636366] focus:outline-none ${
           error
-            ? 'border-rose-300 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
-            : 'border-zinc-200/90 hover:border-zinc-300 focus:border-zinc-900 focus:ring-4 focus:ring-zinc-900/5'
+            ? 'border-[#ff453a] focus:border-[#ff453a] focus:ring-2 focus:ring-[#ff453a]/20'
+            : 'border-white/[0.08] hover:border-white/[0.15] focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/40'
         } ${className}`}
         {...props}
       />
       {error && (
-        <p className="text-xs text-rose-600 font-medium flex items-center gap-1 animate-fluid-enter">
+        <p className="text-xs text-[#ffb4ab] font-medium flex items-center gap-1 animate-fluid-enter">
           <span>•</span> {error}
         </p>
       )}
       {helperText && !error && (
-        <p className="text-[11px] text-zinc-400 font-normal leading-normal">{helperText}</p>
+        <p className="text-[11px] text-[#8d90a0] font-normal leading-normal">{helperText}</p>
       )}
     </div>
   )

@@ -6,21 +6,22 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
+    background-color: #0e0e10;
   }
 
   body {
     min-width: 320px;
-    background: #fafaf9;
-    color: #18181b;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background-color: #0e0e10;
+    color: #e4e2e4;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
   }
 
   ::selection {
-    background-color: #18181b;
+    background-color: #2563eb;
     color: #ffffff;
   }
 
-  /* Scrollbars minimalistas */
+  /* Scrollbars minimalistas oscuros */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -31,12 +32,12 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #d4d4d8;
+    background: #2a2a2c;
     border-radius: 9999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #a1a1aa;
+    background: #434655;
   }
 }
 
@@ -84,41 +85,53 @@
   animation: pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Estilos de paneles de vidrio Apple */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.glass-dropdown {
-  background: rgba(255, 255, 255, 0.92);
+/* Estilos de paneles de vidrio Apple Dark Enclave */
+.glass-header {
+  background: rgba(14, 14, 16, 0.85);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Textura para salas inhabilitadas (tipo cine / plano de evacuación) */
-.hatch-disabled {
+.dark-surface-card {
+  background-color: #1c1c1e;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.dark-elevated-card {
+  background-color: #2c2c2e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Textura para salas inhabilitadas (tipo cine / evacuación) */
+.hatch-disabled-dark {
+  background-color: #1a1517;
   background-image: repeating-linear-gradient(
     45deg,
-    rgba(244, 63, 94, 0.06) 0,
-    rgba(244, 63, 94, 0.06) 8px,
-    rgba(255, 255, 255, 0.8) 8px,
-    rgba(255, 255, 255, 0.8) 16px
+    rgba(255, 69, 58, 0.12) 0,
+    rgba(255, 69, 58, 0.12) 8px,
+    rgba(28, 28, 30, 0.9) 8px,
+    rgba(28, 28, 30, 0.9) 16px
   );
 }
 
-/* Resplandores sobrios */
-.glow-emerald {
-  box-shadow: 0 0 16px -2px rgba(16, 185, 129, 0.22);
+/* Resplandores Apple Dark Enclave */
+.glow-cyan {
+  box-shadow: 0 0 20px -2px rgba(34, 211, 238, 0.28);
 }
 
-.glow-violet {
-  box-shadow: 0 0 20px -2px rgba(139, 92, 246, 0.25);
+.glow-blue {
+  box-shadow: 0 0 24px -2px rgba(37, 99, 235, 0.35);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px -2px rgba(48, 209, 88, 0.25);
 }
 
 .glow-amber {
-  box-shadow: 0 0 16px -2px rgba(245, 158, 11, 0.22);
+  box-shadow: 0 0 20px -2px rgba(255, 159, 10, 0.25);
 }
