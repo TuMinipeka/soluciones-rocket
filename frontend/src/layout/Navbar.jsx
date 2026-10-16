@@ -35,47 +35,26 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full glass-header transition-all">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         {/* Brand / Logo */}
-        <div className="flex items-center gap-6 lg:gap-8">
-          <NavLink to="/spaces" className="flex items-center gap-2.5 group select-none">
-            <img
-              src="/campuslands_helmet.png"
-              alt="Campuslands Helmet"
-              className="h-8 w-auto object-contain drop-shadow-[0_0_10px_rgba(34,211,238,0.3)] group-hover:scale-105 transition-transform"
-            />
-            <div className="flex items-baseline gap-1.5 font-brand leading-none">
-              <span className="text-[20px] font-bold text-white tracking-normal lowercase">
-                campuslands
-              </span>
-              <span className="text-[20px] font-bold text-[#22d3ee] tracking-normal lowercase">
-                control
-              </span>
-            </div>
-          </NavLink>
-
-          {/* Enlaces de navegación con selector deslizante / pill */}
-          <nav className="hidden md:flex items-center gap-1 bg-[#1c1c1e] p-1 rounded-full border border-white/[0.08]">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-150 active:scale-95 select-none ${
-                    isActive
-                      ? 'bg-[#2563eb] text-white font-semibold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]'
-                      : 'text-[#a1a1a6] hover:text-white hover:bg-white/[0.04]'
-                  }`
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
+        <NavLink to="/spaces" className="flex min-w-0 items-center gap-2.5 group select-none">
+          <img
+            src="/campuslands_helmet.png"
+            alt="Campuslands Helmet"
+            className="h-8 w-auto shrink-0 object-contain drop-shadow-[0_0_10px_rgba(34,211,238,0.3)] group-hover:scale-105 transition-transform"
+          />
+          <div className="hidden min-w-0 items-baseline gap-1.5 font-brand leading-none min-[420px]:flex">
+            <span className="truncate text-[20px] font-bold text-white tracking-normal lowercase">
+              campuslands
+            </span>
+            <span className="text-[20px] font-bold text-[#22d3ee] tracking-normal lowercase">
+              control
+            </span>
+          </div>
+        </NavLink>
 
         {/* Sección de usuario & Logout */}
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
           {/* Badge de Telemetría Enclave Seguro */}
           <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-[#2a2a2c]/80 border border-white/[0.08]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#2fd9f4] animate-pulse" />
@@ -85,10 +64,10 @@ export default function Navbar() {
           </div>
 
           {user && (
-            <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#1c1c1e] border border-white/[0.08]">
+            <div className="hidden min-w-0 max-w-52 items-center gap-2.5 rounded-full border border-white/[0.08] bg-[#1c1c1e] px-3 py-1.5 sm:flex">
               <span className={`w-2 h-2 rounded-full ${currentRole.dot} animate-pulse-subtle`} />
-              <div className="flex flex-col text-right">
-                <span className="text-xs font-semibold text-white leading-tight">
+              <div className="flex min-w-0 flex-col text-right">
+                <span className="truncate text-xs font-semibold text-white leading-tight">
                   {user.name || user.email}
                 </span>
                 <span className="text-[10px] font-mono uppercase tracking-wider text-[#a1a1a6]">
@@ -101,30 +80,35 @@ export default function Navbar() {
             variant="ghost"
             size="sm"
             onClick={handleLogout}
-            className="text-xs text-[#8d90a0] hover:text-[#ff453a] hover:bg-white/[0.04]"
+            className="shrink-0 text-xs text-[#8d90a0] hover:text-[#ff453a] hover:bg-white/[0.04]"
           >
             Salir
           </Button>
         </div>
       </div>
 
-      {/* Navegación móvil secundaria horizontal */}
-      <div className="flex md:hidden overflow-x-auto border-t border-white/[0.06] bg-[#131315]/95 px-3 py-2 gap-1.5 scrollbar-none">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              `shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                isActive
-                  ? 'bg-[#2563eb] text-white shadow-xs font-semibold'
-                  : 'text-[#a1a1a6] bg-[#1c1c1e] border border-white/[0.06]'
-              }`
-            }
-          >
-            {item.label}
-          </NavLink>
-        ))}
+      {/* Navegación principal en una fila independiente para evitar compresión. */}
+      <div className="overflow-x-auto border-t border-white/[0.06] bg-[#131315]/95 scrollbar-none">
+        <nav
+          aria-label="Navegación principal"
+          className="mx-auto flex min-w-max max-w-7xl items-center justify-start gap-1.5 px-3 py-2 md:justify-center sm:px-6 lg:px-8"
+        >
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95 select-none ${
+                  isActive
+                    ? 'border-[#2563eb] bg-[#2563eb] text-white font-semibold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]'
+                    : 'border-white/[0.06] bg-[#1c1c1e] text-[#a1a1a6] hover:border-white/[0.12] hover:bg-white/[0.06] hover:text-white'
+                }`
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
       </div>
     </header>
   )
