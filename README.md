@@ -104,6 +104,7 @@ Toda la documentación técnica y operativa está organizada en la carpeta `docs
 - [Estructura y Límites Modulares](docs/architecture.md)
 - [Arquitectura de Seguridad, JWT, Incidencias y Triaje con IA](docs/authIa.md)
 - [Matriz de Versiones y Dependencias](docs/versions.md)
+- [Playbook de pruebas, casos borde y sustentación](docs/testing-and-defense-playbook.md)
 
 ### 3. Contratos de API
 - [Contrato: Autenticación, Usuarios e Incidencias](docs/contracts/authIncidents.md)

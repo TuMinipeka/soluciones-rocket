@@ -1,4 +1,4 @@
-# Contrato de espacios, disponibilidad y reservas (HU-02 a HU-04)
+# Contrato de espacios, disponibilidad, reservas y reubicación (HU-02 a HU-05)
 
 Todas las rutas requieren `Authorization: Bearer <token>` y conservan el formato de error compartido `{"error":{"code":"...","message":"...","details":...}}`.
 
@@ -100,3 +100,34 @@ Un docente recibe `403 FORBIDDEN` al intentar modificar o cancelar una reserva a
 Las modificaciones se ejecutan de forma atómica con la misma serialización SQLite de la creación. Al verificar solapamientos, la reserva que se está modificando se excluye de la consulta. Cambiar de horario o sala vuelve a ejecutar todas las reglas de HU-03.
 
 Cada respuesta de reserva incluye `events`, ordenados cronológicamente, con eventos `created`, `updated` y `cancelled`. La cancelación conserva la reserva y registra quién realizó la acción. Al quedar en estado `cancelled`, deja de bloquear inmediatamente `GET /spaces`.
+
+## Reubicar reservas afectadas
+
+Todas las rutas de reubicación requieren rol `admin`:
+
+| Ruta | Comportamiento |
+| --- | --- |
+| `GET /reservations/affected` | Lista reservas `confirmed`, con fecha actual o futura, cuya sala está inhabilitada. |
+| `GET /reservations/{id}/reallocations` | Calcula alternativas compatibles para una reserva afectada. |
+| `POST /reservations/{id}/reallocate` | Confirma una alternativa después de revalidarla dentro de una transacción. |
+
+Confirmación:
+
+```json
+{
+  "new_space_id": "SAL-005",
+  "notes": "Cambio confirmado por mantenimiento"
+}
+```
+
+Una alternativa se obtiene exclusivamente desde SQLite y debe cumplir simultáneamente:
+
+- Ser diferente de la sala afectada.
+- Estar operativa y no inhabilitada.
+- Tener capacidad igual o superior al número de asistentes.
+- No tener una reserva `confirmed` que se solape en la misma fecha y franja.
+- Cumplir los recursos requeridos cuando esos datos existan. El modelo actual no registra recursos por reserva, por lo que la respuesta declara `resources_checked: false` en vez de inventar compatibilidad.
+
+Las alternativas se ordenan de forma determinista por menor capacidad sobrante y luego por identificador. Si no existe ninguna, la API devuelve una lista vacía con una explicación clara.
+
+La confirmación solo se permite mientras la reserva continúe `confirmed` y su sala original siga bloqueada. Antes de cambiar `space_id`, el backend repite todas las validaciones bajo bloqueo de escritura. Una alternativa ocupada entre la recomendación y la confirmación devuelve `409 CONFLICT` y conserva la reserva original. El cambio exitoso registra un evento `relocated` con sala de origen, destino, actor y notas.
