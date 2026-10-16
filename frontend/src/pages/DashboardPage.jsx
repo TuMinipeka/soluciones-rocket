@@ -7,9 +7,6 @@ import LoadingState from '../components/feedback/LoadingState';
 import EmptyState from '../components/feedback/EmptyState';
 import ErrorMessage from '../components/feedback/ErrorMessage';
 
-// Cliente desacoplado seguro de la API de Guerra
-const getSummaryClient = dashboardApi.getDashboardSummary || dashboardApi.getDashboardSummaryApi;
-
 // Fallback temporal estructurado según especificación técnica
 const FALLBACK_DASHBOARD_DATA = {
   spaces_free: 6,
@@ -53,14 +50,22 @@ export default function DashboardPage() {
     if (!isSilent) setIsLoading(true);
     setError(null);
 
+    const client = dashboardApi.getDashboardSummaryApi || dashboardApi.getDashboardSummary;
+
     try {
-      if (typeof getSummaryClient === 'function') {
-        const response = await getSummaryClient({ date: selectedDate, time_slot: selectedSlot });
-        const data = response?.data || response;
-        if (data && typeof data === 'object') {
-          setSummary(data);
+      if (typeof client === 'function') {
+        const response = await client({ date: selectedDate, time_slot: selectedSlot });
+        if (response === null) {
+          setSummary(null);
         } else {
-          setSummary(FALLBACK_DASHBOARD_DATA);
+          const data = response?.data !== undefined ? response.data : response;
+          if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+            setSummary(data);
+          } else if (data === null) {
+            setSummary(null);
+          } else {
+            setSummary(FALLBACK_DASHBOARD_DATA);
+          }
         }
       } else {
         // Fallback defensivo si la API aún no está disponible
@@ -69,7 +74,6 @@ export default function DashboardPage() {
       }
       setLastRefreshedAt(new Date().toLocaleTimeString());
     } catch (err) {
-      // Si el backend aún no implementa /dashboard/summary (404), usar fallback sin romper la UI
       if (err?.status === 404 || err?.response?.status === 404) {
         setSummary(FALLBACK_DASHBOARD_DATA);
       } else {
