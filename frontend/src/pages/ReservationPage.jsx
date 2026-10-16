@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
+import { useAuth } from '../auth/useAuth'
 import { getSpacesApi } from '../api/spaces'
 import {
   createReservationApi,
@@ -19,6 +20,7 @@ import Table from '../components/ui/Table'
 import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
 import SuccessMessage from '../components/feedback/SuccessMessage'
+import SpaceConciergeModal from '../components/spaces/SpaceConciergeModal'
 
 // Catálogo oficial de las 10 salas del campus (Fuente: backend/app/services/availability.py)
 const DEFAULT_OFFICIAL_SPACES = [
@@ -37,6 +39,8 @@ const DEFAULT_OFFICIAL_SPACES = [
 export default function ReservationPage() {
   const location = useLocation()
   const pre = location.state || {}
+  const { user } = useAuth()
+  const userName = user?.name || user?.email?.split('@')[0] || 'Camper'
 
   // Listados
   const [spaces, setSpaces] = useState(DEFAULT_OFFICIAL_SPACES)
@@ -50,11 +54,20 @@ export default function ReservationPage() {
   const [attendees, setAttendees] = useState(20)
   const [title, setTitle] = useState('')
 
-  // Estados de interfaz
+  // Estados de interfaz y Concierge IA
+  const [isConciergeOpen, setIsConciergeOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+
+  const handleApplyRecommendation = ({ spaceId: recSpaceId, attendees: recAttendees, title: recTitle }) => {
+    if (recSpaceId) setSpaceId(String(recSpaceId))
+    if (recAttendees) setAttendees(Number(recAttendees))
+    if (recTitle) setTitle(recTitle)
+    const matched = spaces.find((s) => String(s.id) === String(recSpaceId))
+    setSuccess(`¡Asistente Groq aplicó la sala ${matched?.name || recSpaceId} (${recAttendees || attendees} asistentes)!`)
+  }
 
   // Cargar salas y reservas actuales
   const loadInitialData = async () => {
@@ -240,8 +253,16 @@ export default function ReservationPage() {
             </p>
           </div>
 
-          {/* Acceso rápido y Gateway IoT */}
+          {/* Acceso rápido y Asistente IA Groq */}
           <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsConciergeOpen(true)}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-600/30 via-cyan-500/20 to-blue-600/30 hover:from-blue-600/45 hover:to-cyan-500/35 text-white text-xs font-semibold border border-cyan-400/40 shadow-[0_0_15px_rgba(34,211,238,0.25)] hover:shadow-[0_0_20px_rgba(34,211,238,0.4)] active:scale-95 transition-all cursor-pointer"
+            >
+              <span className="text-cyan-300">✨</span>
+              <span>Asistente IA Groq</span>
+            </button>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1c1c1e] text-[#a1a1a6] text-xs font-mono border border-white/[0.08]">
               <span className="w-2 h-2 rounded-full bg-[#30D158] animate-pulse" />
               <span>Gateway IoT Activo</span>
@@ -266,6 +287,24 @@ export default function ReservationPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Banner sugerencia Asistente IA Groq */}
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-950/40 via-[#1c1c1e] to-cyan-950/30 border border-blue-500/25 flex items-center justify-between gap-3 shadow-[0_0_15px_rgba(37,99,235,0.1)]">
+              <div className="flex items-center gap-2.5">
+                <span className="text-base text-cyan-400">✨</span>
+                <div>
+                  <p className="text-xs font-semibold text-white">¿Dudas sobre qué sala elegir?</p>
+                  <p className="text-[11px] text-[#a1a1a6]">Pídele a Groq recomendaciones por aforo y equipamiento</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsConciergeOpen(true)}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white shrink-0 active:scale-95 transition-all cursor-pointer shadow-[0_0_10px_rgba(37,99,235,0.3)]"
+              >
+                Recomendar
+              </button>
+            </div>
+
             {/* Selector de Sala */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
@@ -404,6 +443,16 @@ export default function ReservationPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal Concierge IA Groq */}
+      <SpaceConciergeModal
+        isOpen={isConciergeOpen}
+        onClose={() => setIsConciergeOpen(false)}
+        userName={userName}
+        initialAttendees={attendees}
+        initialTitle={title}
+        onApplyRecommendation={handleApplyRecommendation}
+      />
     </div>
   )
 }
