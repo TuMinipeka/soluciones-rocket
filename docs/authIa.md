@@ -126,7 +126,7 @@ Para la sustentación frente al jurado, cualquier cambio de regla se encuentra c
 1. Configurar el proveedor Groq en el `.env` local (ignorado por Git):
    ```dotenv
    AI_PROVIDER=groq
-   AI_MODEL=llama-3.3-70b-versatile
+   AI_MODEL=openai/gpt-oss-20b
    AI_API_KEY=<clave local de Groq>
    AI_BASE_URL=
    ```
@@ -141,7 +141,7 @@ Para la sustentación frente al jurado, cualquier cambio de regla se encuentra c
    ```
 3. **Evidencia que revisará el jurado:**
    - `"classification_source": "ai"`
-   - `"ai_model": "llama-3.3-70b-versatile"`
+   - `"ai_model": "openai/gpt-oss-20b"`
    - `"latency_ms"` con la duración real de la petición
    - Categoría, prioridad y recomendación sujetas a la respuesta validada del modelo
    - `"analysis_token"` con firma HMAC válida.

@@ -14,7 +14,7 @@ from app.modules.recommendations.service import RecommendationService
 async def test_groq_provider_uses_endpoint_and_json_mode(monkeypatch):
     monkeypatch.setattr(settings, "AI_PROVIDER", "groq")
     monkeypatch.setattr(settings, "AI_BASE_URL", None)
-    monkeypatch.setattr(settings, "AI_MODEL", "llama-3.3-70b-versatile")
+    monkeypatch.setattr(settings, "AI_MODEL", "openai/gpt-oss-20b")
     requests = []
 
     def mock_handler(request: httpx.Request) -> httpx.Response:
@@ -33,7 +33,7 @@ async def test_groq_provider_uses_endpoint_and_json_mode(monkeypatch):
 
     assert result is not None
     assert result.category == "electrical"
-    assert model == "llama-3.3-70b-versatile"
+    assert model == "openai/gpt-oss-20b"
     assert fallback is None
     assert str(requests[0].url) == "https://api.groq.com/openai/v1/chat/completions"
     assert json.loads(requests[0].content)["response_format"] == {"type": "json_object"}
