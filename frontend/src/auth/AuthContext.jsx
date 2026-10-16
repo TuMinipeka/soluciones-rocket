@@ -86,11 +86,11 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const register = async ({ name, email, password, role }) => {
+  const register = async ({ name, email, password }) => {
     setError(null)
     setIsLoading(true)
     try {
-      const result = await registerApi({ name, email, password, role })
+      const result = await registerApi({ name, email, password })
       // Tras el registro, intentar login directo si el backend no entrega token automático
       try {
         await login({ email, password })

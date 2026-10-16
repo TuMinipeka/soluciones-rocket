@@ -22,7 +22,6 @@ export default function LoginPage({ initialMode }) {
   const [mode, setMode] = useState(isRegisterPath ? 'register' : 'login')
 
   // Campos de formulario
-  const [roleType, setRoleType] = useState('teacher')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -163,7 +162,7 @@ export default function LoginPage({ initialMode }) {
 
       setIsSubmitting(true)
       try {
-        await register({ name: cleanName, email: email.trim().toLowerCase(), password, role: roleType })
+        await register({ name: cleanName, email: email.trim().toLowerCase(), password })
         navigate(from, { replace: true })
       } catch (err) {
         setLocalError(err.message || 'Error al procesar el registro de la cuenta.')
@@ -267,39 +266,6 @@ export default function LoginPage({ initialMode }) {
 
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="flex flex-col">
-            {/* Selector de Rol / Perfil Institucional (Docente / Soporte / Admin) */}
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-out ${
-                mode === 'register'
-                  ? 'max-h-24 opacity-100 mb-4 transform translate-y-0'
-                  : 'max-h-0 opacity-0 mb-0 transform -translate-y-2 pointer-events-none'
-              }`}
-            >
-              <label className="block text-[10px] uppercase font-bold tracking-wider text-[#717684] mb-1.5 px-0.5">
-                ROL / PERFIL INSTITUCIONAL
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'teacher', label: 'Docente' },
-                  { id: 'support', label: 'Soporte' },
-                  { id: 'admin', label: 'Admin' },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setRoleType(item.id)}
-                    className={`py-2 px-2 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer ${
-                      roleType === item.id
-                        ? 'bg-[#2563eb]/20 border-[#2563eb] text-[#22d3ee] shadow-sm'
-                        : 'bg-[#1c1c1e] border-white/[0.06] text-[#8e8e93] hover:text-[#f5f5f7]'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Campo Nombre Completo (Animado: se despliega suavemente en modo registro) */}
             <div
               className={`overflow-hidden transition-all duration-300 ease-out ${

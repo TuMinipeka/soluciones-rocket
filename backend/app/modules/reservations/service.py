@@ -10,12 +10,15 @@ from app.modules.auth.enums import Role
 from app.modules.auth.models import User
 from app.modules.reservations.models import Reservation, ReservationEvent
 from app.modules.reservations.schemas import (
+    RelocationOptionsResponse,
     ReservationCreate,
     ReservationEventResponse,
+    ReservationRelocate,
     ReservationResponse,
     ReservationUpdate,
 )
 from app.modules.spaces.models import Space
+from app.services.availability import find_relocation_alternatives
 
 
 def _lock_writer(db: Session) -> None:
@@ -233,6 +236,103 @@ def cancel_reservation(
                 actor_id=actor.id,
                 event_type="cancelled",
                 details="Reserva cancelada; la franja quedó liberada.",
+            )
+        )
+        db.commit()
+        db.refresh(reservation)
+    except Exception:
+        db.rollback()
+        raise
+    return reservation_response(reservation, db)
+
+
+def list_affected_reservations(actor: User, db: Session) -> list[ReservationResponse]:
+    if actor.role != Role.ADMIN.value:
+        raise ForbiddenError("Solo un administrador puede consultar reservas afectadas.")
+    reservations = db.scalars(
+        select(Reservation)
+        .join(Space, Space.id == Reservation.space_id)
+        .where(
+            Reservation.status == "confirmed",
+            Reservation.date >= date.today(),
+            Space.is_blocked.is_(True),
+        )
+        .order_by(Reservation.date, Reservation.start_time, Reservation.id)
+    ).all()
+    return [reservation_response(item, db) for item in reservations]
+
+
+def get_relocation_options(
+    reservation_id: int,
+    actor: User,
+    db: Session,
+) -> RelocationOptionsResponse:
+    if actor.role != Role.ADMIN.value:
+        raise ForbiddenError("Solo un administrador puede consultar alternativas de reubicación.")
+    reservation = _authorized_reservation(reservation_id, actor, db)
+    if reservation.status != "confirmed":
+        raise ConflictError("Solo las reservas confirmadas pueden reubicarse.")
+    origin = db.get(Space, reservation.space_id)
+    if origin is None:
+        raise NotFoundError("La sala original de la reserva no existe.")
+    if not origin.is_blocked:
+        raise ConflictError("La reserva no está afectada por una sala inhabilitada.")
+    alternatives = find_relocation_alternatives(reservation, db)
+    explanation = (
+        "Alternativas operativas ordenadas por mejor aprovechamiento de capacidad."
+        if alternatives
+        else "No existe una sala operativa con aforo y horario compatibles."
+    )
+    return RelocationOptionsResponse(
+        reservation_id=reservation.id,
+        affected=True,
+        resources_checked=False,
+        explanation=explanation,
+        alternatives=alternatives,
+    )
+
+
+def relocate_reservation(
+    reservation_id: int,
+    data: ReservationRelocate,
+    actor: User,
+    db: Session,
+) -> ReservationResponse:
+    if actor.role != Role.ADMIN.value:
+        raise ForbiddenError("Solo un administrador puede confirmar reubicaciones.")
+    try:
+        _lock_writer(db)
+        reservation = _authorized_reservation(reservation_id, actor, db)
+        if reservation.status != "confirmed":
+            raise ConflictError("Solo las reservas confirmadas pueden reubicarse.")
+        origin = db.get(Space, reservation.space_id)
+        if origin is None:
+            raise NotFoundError("La sala original de la reserva no existe.")
+        if not origin.is_blocked:
+            raise ConflictError("La reserva ya no está afectada por una sala inhabilitada.")
+        if data.new_space_id == reservation.space_id:
+            raise ConflictError("La sala de destino debe ser diferente de la sala afectada.")
+
+        destination = _validate_values(
+            data.new_space_id,
+            reservation.date,
+            reservation.start_time,
+            reservation.end_time,
+            reservation.attendees,
+            db,
+            exclude_reservation_id=reservation.id,
+        )
+        origin_id = reservation.space_id
+        reservation.space_id = destination.id
+        details = f"Reubicación de {origin_id} a {destination.id}."
+        if data.notes:
+            details = f"{details} Notas: {data.notes}"
+        db.add(
+            ReservationEvent(
+                reservation_id=reservation.id,
+                actor_id=actor.id,
+                event_type="relocated",
+                details=details,
             )
         )
         db.commit()

@@ -2,9 +2,9 @@
  * Página: Mapa Interactivo de Salas y Espacios del Campus (HU-18, HU-17, HU-21)
  * Integra el plano arquitectónico 2D de Campuslands con consulta en tiempo real:
  * - Filtros superiores de Fecha, Hora Inicial y Hora Final conectados a GET /spaces.
- * - Doble visualización: Plano Arquitectónico Real (Evacuación) y Cuadrícula Resumida.
+ * - Fiel al plano físico de evacuación con doble canal accesible (color y símbolo).
  * - Acciones directas para Reservar Sala (HU-22) y Reportar Incidencia con IA (HU-24).
- * Responsables: GUERRA & MAFE
+ * Responsables: GUERRA & MAFE & DANIEL
  */
 
 import { useState, useEffect } from 'react'
@@ -15,6 +15,7 @@ import CampusRealFloorplan, {
 } from '../components/spaces/CampusRealFloorplan'
 import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
+import EmptyState from '../components/feedback/EmptyState'
 import Input from '../components/ui/Input'
 
 export default function SpacesPage() {
@@ -45,8 +46,9 @@ export default function SpacesPage() {
       } else {
         setSpaces(CAMPUS_FLOORPLAN_SPACES)
       }
-    } catch {
-      // Fallback determinista con las 10 salas del catálogo oficial
+    } catch (err) {
+      setError(err.message || 'No se pudo consultar la disponibilidad telemática de salas.')
+      // Mantener catálogo oficial como fallback visual si el backend no responde
       setSpaces(CAMPUS_FLOORPLAN_SPACES)
     } finally {
       setIsLoading(false)
@@ -133,11 +135,25 @@ export default function SpacesPage() {
         </div>
       </div>
 
-      {error && <ErrorMessage message={error} onRetry={loadSpaces} />}
-
-      {/* Plano Arquitectónico 2D Oficial */}
+      {/* Estados de Carga, Error y Plano */}
       {isLoading ? (
         <LoadingState message="Consultando disponibilidad telemática de salas en tiempo real…" />
+      ) : error ? (
+        <div className="space-y-4">
+          <ErrorMessage message={error} onRetry={loadSpaces} />
+          <CampusRealFloorplan
+            spaces={spaces}
+            selectedSpaceId={selectedSpaceId}
+            onSelectSpace={(s) => setSelectedSpaceId(s.id)}
+            onBook={handleBookRoom}
+            onReportIncident={handleReportIncident}
+          />
+        </div>
+      ) : spaces.length === 0 ? (
+        <EmptyState
+          title="Sin salas registradas"
+          description="No se encontraron salas en el catálogo del campus."
+        />
       ) : (
         <CampusRealFloorplan
           spaces={spaces}

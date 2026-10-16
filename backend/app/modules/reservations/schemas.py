@@ -57,7 +57,7 @@ class ReservationUpdate(BaseModel):
 class ReservationEventResponse(BaseModel):
     id: int
     actor_id: int
-    event_type: Literal["created", "updated", "cancelled"]
+    event_type: Literal["created", "updated", "cancelled", "relocated"]
     details: str | None
     created_at: DateTimeType
 
@@ -74,3 +74,36 @@ class ReservationResponse(BaseModel):
     title: str
     status: Literal["confirmed", "cancelled"]
     events: list[ReservationEventResponse]
+
+
+class RelocationAlternative(BaseModel):
+    id: str
+    name: str
+    capacity: int
+    reason: str
+
+
+class RelocationOptionsResponse(BaseModel):
+    reservation_id: int
+    affected: bool
+    resources_checked: bool
+    explanation: str
+    alternatives: list[RelocationAlternative]
+
+
+class ReservationRelocate(BaseModel):
+    new_space_id: str = Field(min_length=7, max_length=7, pattern=r"^SAL-[0-9]{3}$")
+    notes: str | None = Field(default=None, max_length=500)
+
+    @field_validator("new_space_id", mode="before")
+    @classmethod
+    def normalize_new_space_id(cls, value: str) -> str:
+        return value.strip().upper()
+
+    @field_validator("notes")
+    @classmethod
+    def normalize_notes(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
