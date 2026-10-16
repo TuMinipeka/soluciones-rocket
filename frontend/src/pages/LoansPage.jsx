@@ -1,0 +1,638 @@
+/**
+ * Página: Gestión de Equipos y Préstamos Tecnológicos (HU-08, HU-23)
+ * Responsable: GUERRA
+ */
+
+import { useState, useEffect } from 'react'
+import {
+  getResourcesApi,
+  getLoansApi,
+  requestLoanApi,
+  returnLoanApi,
+  createResourceApi,
+} from '../api/resources'
+import { useAuth } from '../auth/useAuth'
+import Card from '../components/ui/Card'
+import Input from '../components/ui/Input'
+import Button from '../components/ui/Button'
+import Modal from '../components/ui/Modal'
+import Table from '../components/ui/Table'
+import LoadingState from '../components/feedback/LoadingState'
+import ErrorMessage from '../components/feedback/ErrorMessage'
+import SuccessMessage from '../components/feedback/SuccessMessage'
+import { PlusIcon, MapPinIcon } from '@heroicons/react/24/outline'
+
+export default function LoansPage() {
+  const { user } = useAuth()
+
+  const [resources, setResources] = useState([])
+  const [loans, setLoans] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [success, setSuccess] = useState(null)
+
+  // Modal para solicitar préstamo
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedResource, setSelectedResource] = useState(null)
+  const [loanDate, setLoanDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [loanStartHour, setLoanStartHour] = useState('08:00')
+  const [loanReturnDate, setLoanReturnDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [loanReturnHour, setLoanReturnHour] = useState('11:00')
+  const [loanNotes, setLoanNotes] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Modal para creación de recurso (G-14: Administrador y Soporte)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [newResourceId, setNewResourceId] = useState('')
+  const [newResourceName, setNewResourceName] = useState('')
+  const [newResourceCategory, setNewResourceCategory] = useState('Computación')
+  const [isCreatingResource, setIsCreatingResource] = useState(false)
+
+
+  const loadData = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const [resData, loansData] = await Promise.all([
+        getResourcesApi(),
+        getLoansApi(),
+      ])
+      const resList = Array.isArray(resData) ? resData : resData?.resources || []
+      setResources(resList)
+      setLoans(Array.isArray(loansData) ? loansData : loansData?.loans || [])
+    } catch (err) {
+      setResources([])
+      setLoans([])
+      setError(err.message || 'No fue posible consultar el inventario y los préstamos.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const handleOpenLoanModal = (resource) => {
+    if (resource.status !== 'available' && resource.status !== 'disponible') {
+      setError(`El equipo "${resource.name}" no está disponible para préstamo en este momento.`)
+      return
+    }
+    setSelectedResource(resource)
+    setIsModalOpen(true)
+    setError(null)
+  }
+
+  const handleRequestLoan = async (e) => {
+    e.preventDefault()
+    if (!selectedResource) return
+
+    // Construir ISO timestamps válidos (G-10)
+    const startIso = `${loanDate}T${loanStartHour}:00`
+    const returnIso = `${loanReturnDate}T${loanReturnHour}:00`
+
+    if (startIso >= returnIso) {
+      setError('La fecha y hora de retiro debe ser estrictamente anterior a la devolución.')
+      return
+    }
+
+    setIsSubmitting(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      await requestLoanApi({
+        resource_id: selectedResource.id,
+        start_time: startIso,
+        expected_return: returnIso,
+        notes: loanNotes,
+      })
+
+      setSuccess(`Préstamo registrado exitosamente para ${selectedResource.name}.`)
+      setIsModalOpen(false)
+      setSelectedResource(null)
+      setLoanNotes('')
+      loadData()
+    } catch (err) {
+      setError(err.message || 'No fue posible registrar el préstamo.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Creación de nuevo recurso tecnológico (G-14)
+  const handleCreateResource = async (e) => {
+    e.preventDefault()
+    if (!newResourceId.trim() || !newResourceName.trim()) {
+      setError('Por favor ingresa identificador y nombre del recurso.')
+      return
+    }
+
+    setIsCreatingResource(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      await createResourceApi({
+        id: newResourceId.trim().toUpperCase(),
+        name: newResourceName.trim(),
+        category: newResourceCategory.trim(),
+      })
+
+      setSuccess(`Recurso ${newResourceName} (${newResourceId.toUpperCase()}) registrado exitosamente.`)
+      setIsCreateModalOpen(false)
+      setNewResourceId('')
+      setNewResourceName('')
+      loadData()
+    } catch (err) {
+      setError(err.message || 'No se pudo crear el recurso tecnológico.')
+    } finally {
+      setIsCreatingResource(false)
+    }
+  }
+
+
+  const handleReturnLoan = async (loanId) => {
+    if (!window.confirm('¿Confirmar la devolución y entrega de este equipo?')) return
+
+    setError(null)
+    try {
+      await returnLoanApi(loanId, { returned_at: new Date().toISOString() })
+      setSuccess('Equipo devuelto y reincorporado al inventario disponible.')
+      loadData()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('Todos')
+
+  const categories = ['Todos', 'Computación', 'Audiovisual', 'Diseño', 'Electrónica']
+
+  const filteredResources = resources.filter((res) => {
+    const matchesSearch =
+      res.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (res.serial_number && res.serial_number.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (res.id && res.id.toLowerCase().includes(searchQuery.toLowerCase()))
+
+    const matchesCategory =
+      selectedCategory === 'Todos' ||
+      (res.category && res.category.toLowerCase() === selectedCategory.toLowerCase())
+
+    return matchesSearch && matchesCategory
+  })
+
+  // Estadísticas KPI
+  const totalCount = resources.length
+  const availableCount = resources.filter((r) => r.status === 'available' || r.status === 'disponible').length
+  const loanedCount = resources.filter((r) => r.status === 'loaned' || r.status === 'prestado').length
+
+  const resourceStatusBadge = (status) => {
+    const s = String(status).toLowerCase()
+    if (s === 'available' || s === 'disponible') {
+      return (
+        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#30d158]/15 text-[#30d158] border border-[#30d158]/30 uppercase tracking-wider">
+          Disponible
+        </span>
+      )
+    }
+    if (s === 'loaned' || s === 'prestado') {
+      return (
+        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#2563eb]/20 text-[#6cd3f7] border border-[#2563eb]/40 uppercase tracking-wider">
+          En préstamo
+        </span>
+      )
+    }
+    return (
+      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff9f0a]/20 text-[#ff9f0a] border border-[#ff9f0a]/30 uppercase tracking-wider">
+        Mantenimiento
+      </span>
+    )
+  }
+
+  const loanColumns = [
+    {
+      header: 'ID',
+      accessor: 'id',
+      render: (l) => <span className="font-mono font-bold text-[#22d3ee]">#{l.id}</span>,
+    },
+    {
+      header: 'Equipo',
+      accessor: 'resource_name',
+      render: (l) => (
+        <span className="font-semibold text-white">
+          {l.resource_name || `Equipo ${l.resource_id}`}
+        </span>
+      ),
+    },
+    {
+      header: 'Solicitante',
+      accessor: 'user_name',
+      render: (l) => <span className="text-[#e4e2e4]">{l.user_name || user?.name || 'Docente'}</span>,
+    },
+    {
+      header: 'Entrega',
+      accessor: 'start_time',
+      render: (l) => (
+        <span className="text-[#a1a1a6] font-mono text-xs">
+          {new Date(l.start_time).toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      header: 'Devolución Prevista',
+      accessor: 'expected_return',
+      render: (l) => (
+        <span className="text-[#a1a1a6] font-mono text-xs">
+          {new Date(l.expected_return).toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      header: 'Estado',
+      accessor: 'status',
+      render: (l) => (
+        <span
+          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+            l.status === 'returned'
+              ? 'bg-[#2a2a2c] text-[#8d90a0] border border-white/[0.06]'
+              : 'bg-[#ff9f0a]/15 text-[#ff9f0a] border border-[#ff9f0a]/30'
+          }`}
+        >
+          {l.status === 'returned' ? 'Devuelto' : 'Activo'}
+        </span>
+      ),
+    },
+    {
+      header: 'Acción',
+      render: (l) =>
+        l.status !== 'returned' ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-xs"
+            onClick={() => handleReturnLoan(l.id)}
+          >
+            Registrar devolución
+          </Button>
+        ) : null,
+    },
+  ]
+
+  return (
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Top Breadcrumb & Section Header */}
+      <section className="flex flex-col gap-3">
+        <nav aria-label="Ruta de navegación" className="flex items-center gap-1.5 text-xs text-[#8d90a0]">
+          <span className="hover:text-white transition-colors cursor-pointer">Inicio</span>
+          <span className="text-white/20">/</span>
+          <span className="hover:text-white transition-colors cursor-pointer">Gestión de Campus</span>
+          <span className="text-white/20">/</span>
+          <span className="text-[#22d3ee] font-semibold">Recursos tecnológicos</span>
+        </nav>
+
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pt-1">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-2.5 mb-2">
+              <span className="px-2.5 py-0.5 rounded-full font-mono text-[11px] bg-[#161B22] text-[#22D3EE] border border-white/[0.08]">
+                INVENTARIO v4.8
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-[#30D158] font-mono">
+                <span className="inline-block w-2 h-2 rounded-full bg-[#30D158] animate-pulse" />
+                Telemetría en tiempo real activa
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              Recursos tecnológicos
+            </h1>
+            <p className="text-sm text-[#a1a1a6] mt-1">
+              Inventario, control de disponibilidad y gestión de préstamos de equipamiento multimedia y cómputo.
+            </p>
+          </div>
+
+          {/* Quick KPI Strip estilo Stitch y Botón Nuevo Recurso (G-14) */}
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            {(user?.role === 'admin' || user?.role === 'support') && (
+              <Button
+                variant="primary"
+                size="md"
+                className="rounded-xl flex items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                <PlusIcon className="w-4 h-4" />
+                <span>Nuevo Recurso</span>
+              </Button>
+            )}
+
+            <div className="flex items-center gap-3 bg-[#1c1c1e] p-2 rounded-2xl border border-white/[0.08] shadow-lg">
+              <div className="px-4 py-1.5 border-r border-white/[0.08] text-left">
+                <span className="block text-[10px] font-mono uppercase tracking-wider text-[#8d90a0]">TOTAL ACTIVOS</span>
+                <span className="font-mono text-xl font-bold text-white">{totalCount}</span>
+              </div>
+              <div className="px-4 py-1.5 border-r border-white/[0.08] text-left">
+                <span className="block text-[10px] font-mono uppercase tracking-wider text-[#30D158]">DISPONIBLES</span>
+                <span className="font-mono text-xl font-bold text-[#30D158]">{availableCount}</span>
+              </div>
+              <div className="px-4 py-1.5 text-left">
+                <span className="block text-[10px] font-mono uppercase tracking-wider text-[#FF9F0A]">EN PRÉSTAMO</span>
+                <span className="font-mono text-xl font-bold text-[#FF9F0A]">{loanedCount}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {error && <ErrorMessage message={error} onDismiss={() => setError(null)} />}
+      {success && <SuccessMessage message={success} onDismiss={() => setSuccess(null)} />}
+
+      {/* Filter & Search Toolbar */}
+      <section className="bg-[#1c1c1e] border border-white/[0.08] rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-[0_4px_16px_rgba(0,0,0,0.3)]">
+        <div className="relative flex-1 max-w-md">
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8d90a0]">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+          <input
+            type="search"
+            placeholder="Buscar por ID, modelo, etiqueta o aula…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-[#2a2a2c] border border-white/[0.08] rounded-xl pl-10 pr-4 py-2 text-sm text-[#f5f5f7] placeholder-[#636366] focus:border-[#2563eb] focus:ring-2 focus:ring-[#22d3ee]/40 focus:outline-none transition-all"
+          />
+        </div>
+
+        {/* Category Filters Pills */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                selectedCategory === cat
+                  ? 'bg-[#2563eb] text-white shadow-sm'
+                  : 'bg-[#2a2a2c] text-[#a1a1a6] hover:text-white border border-white/[0.06]'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Catálogo de equipos disponibles en cards */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]">
+            Catálogo de Equipos ({filteredResources.length})
+          </h3>
+        </div>
+
+        {isLoading ? (
+          <div className="p-8 rounded-[20px] bg-[#1c1c1e] border border-white/[0.08]">
+            <LoadingState message="Consultando inventario de equipos…" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredResources.length === 0 && (
+              <p className="col-span-full py-8 text-center text-sm text-[#a1a1a6]">
+                No hay recursos autorizados registrados.
+              </p>
+            )}
+            {filteredResources.map((res) => (
+              <Card key={res.id} className="flex flex-col justify-between hover:border-white/[0.15] transition-all">
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span className="text-[10px] font-mono font-medium text-[#22d3ee]">
+                      {res.id}
+                    </span>
+                    {resourceStatusBadge(res.status)}
+                  </div>
+                  <h4 className="text-sm font-bold text-white tracking-tight">{res.name}</h4>
+                  <p className="text-xs text-[#a1a1a6] mt-1">
+                    Categoría: <span className="font-medium text-[#f5f5f7]">{res.category || 'General'}</span>
+                  </p>
+                  {res.serial_number && (
+                    <p className="text-[11px] text-[#8d90a0] font-mono mt-0.5">
+                      S/N: {res.serial_number}
+                    </p>
+                  )}
+                  {res.location && (
+                    <p className="text-[11px] text-[#8d90a0] mt-1 flex items-center gap-1">
+                      <MapPinIcon className="w-3.5 h-3.5 text-[#22d3ee] shrink-0" /> {res.location}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-4 pt-3.5 border-t border-white/[0.06]">
+                  <Button
+                    size="sm"
+                    variant={res.status === 'available' || res.status === 'disponible' ? 'primary' : 'outline'}
+                    disabled={res.status !== 'available' && res.status !== 'disponible'}
+                    className="w-full text-xs h-9 rounded-xl"
+                    onClick={() => handleOpenLoanModal(res)}
+                  >
+                    {res.status === 'available' || res.status === 'disponible'
+                      ? 'Solicitar préstamo'
+                      : 'No disponible'}
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Préstamos Activos */}
+      <div className="space-y-4 pt-4">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]">
+          Préstamos Activos y Devoluciones
+        </h3>
+        <Table
+          columns={loanColumns}
+          data={loans}
+          emptyMessage="No hay préstamos activos registrados actualmente."
+        />
+      </div>
+
+      {/* Modal de Solicitud de Préstamo (G-10) */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={`Solicitar Préstamo: ${selectedResource?.name || ''}`}
+        subtitle="Configura el horario de retiro y devolución en el horario institucional (06:00 - 22:00)"
+      >
+        <form onSubmit={handleRequestLoan} className="space-y-4">
+          <div className="p-3 rounded-xl bg-[#2a2a2c]/60 border border-white/[0.06] text-xs space-y-1">
+            <div className="flex justify-between text-[#a1a1a6]">
+              <span>ID de Inventario:</span>
+              <span className="font-mono text-[#22d3ee] font-bold">{selectedResource?.id}</span>
+            </div>
+            <div className="flex justify-between text-[#a1a1a6]">
+              <span>Categoría:</span>
+              <span className="text-white font-medium">{selectedResource?.category}</span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#a1a1a6]">
+              Retiro de equipo
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Input
+                label="Fecha de retiro"
+                type="date"
+                required
+                value={loanDate}
+                onChange={(e) => setLoanDate(e.target.value)}
+                disabled={isSubmitting}
+              />
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
+                  Hora de retiro
+                </label>
+                <select
+                  value={loanStartHour}
+                  onChange={(e) => setLoanStartHour(e.target.value)}
+                  className="w-full h-11 px-3 rounded-xl bg-[#2a2a2c] border border-white/10 text-white text-sm focus:outline-none focus:border-[#2563eb]"
+                >
+                  {['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'].map(t => (
+                    <option key={t} value={t}>{t} hrs</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#a1a1a6]">
+              Devolución de equipo
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Input
+                label="Fecha de devolución"
+                type="date"
+                required
+                value={loanReturnDate}
+                onChange={(e) => setLoanReturnDate(e.target.value)}
+                disabled={isSubmitting}
+              />
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
+                  Hora de devolución
+                </label>
+                <select
+                  value={loanReturnHour}
+                  onChange={(e) => setLoanReturnHour(e.target.value)}
+                  className="w-full h-11 px-3 rounded-xl bg-[#2a2a2c] border border-white/10 text-white text-sm focus:outline-none focus:border-[#2563eb]"
+                >
+                  {['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00'].map(t => (
+                    <option key={t} value={t}>{t} hrs</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
+              Propósito académico o notas
+            </label>
+            <textarea
+              rows="3"
+              value={loanNotes}
+              onChange={(e) => setLoanNotes(e.target.value)}
+              placeholder="Ej. Sesión práctica de laboratorio en Sala Cosmos"
+              className="w-full rounded-xl border border-white/10 bg-[#2a2a2c] px-3.5 py-2.5 text-sm text-white placeholder:text-[#a1a1a6]/50 focus:outline-none focus:border-[#2563eb]"
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <div className="pt-3 flex justify-end gap-3 border-t border-white/[0.06]">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsModalOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={isSubmitting}
+            >
+              Confirmar Solicitud
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal de Creación de Recurso Tecnológico (G-14: Admin y Soporte) */}
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Registrar Nuevo Recurso Tecnológico"
+        subtitle="Agrega un activo al inventario consumiendo la API de recursos"
+      >
+        <form onSubmit={handleCreateResource} className="space-y-4">
+          <Input
+            label="Identificador Único (Código)"
+            placeholder="Ej. REC-015 o LAP-001"
+            value={newResourceId}
+            onChange={(e) => setNewResourceId(e.target.value)}
+            disabled={isCreatingResource}
+            required
+          />
+
+          <Input
+            label="Nombre del Equipo o Recurso"
+            placeholder="Ej. Laptop Dell XPS 15 Dev"
+            value={newResourceName}
+            onChange={(e) => setNewResourceName(e.target.value)}
+            disabled={isCreatingResource}
+            required
+          />
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
+              Categoría Tecnológica
+            </label>
+            <select
+              value={newResourceCategory}
+              onChange={(e) => setNewResourceCategory(e.target.value)}
+              className="w-full h-11 px-3 rounded-xl bg-[#2a2a2c] border border-white/10 text-white text-sm focus:outline-none focus:border-[#2563eb]"
+              disabled={isCreatingResource}
+            >
+              <option value="Computación">Computación</option>
+              <option value="Audiovisual">Audiovisual</option>
+              <option value="Diseño">Diseño</option>
+              <option value="Electrónica">Electrónica</option>
+              <option value="Accesorios">Accesorios</option>
+            </select>
+          </div>
+
+          <div className="pt-3 flex justify-end gap-3 border-t border-white/[0.06]">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsCreateModalOpen(false)}
+              disabled={isCreatingResource}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={isCreatingResource}
+            >
+              Crear Recurso
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  )
+}

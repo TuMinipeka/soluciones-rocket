@@ -15,6 +15,8 @@ __pycache__/
 *.db-*
 *.sqlite
 *.sqlite-*
+official-data/
+import-reports/
 node_modules/
 dist/
 build/
@@ -25,3 +27,7 @@ target/
 # Operating system files
 .DS_Store
 Thumbs.db
+
+# Graphify artifacts
+graphify-out/
+
