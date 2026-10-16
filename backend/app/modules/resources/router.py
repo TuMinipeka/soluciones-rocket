@@ -32,7 +32,7 @@ def list_resources(
 @router.post("", response_model=ResourceResponse, status_code=status.HTTP_201_CREATED)
 def create_resource(
     data: ResourceCreate,
-    _admin: User = Depends(require_roles(Role.ADMIN)),
+    _staff: User = Depends(require_roles(Role.ADMIN, Role.SUPPORT)),
     db: Session = Depends(get_db),
 ) -> ResourceResponse:
     return service.create_resource(data, db)

@@ -65,6 +65,17 @@ def test_inventory_and_loan_lifecycle(client, admin_token, teacher_token, suppor
     assert client.get("/resources", headers=auth(teacher_token)).json()[0]["id"] == "EQ-001"
     assert client.post("/resources", json=data, headers=auth(admin_token)).status_code == 409
 
+    support_resource = {
+        "id": "EQ-SUPPORT",
+        "name": "Equipo autorizado por soporte",
+        "category": "laptop",
+    }
+    support_created = client.post(
+        "/resources", json=support_resource, headers=auth(support_token)
+    )
+    assert support_created.status_code == 201
+    assert support_created.json()["id"] == "EQ-SUPPORT"
+
     start = datetime.now(timezone.utc) + timedelta(minutes=2)
     payload = {
         "resource_id": "EQ-001",
