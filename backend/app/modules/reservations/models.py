@@ -1,8 +1,8 @@
 """Reservation records used to calculate room availability."""
 
-from datetime import date, time
+from datetime import date, datetime, time, timezone
 
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Index, Integer, String, Time
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, String, Text, Time
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -35,3 +35,20 @@ class Reservation(Base):
     attendees: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[str] = mapped_column(String(150), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="confirmed")
+
+
+class ReservationEvent(Base):
+    __tablename__ = "reservation_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    reservation_id: Mapped[int] = mapped_column(
+        ForeignKey("reservations.id"), nullable=False, index=True
+    )
+    actor_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    details: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
