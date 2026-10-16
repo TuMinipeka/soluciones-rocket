@@ -1,27 +1,26 @@
 /**
- * Página: Mapa Interactivo de Salas y Espacios del Campus (HU-18, HU-17, HU-21)
- * Integra el plano arquitectónico 2D de Campuslands con consulta en tiempo real:
- * - Filtros superiores de Fecha, Hora Inicial y Hora Final conectados a GET /spaces.
- * - Fiel al plano físico de evacuación con doble canal accesible (color y símbolo).
- * - Acciones directas para Reservar Sala (HU-22) y Reportar Incidencia con IA (HU-24).
+ * Página: Mapa y Gestión de Disponibilidad de Salas (HU-18, HU-17, HU-21, HU-22)
+ *
+ * Implementa el diseño táctico de alta gama (Swiss Design / Apple Pro Dark) basado en la guía Stitch:
+ * - Telemetría táctica y microindicadores de estado (Disponible, Ocupado, Incidencia, Inhabilitado).
+ * - Matriz de 10 salas oficiales con aforos y ubicaciones del SEED.
+ * - Barra de control de franja horaria (Fecha, Hora Inicio, Hora Fin) conectada a GET /spaces.
+ * - Panel inferior flotante con acciones inmediatas para Reservar Sala y Reportar Falla.
+ *
  * Responsables: GUERRA & MAFE & DANIEL
  */
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getSpacesApi } from '../api/spaces'
-import CampusRealFloorplan, {
-  CAMPUS_FLOORPLAN_SPACES,
-} from '../components/spaces/CampusRealFloorplan'
+import CampusMap, { INITIAL_ROOMS_SEED } from '../components/spaces/CampusMap'
 import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
-import EmptyState from '../components/feedback/EmptyState'
 import Input from '../components/ui/Input'
 
 export default function SpacesPage() {
   const navigate = useNavigate()
-  const [spaces, setSpaces] = useState(CAMPUS_FLOORPLAN_SPACES)
-  const [selectedSpaceId, setSelectedSpaceId] = useState('SAL-005') // Apolo por defecto
+  const [spaces, setSpaces] = useState(INITIAL_ROOMS_SEED)
 
   // Filtros de franja horaria para consulta en tiempo real
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
@@ -37,19 +36,25 @@ export default function SpacesPage() {
       const data = await getSpacesApi({ date, start_time: startTime, end_time: endTime })
       const list = Array.isArray(data) ? data : data?.spaces || []
       if (list.length > 0) {
-        // Enriquecer salas recibidas del backend con los metadatos de ubicación del plano
-        const merged = CAMPUS_FLOORPLAN_SPACES.map((floorSpace) => {
-          const apiRoom = list.find((s) => s.id === floorSpace.id)
-          return apiRoom ? { ...floorSpace, ...apiRoom } : floorSpace
+        // Enriquecer salas recibidas del backend con los metadatos institucionales del SEED
+        const merged = INITIAL_ROOMS_SEED.map((seedRoom) => {
+          const apiRoom = list.find((s) => s.id === seedRoom.id)
+          if (!apiRoom) return seedRoom
+          let st = apiRoom.status || 'available'
+          if (st === 'incident') st = 'issue'
+          return {
+            ...seedRoom,
+            ...apiRoom,
+            status: st,
+          }
         })
         setSpaces(merged)
       } else {
-        setSpaces(CAMPUS_FLOORPLAN_SPACES)
+        setSpaces(INITIAL_ROOMS_SEED)
       }
     } catch (err) {
       setError(err.message || 'No se pudo consultar la disponibilidad telemática de salas.')
-      // Mantener catálogo oficial como fallback visual si el backend no responde
-      setSpaces(CAMPUS_FLOORPLAN_SPACES)
+      setSpaces(INITIAL_ROOMS_SEED)
     } finally {
       setIsLoading(false)
     }
@@ -92,7 +97,7 @@ export default function SpacesPage() {
             </span>
           </div>
           <p className="text-sm text-[#a1a1a6] mt-1">
-            Plano arquitectónico interactivo con evaluación de disponibilidad horaria y aforos en tiempo real.
+            Matriz de disponibilidad en tiempo real con consulta de aforos y programación telemática.
           </p>
         </div>
 
@@ -111,8 +116,8 @@ export default function SpacesPage() {
         </div>
       </div>
 
-      {/* Barra de Control de Disponibilidad Horaria (HU-18) */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-[#16181f] border border-white/[0.08] shadow-lg">
+      {/* Barra de Control de Disponibilidad Horaria (HU-02 / HU-18) */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-[#121215] border border-white/[0.08] shadow-lg">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Input
             label="Fecha de consulta"
@@ -135,31 +140,16 @@ export default function SpacesPage() {
         </div>
       </div>
 
-      {/* Estados de Carga, Error y Plano */}
+      {/* Mensaje de Error si la consulta falla */}
+      {error && <ErrorMessage message={error} onRetry={loadSpaces} />}
+
+      {/* Estados de Carga y Componente CampusMap */}
       {isLoading ? (
         <LoadingState message="Consultando disponibilidad telemática de salas en tiempo real…" />
-      ) : error ? (
-        <div className="space-y-4">
-          <ErrorMessage message={error} onRetry={loadSpaces} />
-          <CampusRealFloorplan
-            spaces={spaces}
-            selectedSpaceId={selectedSpaceId}
-            onSelectSpace={(s) => setSelectedSpaceId(s.id)}
-            onBook={handleBookRoom}
-            onReportIncident={handleReportIncident}
-          />
-        </div>
-      ) : spaces.length === 0 ? (
-        <EmptyState
-          title="Sin salas registradas"
-          description="No se encontraron salas en el catálogo del campus."
-        />
       ) : (
-        <CampusRealFloorplan
-          spaces={spaces}
-          selectedSpaceId={selectedSpaceId}
-          onSelectSpace={(s) => setSelectedSpaceId(s.id)}
-          onBook={handleBookRoom}
+        <CampusMap
+          rooms={spaces}
+          onReserveSpace={handleBookRoom}
           onReportIncident={handleReportIncident}
         />
       )}
