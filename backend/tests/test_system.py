@@ -77,3 +77,16 @@ def test_database_failure_returns_controlled_service_unavailable(client, teacher
             "details": None,
         }
     }
+
+
+def test_method_not_allowed_uses_consistent_error_contract(client):
+    response = client.post("/health")
+
+    assert response.status_code == 405
+    assert response.json() == {
+        "error": {
+            "code": "METHOD_NOT_ALLOWED",
+            "message": "Method Not Allowed",
+            "details": None,
+        }
+    }

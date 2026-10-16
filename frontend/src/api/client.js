@@ -147,6 +147,7 @@ export async function apiClient(endpoint, options = {}) {
       const message = normalizeError(errBody, 401)
       const error = new Error(message)
       error.status = 401
+      error.code = errBody?.error?.code || 'UNAUTHORIZED'
       error.data = errBody
       throw error
     }
@@ -164,6 +165,7 @@ export async function apiClient(endpoint, options = {}) {
       const message = normalizeError(data, response.status)
       const error = new Error(message)
       error.status = response.status
+      error.code = data?.error?.code || 'HTTP_ERROR'
       error.data = data
       throw error
     }
@@ -173,6 +175,7 @@ export async function apiClient(endpoint, options = {}) {
     if (err.name === 'TypeError' && err.message.includes('fetch')) {
       const netError = new Error('No fue posible conectar con el servidor. Revisa tu conexión.')
       netError.status = 0
+      netError.code = 'NETWORK_ERROR'
       throw netError
     }
     throw err
