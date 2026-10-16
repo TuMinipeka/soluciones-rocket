@@ -1,9 +1,10 @@
 """Custom application exceptions and centralized FastAPI handlers."""
 
 from typing import Any
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 class AppError(Exception):
@@ -126,8 +127,8 @@ def register_exception_handlers(app: FastAPI) -> None:
             content=content,
         )
 
-    @app.exception_handler(HTTPException)
-    async def http_exception_handler(_request: Request, exc: HTTPException) -> JSONResponse:
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(_request: Request, exc: StarletteHTTPException) -> JSONResponse:
         # Mapeo de códigos HTTP comunes a códigos legibles
         code_map = {
             400: "BAD_REQUEST",
