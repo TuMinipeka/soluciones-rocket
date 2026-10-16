@@ -21,6 +21,9 @@ import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
 import SuccessMessage from '../components/feedback/SuccessMessage'
 import SpaceConciergeModal from '../components/spaces/SpaceConciergeModal'
+import RoomScheduleCalendar from '../components/spaces/RoomScheduleCalendar'
+import { ROOM_PHOTO_MAP } from '../components/spaces/CampusMap'
+
 
 // Catálogo oficial de las 10 salas del campus (Fuente: backend/app/services/availability.py)
 const DEFAULT_OFFICIAL_SPACES = [
@@ -338,6 +341,7 @@ export default function ReservationPage() {
               disabled={isSubmitting}
             />
 
+            {/* Fecha de la reserva */}
             <Input
               label="Fecha de la reserva"
               type="date"
@@ -347,43 +351,136 @@ export default function ReservationPage() {
               disabled={isSubmitting}
             />
 
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="Hora inicio"
-                type="time"
-                required
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                disabled={isSubmitting}
-              />
-              <Input
-                label="Hora fin"
-                type="time"
-                required
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                disabled={isSubmitting}
-              />
+            {/* Selector Rediseñado de Horarios: 06:00 a 22:00 (G-01, G-02) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]">
+                  Franja Horaria * (06:00 - 22:00)
+                </label>
+                <span className="text-[11px] font-mono text-[#22d3ee]">
+                  {startTime} - {endTime}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Hora de Inicio */}
+                <div>
+                  <span className="block text-[10px] text-zinc-400 font-mono mb-1">Hora Inicio</span>
+                  <select
+                    value={startTime}
+                    onChange={(e) => {
+                      const newStart = e.target.value
+                      setStartTime(newStart)
+                      if (newStart >= endTime) {
+                        const [h] = newStart.split(':').map(Number)
+                        const nextHour = `${String(Math.min(22, h + 1)).padStart(2, '0')}:00`
+                        setEndTime(nextHour)
+                      }
+                    }}
+                    className="w-full h-11 px-3 rounded-xl bg-[#2c2c2e] text-[#f5f5f7] text-sm font-mono border border-white/[0.08] focus:outline-none focus:ring-2 focus:ring-[#2563eb] cursor-pointer"
+                  >
+                    {[
+                      '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
+                      '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
+                      '18:00', '19:00', '20:00', '21:00'
+                    ].map((t) => (
+                      <option key={t} value={t} className="bg-[#1c1c1e] text-white">
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Hora de Fin */}
+                <div>
+                  <span className="block text-[10px] text-zinc-400 font-mono mb-1">Hora Fin</span>
+                  <select
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full h-11 px-3 rounded-xl bg-[#2c2c2e] text-[#f5f5f7] text-sm font-mono border border-white/[0.08] focus:outline-none focus:ring-2 focus:ring-[#2563eb] cursor-pointer"
+                  >
+                    {[
+                      '07:00', '08:00', '09:00', '10:00', '11:00',
+                      '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
+                      '18:00', '19:00', '20:00', '21:00', '22:00'
+                    ].map((t) => {
+                      const isDisabled = t <= startTime
+                      return (
+                        <option
+                          key={t}
+                          value={t}
+                          disabled={isDisabled}
+                          className={isDisabled ? 'bg-[#18181a] text-zinc-600' : 'bg-[#1c1c1e] text-white'}
+                        >
+                          {t} {isDisabled ? '(Inválida)' : ''}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <Input
-                label="Número de asistentes"
-                type="number"
-                min="1"
-                required
-                value={attendees}
-                onChange={(e) => setAttendees(e.target.value)}
-                disabled={isSubmitting}
-                error={isOverCapacity ? `Excede la capacidad de ${selectedSpace?.capacity} personas` : null}
-              />
+            {/* Campo de Asistentes con Stepper - y + sin control nativo (G-08) */}
+            <div className="space-y-1.5">
+              <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]">
+                <span>Número de Asistentes *</span>
+                <span className="text-[11px] font-mono text-zinc-400 font-normal">
+                  Capacidad sala: {selectedSpace?.capacity || 100}
+                </span>
+              </label>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAttendees((prev) => Math.max(1, Number(prev) - 1))}
+                  className="w-11 h-11 rounded-xl bg-[#2c2c2e] hover:bg-[#3a3a3c] active:scale-95 text-white font-bold text-lg border border-white/[0.08] flex items-center justify-center transition-colors cursor-pointer select-none"
+                  aria-label="Disminuir asistentes"
+                >
+                  −
+                </button>
+
+                <div className="flex-1 relative">
+                  <input
+                    type="number"
+                    min="1"
+                    max={selectedSpace?.capacity || 200}
+                    value={attendees}
+                    onChange={(e) => setAttendees(e.target.value)}
+                    disabled={isSubmitting}
+                    className={`w-full h-11 rounded-xl bg-[#2c2c2e] text-center font-mono text-base font-bold text-white border transition-all focus:outline-none ${
+                      isOverCapacity
+                        ? 'border-[#ff453a] focus:ring-2 focus:ring-[#ff453a]/30'
+                        : 'border-white/[0.08] focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/40'
+                    }`}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 font-medium pointer-events-none">
+                    pers.
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setAttendees((prev) => Math.min(selectedSpace?.capacity || 100, Number(prev) + 1))}
+                  className="w-11 h-11 rounded-xl bg-[#2c2c2e] hover:bg-[#3a3a3c] active:scale-95 text-white font-bold text-lg border border-white/[0.08] flex items-center justify-center transition-colors cursor-pointer select-none"
+                  aria-label="Aumentar asistentes"
+                >
+                  +
+                </button>
+              </div>
+
+              {isOverCapacity && (
+                <p className="text-xs text-[#ff8077] font-medium flex items-center gap-1 animate-fluid-enter">
+                  <span>•</span> Excede la capacidad autorizada ({selectedSpace?.capacity} personas)
+                </p>
+              )}
             </div>
 
             <Button
               type="submit"
               variant="primary"
               size="lg"
-              className="w-full h-12 rounded-full mt-2 text-sm font-semibold tracking-wide"
+              className="w-full h-12 rounded-xl mt-3 text-sm font-semibold tracking-wide"
               isLoading={isSubmitting}
               disabled={isOverCapacity}
             >
@@ -392,34 +489,75 @@ export default function ReservationPage() {
           </form>
         </div>
 
-        {/* Columna Derecha: Mapa de Salas (Cinema) y Tabla de Reservas (7 cols) */}
+        {/* Columna Derecha: Detalles EXCLUSIVOS de la sala seleccionada y Google Calendar (G-04, G-05) */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Card del Mapa Interactivo */}
-          <Card title="Mapa de Disponibilidad en Pabellón" subtitle="Selecciona un pod para auto-completar el formulario">
-            <div className="pt-2">
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                {spaces.map((room) => {
-                  const isSelected = String(room.id) === String(spaceId)
-                  return (
-                    <button
-                      key={room.id}
-                      type="button"
-                      onClick={() => setSpaceId(String(room.id))}
-                      className={`p-3 rounded-xl border text-left transition-all ${
-                        isSelected
-                          ? 'bg-[#222226] border-[#2563eb] ring-2 ring-[#2563eb]/50'
-                          : 'bg-[#141416] border-white/[0.06] hover:border-white/[0.15]'
-                      }`}
-                    >
-                      <span className="text-[10px] font-mono text-[#8d90a0] block">{room.code || room.id}</span>
-                      <span className="text-xs font-bold text-white block mt-0.5">{room.name}</span>
-                      <span className="text-[10px] text-[#22d3ee] font-mono block mt-1">{room.capacity} pers.</span>
-                    </button>
-                  )
-                })}
+          {/* Card: Detalles Exclusivos de la Sala Seleccionada (G-05) */}
+          <div className="p-5 sm:p-6 rounded-2xl bg-[#161618] border border-white/[0.08] shadow-lg">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+              {/* Fotografía oficial de la sala seleccionada */}
+              <div className="w-36 h-28 sm:w-44 sm:h-28 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-[#1c1c1e] relative group">
+                <img
+                  src={ROOM_PHOTO_MAP[selectedSpace?.id] || '/imagenes_salones/auditorio.png'}
+                  alt={selectedSpace?.name}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  onError={(e) => {
+                    e.target.style.display = 'none'
+                  }}
+                />
+                <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-black/70 backdrop-blur-md text-[#22d3ee] border border-white/10">
+                  {selectedSpace?.id}
+                </span>
+              </div>
+
+              {/* Información y Aforo de la Sala */}
+              <div className="flex-1 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                  <h3 className="text-xl font-bold text-white tracking-tight">
+                    {selectedSpace?.name}
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                    Operativa
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  Capacidad máxima: <strong className="text-white font-mono">{selectedSpace?.capacity} personas</strong>
+                </p>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Ubicación: <span className="text-zinc-200">Pabellón Principal • Campuslands</span>
+                </p>
+                <div className="mt-3 flex items-center justify-center sm:justify-start gap-2 text-xs font-mono">
+                  <span className="px-2.5 py-1 rounded-lg bg-zinc-800 text-zinc-300">
+                    {spaces.findIndex((s) => s.id === selectedSpace?.id) + 1} de {spaces.length} salas
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currIdx = spaces.findIndex((s) => s.id === spaceId)
+                      const next = spaces[(currIdx + 1) % spaces.length]
+                      setSpaceId(String(next.id))
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-[#2563eb]/20 text-[#22d3ee] hover:bg-[#2563eb]/30 transition-colors cursor-pointer"
+                  >
+                    Cambiar sala →
+                  </button>
+                </div>
               </div>
             </div>
-          </Card>
+          </div>
+
+          {/* Calendario Google Calendar para la Sala Seleccionada (G-04, G-06) */}
+          <RoomScheduleCalendar
+            room={selectedSpace}
+            date={date}
+            reservations={myReservations}
+            userRole={user?.role || 'teacher'}
+            selectedStart={startTime}
+            selectedEnd={endTime}
+            onSelectSlot={(slotStart, slotEnd) => {
+              setStartTime(slotStart)
+              setEndTime(slotEnd)
+            }}
+          />
 
           {/* Listado de reservas registradas */}
           <div className="space-y-3">

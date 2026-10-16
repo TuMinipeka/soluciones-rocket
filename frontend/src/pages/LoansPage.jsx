@@ -9,6 +9,7 @@ import {
   getLoansApi,
   requestLoanApi,
   returnLoanApi,
+  createResourceApi,
 } from '../api/resources'
 import { useAuth } from '../auth/useAuth'
 import Card from '../components/ui/Card'
@@ -42,14 +43,20 @@ export default function LoansPage() {
   // Modal para solicitar préstamo
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedResource, setSelectedResource] = useState(null)
-  const [startTime, setStartTime] = useState(() => new Date().toISOString().slice(0, 16))
-  const [expectedReturn, setExpectedReturn] = useState(() => {
-    const d = new Date()
-    d.setHours(d.getHours() + 3)
-    return d.toISOString().slice(0, 16)
-  })
+  const [loanDate, setLoanDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [loanStartHour, setLoanStartHour] = useState('08:00')
+  const [loanReturnDate, setLoanReturnDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [loanReturnHour, setLoanReturnHour] = useState('11:00')
   const [loanNotes, setLoanNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Modal para creación de recurso (G-14: Administrador y Soporte)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [newResourceId, setNewResourceId] = useState('')
+  const [newResourceName, setNewResourceName] = useState('')
+  const [newResourceCategory, setNewResourceCategory] = useState('Computación')
+  const [isCreatingResource, setIsCreatingResource] = useState(false)
+
 
   const loadData = async () => {
     setIsLoading(true)
@@ -85,6 +92,15 @@ export default function LoansPage() {
     e.preventDefault()
     if (!selectedResource) return
 
+    // Construir ISO timestamps válidos (G-10)
+    const startIso = `${loanDate}T${loanStartHour}:00`
+    const returnIso = `${loanReturnDate}T${loanReturnHour}:00`
+
+    if (startIso >= returnIso) {
+      setError('La fecha y hora de retiro debe ser estrictamente anterior a la devolución.')
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
     setSuccess(null)
@@ -92,8 +108,8 @@ export default function LoansPage() {
     try {
       await requestLoanApi({
         resource_id: selectedResource.id,
-        start_time: startTime,
-        expected_return: expectedReturn,
+        start_time: startIso,
+        expected_return: returnIso,
         notes: loanNotes,
       })
 
@@ -108,6 +124,38 @@ export default function LoansPage() {
       setIsSubmitting(false)
     }
   }
+
+  // Creación de nuevo recurso tecnológico (G-14)
+  const handleCreateResource = async (e) => {
+    e.preventDefault()
+    if (!newResourceId.trim() || !newResourceName.trim()) {
+      setError('Por favor ingresa identificador y nombre del recurso.')
+      return
+    }
+
+    setIsCreatingResource(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      await createResourceApi({
+        id: newResourceId.trim().toUpperCase(),
+        name: newResourceName.trim(),
+        category: newResourceCategory.trim(),
+      })
+
+      setSuccess(`Recurso ${newResourceName} (${newResourceId.toUpperCase()}) registrado exitosamente.`)
+      setIsCreateModalOpen(false)
+      setNewResourceId('')
+      setNewResourceName('')
+      loadData()
+    } catch (err) {
+      setError(err.message || 'No se pudo crear el recurso tecnológico.')
+    } finally {
+      setIsCreatingResource(false)
+    }
+  }
+
 
   const handleReturnLoan = async (loanId) => {
     if (!window.confirm('¿Confirmar la devolución y entrega de este equipo?')) return
@@ -268,25 +316,39 @@ export default function LoansPage() {
             </p>
           </div>
 
-          {/* Quick KPI Strip estilo Stitch */}
-          <div className="flex items-center gap-3 bg-[#1c1c1e] p-2 rounded-2xl border border-white/[0.08] shadow-lg shrink-0">
-            <div className="px-4 py-1.5 border-r border-white/[0.08] text-left">
-              <span className="block text-[10px] font-mono uppercase tracking-wider text-[#8d90a0]">TOTAL ACTIVOS</span>
-              <span className="font-mono text-xl font-bold text-white">{totalCount}</span>
-            </div>
-            <div className="px-4 py-1.5 border-r border-white/[0.08] text-left">
-              <span className="block text-[10px] font-mono uppercase tracking-wider text-[#30D158]">DISPONIBLES</span>
-              <span className="font-mono text-xl font-bold text-[#30D158]">{availableCount}</span>
-            </div>
-            <div className="px-4 py-1.5 text-left">
-              <span className="block text-[10px] font-mono uppercase tracking-wider text-[#FF9F0A]">EN PRÉSTAMO</span>
-              <span className="font-mono text-xl font-bold text-[#FF9F0A]">{loanedCount}</span>
+          {/* Quick KPI Strip estilo Stitch y Botón Nuevo Recurso (G-14) */}
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            {(user?.role === 'admin' || user?.role === 'support') && (
+              <Button
+                variant="primary"
+                size="md"
+                className="rounded-xl flex items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                <span>➕</span>
+                <span>Nuevo Recurso</span>
+              </Button>
+            )}
+
+            <div className="flex items-center gap-3 bg-[#1c1c1e] p-2 rounded-2xl border border-white/[0.08] shadow-lg">
+              <div className="px-4 py-1.5 border-r border-white/[0.08] text-left">
+                <span className="block text-[10px] font-mono uppercase tracking-wider text-[#8d90a0]">TOTAL ACTIVOS</span>
+                <span className="font-mono text-xl font-bold text-white">{totalCount}</span>
+              </div>
+              <div className="px-4 py-1.5 border-r border-white/[0.08] text-left">
+                <span className="block text-[10px] font-mono uppercase tracking-wider text-[#30D158]">DISPONIBLES</span>
+                <span className="font-mono text-xl font-bold text-[#30D158]">{availableCount}</span>
+              </div>
+              <div className="px-4 py-1.5 text-left">
+                <span className="block text-[10px] font-mono uppercase tracking-wider text-[#FF9F0A]">EN PRÉSTAMO</span>
+                <span className="font-mono text-xl font-bold text-[#FF9F0A]">{loanedCount}</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {error && <ErrorMessage message={error} />}
+      {error && <ErrorMessage message={error} onDismiss={() => setError(null)} />}
       {success && <SuccessMessage message={success} onDismiss={() => setSuccess(null)} />}
 
       {/* Filter & Search Toolbar */}
@@ -395,47 +457,100 @@ export default function LoansPage() {
         />
       </div>
 
-      {/* Modal de Solicitud de Préstamo */}
+      {/* Modal de Solicitud de Préstamo (G-10) */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={`Solicitar: ${selectedResource?.name || ''}`}
-        subtitle="Ingresa el intervalo de uso para reservar el equipo"
+        title={`Solicitar Préstamo: ${selectedResource?.name || ''}`}
+        subtitle="Configura el horario de retiro y devolución en el horario institucional (06:00 - 22:00)"
       >
         <form onSubmit={handleRequestLoan} className="space-y-4">
-          <Input
-            label="Fecha y hora de retiro"
-            type="datetime-local"
-            required
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            disabled={isSubmitting}
-          />
+          <div className="p-3 rounded-xl bg-[#2a2a2c]/60 border border-white/[0.06] text-xs space-y-1">
+            <div className="flex justify-between text-[#a1a1a6]">
+              <span>ID de Inventario:</span>
+              <span className="font-mono text-[#22d3ee] font-bold">{selectedResource?.id}</span>
+            </div>
+            <div className="flex justify-between text-[#a1a1a6]">
+              <span>Categoría:</span>
+              <span className="text-white font-medium">{selectedResource?.category}</span>
+            </div>
+          </div>
 
-          <Input
-            label="Fecha y hora prevista de devolución"
-            type="datetime-local"
-            required
-            value={expectedReturn}
-            onChange={(e) => setExpectedReturn(e.target.value)}
-            disabled={isSubmitting}
-          />
+          <div className="space-y-3">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#a1a1a6]">
+              Retiro de equipo
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Input
+                label="Fecha de retiro"
+                type="date"
+                required
+                value={loanDate}
+                onChange={(e) => setLoanDate(e.target.value)}
+                disabled={isSubmitting}
+              />
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
+                  Hora de retiro
+                </label>
+                <select
+                  value={loanStartHour}
+                  onChange={(e) => setLoanStartHour(e.target.value)}
+                  className="w-full h-11 px-3 rounded-xl bg-[#2a2a2c] border border-white/10 text-white text-sm focus:outline-none focus:border-[#2563eb]"
+                >
+                  {['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'].map(t => (
+                    <option key={t} value={t}>{t} hrs</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#a1a1a6]">
+              Devolución de equipo
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Input
+                label="Fecha de devolución"
+                type="date"
+                required
+                value={loanReturnDate}
+                onChange={(e) => setLoanReturnDate(e.target.value)}
+                disabled={isSubmitting}
+              />
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
+                  Hora de devolución
+                </label>
+                <select
+                  value={loanReturnHour}
+                  onChange={(e) => setLoanReturnHour(e.target.value)}
+                  className="w-full h-11 px-3 rounded-xl bg-[#2a2a2c] border border-white/10 text-white text-sm focus:outline-none focus:border-[#2563eb]"
+                >
+                  {['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00'].map(t => (
+                    <option key={t} value={t}>{t} hrs</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
               Propósito académico o notas
             </label>
             <textarea
               rows="3"
               value={loanNotes}
               onChange={(e) => setLoanNotes(e.target.value)}
-              placeholder="Ej. Sesión práctica con estudiantes en sala Cosmos"
-              className="w-full rounded-xl border border-zinc-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900"
+              placeholder="Ej. Sesión práctica de laboratorio en Sala Cosmos"
+              className="w-full rounded-xl border border-white/10 bg-[#2a2a2c] px-3.5 py-2.5 text-sm text-white placeholder:text-[#a1a1a6]/50 focus:outline-none focus:border-[#2563eb]"
               disabled={isSubmitting}
             />
           </div>
 
-          <div className="pt-3 flex justify-end gap-3 border-t border-zinc-100">
+          <div className="pt-3 flex justify-end gap-3 border-t border-white/[0.06]">
             <Button
               type="button"
               variant="ghost"
@@ -450,6 +565,70 @@ export default function LoansPage() {
               isLoading={isSubmitting}
             >
               Confirmar Solicitud
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal de Creación de Recurso Tecnológico (G-14: Admin y Soporte) */}
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Registrar Nuevo Recurso Tecnológico"
+        subtitle="Agrega un activo al inventario consumiendo la API de recursos"
+      >
+        <form onSubmit={handleCreateResource} className="space-y-4">
+          <Input
+            label="Identificador Único (Código)"
+            placeholder="Ej. REC-015 o LAP-001"
+            value={newResourceId}
+            onChange={(e) => setNewResourceId(e.target.value)}
+            disabled={isCreatingResource}
+            required
+          />
+
+          <Input
+            label="Nombre del Equipo o Recurso"
+            placeholder="Ej. Laptop Dell XPS 15 Dev"
+            value={newResourceName}
+            onChange={(e) => setNewResourceName(e.target.value)}
+            disabled={isCreatingResource}
+            required
+          />
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] mb-1.5">
+              Categoría Tecnológica
+            </label>
+            <select
+              value={newResourceCategory}
+              onChange={(e) => setNewResourceCategory(e.target.value)}
+              className="w-full h-11 px-3 rounded-xl bg-[#2a2a2c] border border-white/10 text-white text-sm focus:outline-none focus:border-[#2563eb]"
+              disabled={isCreatingResource}
+            >
+              <option value="Computación">Computación</option>
+              <option value="Audiovisual">Audiovisual</option>
+              <option value="Diseño">Diseño</option>
+              <option value="Electrónica">Electrónica</option>
+              <option value="Accesorios">Accesorios</option>
+            </select>
+          </div>
+
+          <div className="pt-3 flex justify-end gap-3 border-t border-white/[0.06]">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsCreateModalOpen(false)}
+              disabled={isCreatingResource}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={isCreatingResource}
+            >
+              Crear Recurso
             </Button>
           </div>
         </form>

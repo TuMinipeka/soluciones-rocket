@@ -10,8 +10,23 @@ import React, { useState, useMemo } from 'react'
  * - Accesibilidad plena WCAG 2.1 AA (navegación por teclado, roles ARIA, focus ring visible)
  */
 
+// Mapeo oficial de fotografías locales
+export const ROOM_PHOTO_MAP = {
+  'SAL-001': '/imagenes_salones/auditorio.png',
+  'SAL-002': '/assets/rooms/SAL-001.jpg',
+  'SAL-003': '/assets/rooms/SAL-004.jpg',
+  'SAL-004': '/imagenes_salones/sputnik.png',
+  'SAL-005': '/imagenes_salones/apolo.png',
+  'SAL-006': '/imagenes_salones/apolo.png',
+  'SAL-007': '/imagenes_salones/amarilla_1.png',
+  'SAL-008': '/imagenes_salones/amarilla_1.png',
+  'SAL-009': '/imagenes_salones/amarilla_2.png',
+  'SAL-010': '/imagenes_salones/artemis.png',
+}
+
 // Semilla oficial de las 10 salas del SEED Campus Control con metadatos de ubicación
 export const INITIAL_ROOMS_SEED = [
+
   {
     id: 'SAL-001',
     name: 'Auditorio',
@@ -391,15 +406,35 @@ export function CampusMap({
           className="fixed bottom-0 left-0 right-0 z-40 bg-[#121215]/95 backdrop-blur-xl border-t border-zinc-800/90 px-6 py-4 transition-all duration-200 ease-out shadow-2xl shadow-black/80"
         >
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Metadatos estructurales de la sala */}
+            {/* Metadatos estructurales de la sala y Fotografía oficial */}
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center gap-3">
-                <span className="font-mono text-xs px-2 py-0.5 rounded bg-zinc-800/80 text-zinc-300 border border-zinc-700/50">
-                  {selectedRoom.id}
-                </span>
-                <span className="text-base font-medium tracking-tight text-zinc-100">
-                  {selectedRoom.name}
-                </span>
+                {/* Miniatura fotográfica de la sala */}
+                <div className="w-12 h-10 rounded-lg overflow-hidden border border-zinc-700/60 bg-zinc-900 shrink-0 relative">
+                  <img
+                    src={ROOM_PHOTO_MAP[selectedRoom.id] || `/imagenes_salones/auditorio.png`}
+                    alt={selectedRoom.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                      e.target.nextSibling.style.display = 'flex'
+                    }}
+                  />
+                  <div className="w-full h-full hidden items-center justify-center bg-zinc-800 text-[10px] font-mono text-zinc-400">
+                    {selectedRoom.id}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/50">
+                      {selectedRoom.id}
+                    </span>
+                    <span className="text-base font-semibold tracking-tight text-zinc-100">
+                      {selectedRoom.name}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <div className="h-4 w-px bg-zinc-800 hidden sm:block" />

@@ -71,14 +71,19 @@ export const STATUS_STYLES = {
 }
 
 // Mapeo oficial de fotografías locales en frontend/public
-const ROOM_LOCAL_IMAGES = {
+export const ROOM_LOCAL_IMAGES = {
   'SAL-001': '/imagenes_salones/auditorio.png',
-  'SAL-004': '/imagenes_salones/sputnik.png',
-  'SAL-005': '/imagenes_salones/apolo.png',
-  'SAL-008': '/imagenes_salones/amarilla_1.png',
-  'SAL-009': '/imagenes_salones/amarilla_2.png',
-  'SAL-010': '/imagenes_salones/artemis.png',
+  'SAL-002': '/assets/rooms/SAL-001.jpg', // Cosmos (Laboratorio)
+  'SAL-003': '/assets/rooms/SAL-004.jpg', // Skilab (Laboratorio)
+  'SAL-004': '/imagenes_salones/sputnik.png', // Spooki
+  'SAL-005': '/imagenes_salones/apolo.png',   // Apolo
+  'SAL-006': '/imagenes_salones/apolo.png',   // Blanca
+  'SAL-007': '/imagenes_salones/amarilla_1.png', // Azul
+  'SAL-008': '/imagenes_salones/amarilla_1.png', // Amarillas
+  'SAL-009': '/imagenes_salones/amarilla_2.png', // Verdes
+  'SAL-010': '/imagenes_salones/artemis.png',    // Artemis
 }
+
 
 export default function CampusRealFloorplan({
   spaces = CAMPUS_FLOORPLAN_SPACES,
@@ -257,13 +262,10 @@ export default function CampusRealFloorplan({
               />
             </div>
 
-            {/* CORREDOR CENTRAL DE EVACUACIÓN / CONEXIÓN HORIZONTAL */}
-            <div className="my-1 py-2.5 px-4 rounded-xl bg-emerald-500/[0.05] border border-dashed border-emerald-500/25 flex items-center justify-between text-[11px] font-mono text-emerald-400 select-none">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span className="font-semibold tracking-wider">•••▷ CORREDOR CENTRAL CAMPUSLANDS</span>
-              </div>
-              <span className="opacity-80">RUTA DE EVACUACIÓN ▷▷ LOBBY</span>
+            {/* CORREDOR CENTRAL DE CONEXIÓN */}
+            <div className="my-1 py-1.5 px-3 rounded-lg bg-white/[0.02] border border-white/5 flex items-center justify-between text-[11px] font-mono text-zinc-400 select-none">
+              <span className="font-medium">Pasillo Principal</span>
+              <span className="text-[10px] text-zinc-400">Conexión a salas</span>
             </div>
 
             {/* Franja Inferior Izquierda: Artemis (Chaflán Sup) + Blanca + Cosmos & Skilab */}
@@ -299,26 +301,17 @@ export default function CampusRealFloorplan({
               <RoomCard id="SAL-009" compact className="min-h-[85px] rounded-xl" />
             </div>
 
-            {/* Núcleo Central Derecho: Bloque Pasivo (Escaleras/Salidas) + Gran Auditorio */}
+            {/* Núcleo Central Derecho: Gran Auditorio */}
             <div className="grid grid-cols-12 gap-3 items-stretch my-auto">
-              <div className="col-span-4 flex flex-col justify-center items-center p-3 rounded-xl bg-white/[0.02] border border-white/5 text-center text-[10px] font-mono text-zinc-400 gap-1.5 select-none">
-                <span>🪜 ESCALERAS</span>
-                <span className="text-emerald-400 font-semibold my-0.5">🚪 SALIDA</span>
-                <span>🚻 SERVICIOS</span>
-              </div>
               <RoomCard
                 id="SAL-001"
-                className="col-span-8 min-h-[155px]"
+                className="col-span-12 min-h-[155px]"
               />
             </div>
 
-            {/* Franja Inferior Derecha: Pod Azul + Zona Técnica & Lockers */}
+            {/* Franja Inferior Derecha: Pod Azul */}
             <div className="grid grid-cols-12 gap-3">
-              <RoomCard id="SAL-007" compact className="col-span-7 min-h-[85px] rounded-xl" />
-              <div className="col-span-5 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col items-center justify-center p-2 text-[10px] font-mono text-zinc-400 text-center select-none">
-                <span>⚡ ÁREA TÉCNICA</span>
-                <span className="text-[9px] text-zinc-500 mt-0.5">& LOCKERS</span>
-              </div>
+              <RoomCard id="SAL-007" compact className="col-span-12 min-h-[85px] rounded-xl" />
             </div>
           </div>
         </div>
