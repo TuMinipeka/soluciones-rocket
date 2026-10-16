@@ -22,7 +22,7 @@ El reporte enumera **todas las ramas `developer/*` visibles**, incluso las que n
 
 Formato sugerido para cada rama: `developer/Nombre | implementado | evidencia (commit/PR/archivos) | integrado o pendiente | novedades de este pull | bloqueos`. Incluye después un resumen breve de documentos nuevos o modificados que afecten el trabajo.
 
-Tras la actualización, el agente descubre de nuevo los documentos (`rg --files --hidden -g '!.git/**'`) y lee los nuevos o modificados, además de sus referencias pertinentes.
+Tras la actualización, el agente descubre de nuevo los documentos (`rg --files --hidden -g '!.git/**'`) y lee los nuevos o modificados, además de sus referencias pertinentes.asjdjaskdjaskdjaskdask
 
 ## Commits y títulos de PR
 
