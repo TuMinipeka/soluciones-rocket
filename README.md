@@ -27,8 +27,11 @@ Consulta la [matriz de versiones y las comprobaciones de reproducibilidad](docs/
 ## Documentación del reto
 
 - [Enunciado general](contexto.md).
-- [Historias de usuario y criterios de aceptación](docs/trabajo-x-hacer.md).
+- [Historias de usuario y criterios de aceptación (ES)](docs/trabajo-x-hacer.md) | [Backlog (EN)](docs/user-stories.md).
 - [Información técnica, salas y decisiones pendientes](docs/hackaton-rubricas-informacion.md).
+- [Responsabilidades y trabajo en equipo](docs/team-responsibilities.md).
+- [Contrato de API: Auth e Incidencias](docs/contracts/auth_incidents.md).
+- [Arquitectura de Seguridad, IA y Fallback](docs/AUTH_IA.md).
 
 ## Trabajo en equipo
 
