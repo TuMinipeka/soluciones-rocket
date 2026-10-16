@@ -10,6 +10,7 @@ from app.db.session import engine
 from app.modules.auth.router import router as auth_router
 from app.modules.auth.users_router import router as users_router
 from app.modules.incidents.router import router as incidents_router
+from app.modules.resources.router import router as resources_router
 
 
 app = FastAPI(
@@ -45,3 +46,4 @@ def health() -> dict[str, str]:
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(incidents_router)
+app.include_router(resources_router)
