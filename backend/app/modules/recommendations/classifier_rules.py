@@ -24,7 +24,7 @@ KEYWORD_RULES = {
     IncidentCategory.SAFETY: {
         "keywords": [
             "humo", "fuego", "incendio", "fuga", "escape", "gas", "descarga",
-            "electrocucion", "peligro", "emergencia", "chispa", "chispas", "quemado"
+            "electrocucion", "pelado", "cable pelado", "olor a quemado", "peligro", "emergencia", "chispa", "chispas", "quemado"
         ],
         "priority": IncidentPriority.CRITICAL,
         "team": ResponsibleTeam.SECURITY,
