@@ -33,13 +33,17 @@ export default function LoginPage({ initialMode }) {
 
   const from = location.state?.from?.pathname || '/spaces'
 
-  // Sincronizar estado si la ruta cambia externamente
+  // Sincronizar estado si la ruta cambia externamente y limpiar campos
   useEffect(() => {
-    if (initialMode) {
-      setMode(initialMode)
-    } else {
-      setMode(location.pathname === '/register' ? 'register' : 'login')
-    }
+    const targetMode = initialMode || (location.pathname === '/register' ? 'register' : 'login')
+    setMode(targetMode)
+    setName('')
+    setEmail('')
+    setPassword('')
+    setConfirmPassword('')
+    setShowPassword(false)
+    setLocalError(null)
+    clearError()
   }, [location.pathname, initialMode])
 
   // Sanitización y restricción de caracteres en tiempo real
@@ -120,6 +124,12 @@ export default function LoginPage({ initialMode }) {
   const handleModeSwitch = (newMode) => {
     if (newMode === mode) return
     setMode(newMode)
+    setName('')
+    setEmail('')
+    setPassword('')
+    setConfirmPassword('')
+    setShowPassword(false)
+    setRoleType('teacher')
     setLocalError(null)
     clearError()
     // Actualizar URL sin desmontar el componente (elimina el parpadeo de navegación)
