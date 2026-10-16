@@ -122,6 +122,8 @@ Para la sustentación frente al jurado, cualquier cambio de regla se encuentra c
 
 ## 5. Demostración en Vivo para el Jurado
 
+El modelo de Groq configurado usa esquema JSON estricto para evitar respuestas incompletas. Un relato ajeno o claramente inverosímil devuelve `is_reportable=false` sin token de confirmación; el formulario solicita aclaración. Si el proveedor falla, la respuesta indica `classification_source="rules"` y `fallback_reason`; los textos sin señales reconocibles tampoco reciben token. La recomendación de salas consulta primero aforo y disponibilidad en SQLite y permite a la IA escoger solo entre identificadores elegibles.
+
 ### Demostración 1: Probar que la IA es Real
 1. Configurar el proveedor Groq en el `.env` local (ignorado por Git):
    ```dotenv

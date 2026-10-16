@@ -64,6 +64,7 @@ class IncidentService:
         suggests_blocking = False
         recommendation = None
         assigned_team = ResponsibleTeam.ADMINISTRATION
+        rules_res = None
 
         if data.analysis_token:
             token_payload = verify_analysis_token(data.analysis_token, data.description)
@@ -89,6 +90,11 @@ class IncidentService:
             assigned_team = rules_res["responsible_team"]
             suggests_blocking = rules_res["suggests_blocking"]
             recommendation = rules_res["recommendation"]
+
+        if rules_res is not None and not rules_res["matched_keywords"]:
+            raise ValidationError(
+                "La descripción no contiene una falla operativa reconocible. Analízala con IA o aclara los síntomas antes de registrarla."
+            )
 
         # Si el usuario mandó explícitamente categoría o prioridad válidas, permitir ajuste humano
         if data.category:

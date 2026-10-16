@@ -11,7 +11,7 @@ from app.modules.recommendations.service import RecommendationService
 
 
 @pytest.mark.asyncio
-async def test_groq_provider_uses_endpoint_and_json_mode(monkeypatch):
+async def test_groq_provider_uses_endpoint_and_strict_json_schema(monkeypatch):
     monkeypatch.setattr(settings, "AI_PROVIDER", "groq")
     monkeypatch.setattr(settings, "AI_BASE_URL", None)
     monkeypatch.setattr(settings, "AI_MODEL", "openai/gpt-oss-20b")
@@ -36,7 +36,47 @@ async def test_groq_provider_uses_endpoint_and_json_mode(monkeypatch):
     assert model == "openai/gpt-oss-20b"
     assert fallback is None
     assert str(requests[0].url) == "https://api.groq.com/openai/v1/chat/completions"
-    assert json.loads(requests[0].content)["response_format"] == {"type": "json_object"}
+    payload = json.loads(requests[0].content)
+    assert payload["response_format"]["type"] == "json_schema"
+    assert payload["response_format"]["json_schema"]["strict"] is True
+    assert payload["reasoning_effort"] == "low"
+
+
+@pytest.mark.asyncio
+async def test_irrelevant_story_is_not_reportable_or_signed(db_session):
+    ai_payload = {"choices": [{"message": {"content": json.dumps({
+        "category": "safety", "priority": "critical", "responsible_team": "security",
+        "recommendation": "Evacuar.", "explanation": "Relato inverosímil.",
+        "suggests_blocking": True, "is_reportable": False,
+    })}}]}
+    provider = ChatCompletionsAIProvider(transport=httpx.MockTransport(
+        lambda _request: httpx.Response(200, json=ai_payload)
+    ))
+    result = await RecommendationService(ai_provider=provider).analyze_incident(
+        "En el auditorio explotó un volcán y todos se murieron.", None, "SAL-001", None, db_session
+    )
+    assert result.classification_source == ClassificationSource.AI
+    assert result.is_reportable is False
+    assert result.category == "other"
+    assert result.priority == "low"
+    assert result.suggests_blocking is False
+    assert result.analysis_token is None
+    assert result.alternatives == []
+
+
+@pytest.mark.asyncio
+async def test_rules_fallback_requests_clarification_for_unmatched_story(db_session):
+    provider = ChatCompletionsAIProvider(transport=httpx.MockTransport(
+        lambda _request: httpx.Response(503)
+    ))
+    result = await RecommendationService(ai_provider=provider).analyze_incident(
+        "En la sala del auditorio explotó un volcán y todos se murieron.",
+        None, "SAL-001", None, db_session,
+    )
+    assert result.classification_source == ClassificationSource.RULES
+    assert result.is_reportable is False
+    assert result.analysis_token is None
+    assert result.priority == "low"
 
 
 @pytest.mark.asyncio
@@ -199,3 +239,12 @@ def test_tampered_analysis_token_does_not_spoof_ai(client, teacher_token):
     data = res.json()
     # Debe ser clasificado por rules y no por ai falsificado
     assert data["classification_source"] == "rules"
+
+
+def test_direct_absurd_report_without_ai_token_is_rejected(client, teacher_token):
+    response = client.post(
+        "/incidents",
+        json={"description": "En el auditorio explotó un volcán y todos se murieron.", "space_id": "SAL-001"},
+        headers={"Authorization": f"Bearer {teacher_token}"},
+    )
+    assert response.status_code == 422

@@ -15,6 +15,7 @@ export default function RecommendationCard({
   suggestsBlocking = false,
   alternatives = [],
   aiModel,
+  fallbackReason,
   latencyMs,
   isConfirmed = false,
   onConfirmReallocation,
@@ -57,6 +58,9 @@ export default function RecommendationCard({
             <span className="text-[10px] font-mono text-[#8d90a0]">
               {latencyMs}ms
             </span>
+          )}
+          {!isAI && fallbackReason && (
+            <span className="text-[10px] font-mono text-[#ff9f0a]">Motivo: {fallbackReason}</span>
           )}
         </div>
 

@@ -66,7 +66,7 @@ export default function ReservationPage() {
     if (recAttendees) setAttendees(Number(recAttendees))
     if (recTitle) setTitle(recTitle)
     const matched = spaces.find((s) => String(s.id) === String(recSpaceId))
-    setSuccess(`¡Asistente Groq aplicó la sala ${matched?.name || recSpaceId} (${recAttendees || attendees} asistentes)!`)
+    setSuccess(`Sala sugerida aplicada: ${matched?.name || recSpaceId} (${recAttendees || attendees} asistentes).`)
   }
 
   // Cargar salas y reservas actuales
@@ -253,7 +253,7 @@ export default function ReservationPage() {
             </p>
           </div>
 
-          {/* Acceso rápido y Asistente IA Groq */}
+          {/* Acceso rápido al asistente de salas */}
           <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
@@ -261,7 +261,7 @@ export default function ReservationPage() {
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-600/30 via-cyan-500/20 to-blue-600/30 hover:from-blue-600/45 hover:to-cyan-500/35 text-white text-xs font-semibold border border-cyan-400/40 shadow-[0_0_15px_rgba(34,211,238,0.25)] hover:shadow-[0_0_20px_rgba(34,211,238,0.4)] active:scale-95 transition-all cursor-pointer"
             >
               <span className="text-cyan-300">✨</span>
-              <span>Asistente IA Groq</span>
+              <span>Asistente de salas</span>
             </button>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1c1c1e] text-[#a1a1a6] text-xs font-mono border border-white/[0.08]">
               <span className="w-2 h-2 rounded-full bg-[#30D158] animate-pulse" />
@@ -287,13 +287,13 @@ export default function ReservationPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Banner sugerencia Asistente IA Groq */}
+            {/* Banner del asistente de salas */}
             <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-950/40 via-[#1c1c1e] to-cyan-950/30 border border-blue-500/25 flex items-center justify-between gap-3 shadow-[0_0_15px_rgba(37,99,235,0.1)]">
               <div className="flex items-center gap-2.5">
                 <span className="text-base text-cyan-400">✨</span>
                 <div>
                   <p className="text-xs font-semibold text-white">¿Dudas sobre qué sala elegir?</p>
-                  <p className="text-[11px] text-[#a1a1a6]">Pídele a Groq recomendaciones por aforo y equipamiento</p>
+                  <p className="text-[11px] text-[#a1a1a6]">Consulta salas según aforo y disponibilidad real</p>
                 </div>
               </div>
               <button
@@ -451,6 +451,9 @@ export default function ReservationPage() {
         userName={userName}
         initialAttendees={attendees}
         initialTitle={title}
+        date={date}
+        startTime={startTime}
+        endTime={endTime}
         onApplyRecommendation={handleApplyRecommendation}
       />
     </div>

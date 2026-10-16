@@ -78,6 +78,19 @@ class RecommendationService:
             recommendation = ai_result.recommendation
             explanation = ai_result.explanation
             suggests_blocking = ai_result.suggests_blocking
+            is_reportable = ai_result.is_reportable
+            if not is_reportable:
+                category = IncidentCategory.OTHER
+                priority = IncidentPriority.LOW
+                responsible_team = ResponsibleTeam.ADMINISTRATION
+                suggests_blocking = False
+                recommendation = "Describe una falla o novedad verificable del campus antes de registrar el reporte."
+            else:
+                suggests_blocking = (
+                    suggests_blocking
+                    and category in {IncidentCategory.SAFETY, IncidentCategory.ELECTRICAL, IncidentCategory.INFRASTRUCTURE}
+                    and priority in {IncidentPriority.HIGH, IncidentPriority.CRITICAL}
+                )
         else:
             # Fallback honesto hacia clasificador de reglas locales
             classification_source = ClassificationSource.RULES
@@ -88,20 +101,21 @@ class RecommendationService:
             recommendation = rules_result["recommendation"]
             explanation = rules_result["explanation"]
             suggests_blocking = rules_result["suggests_blocking"]
+            is_reportable = bool(rules_result["matched_keywords"])
             ai_model = None
             if latency_ms == 0:
                 latency_ms = int((time.perf_counter() - start_time) * 1000)
 
         # 4. Búsqueda de alternativas sobre datos reales (nunca inventar datos)
         alternatives: list[AlternativeItem] = []
-        if detected_space_id and (suggests_blocking or priority in (IncidentPriority.HIGH, IncidentPriority.CRITICAL)):
+        if is_reportable and detected_space_id and (suggests_blocking or priority in (IncidentPriority.HIGH, IncidentPriority.CRITICAL)):
             space_alts = get_space_alternatives(detected_space_id, db)
             for alt in space_alts:
                 alternatives.append(AlternativeItem(**alt))
             if not alternatives:
                 warnings.append("No se encontraron salas alternativas disponibles con aforo compatible.")
 
-        if detected_resource_id and (suggests_blocking or priority in (IncidentPriority.HIGH, IncidentPriority.CRITICAL)):
+        if is_reportable and detected_resource_id and (suggests_blocking or priority in (IncidentPriority.HIGH, IncidentPriority.CRITICAL)):
             res_alts = get_resource_alternatives(detected_resource_id, db)
             for alt in res_alts:
                 alternatives.append(AlternativeItem(**alt))
@@ -116,7 +130,7 @@ class RecommendationService:
             responsible_team=responsible_team.value,
             suggests_blocking=suggests_blocking,
             description=description,
-        )
+        ) if is_reportable else None
 
         return IncidentAnalysisResponse(
             classification_source=classification_source,
@@ -126,6 +140,7 @@ class RecommendationService:
             recommendation=recommendation,
             explanation=explanation,
             suggests_blocking=suggests_blocking,
+            is_reportable=is_reportable,
             space_id=detected_space_id,
             resource_id=detected_resource_id,
             alternatives=alternatives,

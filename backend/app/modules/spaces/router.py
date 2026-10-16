@@ -9,10 +9,24 @@ from app.core.permissions import get_current_user
 from app.db.session import get_db
 from app.modules.auth.models import User
 from app.modules.spaces import service
+from app.modules.spaces.recommendation import (
+    SpaceRecommendationRequest,
+    SpaceRecommendationResponse,
+    recommend_space,
+)
 from app.modules.spaces.schemas import SpaceAvailabilityResponse
 
 
 router = APIRouter(prefix="/spaces", tags=["spaces"])
+
+
+@router.post("/recommend", response_model=SpaceRecommendationResponse)
+async def recommend_room(
+    data: SpaceRecommendationRequest,
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SpaceRecommendationResponse:
+    return await recommend_space(data, db)
 
 
 @router.get("", response_model=list[SpaceAvailabilityResponse])

@@ -1,5 +1,5 @@
 /**
- * Modal Asistente Inteligente de Espacios (Concierge IA con Groq / Llama 3.3)
+ * Modal de recomendaciones de espacios con procedencia visible.
  * Provee recomendaciones contextuales de salas según aforo, actividad y equipamiento.
  * Responsable: GUERRA
  */
@@ -27,6 +27,9 @@ export default function SpaceConciergeModal({
   userName = 'Camper',
   initialAttendees = 20,
   initialTitle = '',
+  date,
+  startTime,
+  endTime,
   onApplyRecommendation,
 }) {
   const [activityTitle, setActivityTitle] = useState(initialTitle || 'Sesión de Trabajo en Equipo')
@@ -45,12 +48,15 @@ export default function SpaceConciergeModal({
   const handleConsult = async () => {
     setIsLoading(true)
     setError(null)
+    setResult(null)
     try {
       const data = await getSpaceRecommendationApi({
         attendees: Number(attendees),
         activityTitle,
         requiredFeatures: selectedFeatures,
-        userName,
+        date,
+        startTime,
+        endTime,
       })
       setResult(data)
     } catch (err) {
@@ -77,7 +83,7 @@ export default function SpaceConciergeModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Asistente Inteligente de Espacios"
-      subtitle="Optimización de salas con Groq Llama 3.3"
+      subtitle="Recomendaciones verificadas con salas y horarios del campus"
       maxWidth="max-w-2xl"
     >
       <div className="space-y-6">
@@ -89,10 +95,10 @@ export default function SpaceConciergeModal({
             </div>
             <div>
               <p className="text-xs font-semibold text-white tracking-wide">
-                Motor Groq Llama 3.3 (70B)
+                Asistente de salas
               </p>
               <p className="text-[11px] text-[#a1a1a6]">
-                Análisis heurístico de aforo y equipamiento en tiempo real
+                Aforo y disponibilidad verificados en el servidor
               </p>
             </div>
           </div>
@@ -182,7 +188,7 @@ export default function SpaceConciergeModal({
               onClick={handleConsult}
               isLoading={isLoading}
             >
-              {isLoading ? 'Consultando Groq IA...' : '⚡ Obtener Recomendación Inteligente'}
+              {isLoading ? 'Analizando salas...' : '⚡ Obtener recomendación'}
             </Button>
           </div>
         </div>
@@ -196,6 +202,9 @@ export default function SpaceConciergeModal({
         {/* Resultados del Concierge */}
         {result && (
           <div className="space-y-4 animate-modal-pop">
+            {result.warnings?.map((warning) => (
+              <div key={warning} className="p-3 text-xs rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-200">{warning}</div>
+            ))}
             {/* Saludo Personalizado */}
             <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-900/25 via-[#1a202c]/40 to-cyan-900/20 border border-blue-500/30">
               <div className="flex items-start gap-3">
@@ -210,7 +219,7 @@ export default function SpaceConciergeModal({
             {result.recommended_space && (
               <div className="relative overflow-hidden p-5 rounded-2xl bg-[#1a1a1c] border-2 border-blue-500/60 shadow-[0_10px_30px_rgba(37,99,235,0.2)]">
                 <div className="absolute top-0 right-0 px-4 py-1.5 bg-gradient-to-l from-blue-600 to-cyan-500 text-white font-bold text-[10px] uppercase tracking-wider rounded-bl-xl shadow-sm">
-                  ★ Mejor Elección ({result.recommended_space.fit_percentage}% match)
+                  ★ Sala sugerida (ajuste de aforo {result.recommended_space.fit_percentage}%)
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
@@ -268,7 +277,7 @@ export default function SpaceConciergeModal({
                         <div className="flex items-center justify-between mb-1.5">
                           <h5 className="font-bold text-sm text-white">{alt.name}</h5>
                           <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#2c2c2e] text-cyan-300 border border-white/5">
-                            {alt.fit_percentage}% fit
+                            {alt.fit_percentage}% aforo
                           </span>
                         </div>
                         <p className="text-[11px] text-[#8e8e93] mb-2">
@@ -294,11 +303,12 @@ export default function SpaceConciergeModal({
 
             {/* Telemetría y Fuente */}
             <div className="flex flex-wrap items-center justify-between text-[11px] font-mono text-[#8e8e93] pt-2 border-t border-white/[0.06]">
-              <span>Motor: {result.ai_model}</span>
+              <span>Motor: {result.ai_model || 'Reglas locales'}</span>
               <span>
-                Fuente: {result.classification_source === 'ai' ? 'Groq Cloud (Llama 3.3)' : 'Reglas Deterministas (Fallback)'}
+                Fuente: {result.classification_source === 'ai' ? 'IA' : 'Reglas locales (fallback)'}
               </span>
-              <span>Latencia: ~{result.latency_ms}ms</span>
+              <span>Latencia: {result.latency_ms}ms</span>
+              {result.fallback_reason && <span>Motivo: {result.fallback_reason}</span>}
             </div>
           </div>
         )}

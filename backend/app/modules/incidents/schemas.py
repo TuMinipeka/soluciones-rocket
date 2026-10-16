@@ -86,6 +86,7 @@ class IncidentAnalysisResponse(BaseModel):
                 "recommendation": "Desconectar interruptor principal y evacuar sala temporalmente.",
                 "explanation": "Olor a quemado y chispas indican riesgo eléctrico crítico.",
                 "suggests_blocking": True,
+                "is_reportable": True,
                 "space_id": "SAL-002",
                 "resource_id": None,
                 "alternatives": [
@@ -97,7 +98,7 @@ class IncidentAnalysisResponse(BaseModel):
                     }
                 ],
                 "warnings": [],
-                "ai_model": "gpt-4o-mini",
+                "ai_model": "openai/gpt-oss-20b",
                 "fallback_reason": None,
                 "latency_ms": 280,
                 "analysis_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -112,6 +113,7 @@ class IncidentAnalysisResponse(BaseModel):
     recommendation: str
     explanation: str
     suggests_blocking: bool
+    is_reportable: bool = True
     space_id: str | None = None
     resource_id: str | None = None
     alternatives: list[AlternativeItem] = Field(default_factory=list)
@@ -119,7 +121,7 @@ class IncidentAnalysisResponse(BaseModel):
     ai_model: str | None = None
     fallback_reason: FallbackReason | None = None
     latency_ms: int = 0
-    analysis_token: str
+    analysis_token: str | None
 
 
 class IncidentCreateRequest(BaseModel):
