@@ -209,3 +209,42 @@ def test_space_calendar_returns_persisted_slots_without_owner_data(
         },
     ]
     assert all("user_id" not in slot for slot in response.json())
+
+
+def test_calendar_occupied_slot_is_rejected_when_posted_directly(
+    client, teacher_token
+):
+    first = client.post(
+        "/reservations",
+        json={
+            "space_id": "SAL-002",
+            "date": "2026-10-20",
+            "start_time": "08:00",
+            "end_time": "10:00",
+            "attendees": 10,
+            "title": "Reserva existente",
+        },
+        headers=auth(teacher_token),
+    )
+    assert first.status_code == 201
+    slots = client.get(
+        "/spaces/SAL-002/reservations",
+        params={"date": "2026-10-20"},
+        headers=auth(teacher_token),
+    ).json()
+    assert slots[0]["status"] == "confirmed"
+
+    conflict = client.post(
+        "/reservations",
+        json={
+            "space_id": "SAL-002",
+            "date": "2026-10-20",
+            "start_time": "09:00",
+            "end_time": "11:00",
+            "attendees": 5,
+            "title": "Intento manual",
+        },
+        headers=auth(teacher_token),
+    )
+    assert conflict.status_code == 409
+    assert conflict.json()["error"]["code"] == "CONFLICT"
