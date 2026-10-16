@@ -8,6 +8,8 @@ incidencia crítica bloquea o libera un espacio.
 import unicodedata
 from sqlalchemy.orm import Session
 
+from app.modules.spaces.models import Space
+
 
 # Catálogo oficial de las 10 salas del campus (Fuente: docs/hackaton-rubricas-informacion.md)
 OFFICIAL_SPACES = {
@@ -22,10 +24,6 @@ OFFICIAL_SPACES = {
     "SAL-009": {"name": "Verdes", "capacity": 6},
     "SAL-010": {"name": "Artemis", "capacity": 32},
 }
-
-# Estado de bloqueo en memoria como fallback hasta que Conde monte la tabla de spaces
-_space_block_status: dict[str, bool] = {k: False for k in OFFICIAL_SPACES}
-
 
 def strip_accents(text: str) -> str:
     """Normaliza texto eliminando acentos y diacríticos."""
@@ -55,20 +53,19 @@ def match_space_by_text(text: str) -> str | None:
 
 
 def set_space_status(space_id: str, is_blocked: bool, _reason: str, _db: Session) -> bool:
-    """Punto de integración para marcar una sala como inhabilitada o disponible.
-    
-    Cuando Conde entregue su modelo Space, esta función actualizará space.is_active
-    en la misma transacción.
-    """
+    """Stage a room block in the caller's transaction."""
     sid = space_id.upper()
-    if sid in OFFICIAL_SPACES:
-        _space_block_status[sid] = is_blocked
-        return True
-    return False
+    space = _db.get(Space, sid)
+    if space is None:
+        return False
+    space.is_blocked = is_blocked
+    _db.flush()
+    return True
 
 
-def is_space_blocked(space_id: str) -> bool:
-    return _space_block_status.get(space_id.upper(), False)
+def is_space_blocked(space_id: str, db: Session) -> bool:
+    space = db.get(Space, space_id.upper())
+    return bool(space and space.is_blocked)
 
 
 def get_space_alternatives(space_id: str, _db: Session) -> list[dict]:
@@ -89,7 +86,7 @@ def get_space_alternatives(space_id: str, _db: Session) -> list[dict]:
     for other_id, other_info in OFFICIAL_SPACES.items():
         if other_id == sid:
             continue
-        if is_space_blocked(other_id):
+        if is_space_blocked(other_id, _db):
             continue
 
         cap = other_info["capacity"]

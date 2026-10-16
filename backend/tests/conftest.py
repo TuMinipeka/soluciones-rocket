@@ -18,11 +18,14 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.security import create_access_token, hash_password
 from app.db.base import Base
+import app.db.models  # Register all domain tables before create_all.
 from app.db.session import get_db
 from app.main import app
 from app.modules.auth.enums import Role
 from app.modules.auth.models import User
 from app.modules.incidents.models import Incident, IncidentEvent
+from app.modules.spaces.models import Space
+from app.services.availability import OFFICIAL_SPACES
 
 
 # Motor SQLite en memoria aislado por prueba con StaticPool
@@ -38,6 +41,12 @@ TestingSessionLocal = sessionmaker(bind=TEST_ENGINE, autoflush=False, autocommit
 def setup_test_db():
     """Crea todas las tablas antes de cada test y las elimina al finalizar."""
     Base.metadata.create_all(bind=TEST_ENGINE)
+    with TestingSessionLocal() as session:
+        session.add_all(
+            Space(id=sid, name=info["name"], capacity=info["capacity"])
+            for sid, info in OFFICIAL_SPACES.items()
+        )
+        session.commit()
     yield
     Base.metadata.drop_all(bind=TEST_ENGINE)
 

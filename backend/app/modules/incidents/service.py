@@ -56,7 +56,7 @@ class IncidentService:
             raise ValidationError(f"La sala '{data.space_id}' no pertenece al catálogo oficial de salas.")
 
         # 2. Validar recurso si se especifica
-        if data.resource_id and not is_valid_resource(data.resource_id):
+        if data.resource_id and not is_valid_resource(data.resource_id, db):
             raise ValidationError(f"El identificador de recurso '{data.resource_id}' no es válido.")
 
         # 3. Determinar clasificación (origen seguro)
