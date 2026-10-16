@@ -3,46 +3,46 @@ import Card from '../ui/Card';
 import Button from '../ui/Button';
 
 /**
- * RecommendationCard: Tarjeta de recomendación de reubicación y continuidad operativa (HU-20).
- * Diferencia explícitamente el origen:
- * - 'ai': Brillo cian #0891B2 con texto "Clasificación por IA"
- * - 'rules': Badge neutro #A1A1A6 con texto "Clasificación por Reglas Locales (Fallback)"
- * El botón "Confirmar Reubicación" solo se habilita o muestra para rol 'admin'.
+ * RecommendationCard: Tarjeta de recomendación de triaje y reubicación inteligente (HU-20).
+ * - Distingue 'ai' (chip cian #0891B2 "Clasificación IA") vs 'rules' (#A1A1A6 "Reglas Locales (Fallback)").
+ * - Caso borde: Si alternatives.length === 0, renderiza alerta explícita en texto claro.
+ * - Restricción por rol: El botón "Confirmar Reubicación" SOLO es visible y ejecutable si user?.role === 'admin'.
  */
 export default function RecommendationCard({
   recommendation,
+  incident,
+  user,
   onConfirm,
   isConfirming = false,
-  userRole = 'ADMIN',
   className = '',
 }) {
-  if (!recommendation) return null;
+  if (!recommendation && !incident?.recommendation) return null;
 
-  const {
-    classification_source = recommendation.source || 'ai', // 'ai' | 'rules'
-    targetRoomId = 'SAL-004',
-    targetRoomName = 'Spooki',
-    reason = 'Aforo compatible (38 PCs disponibles vs 34 requeridas), climatización operativa y franja horaria sin solapes.',
-    confidence = 0.96,
-    affectedReservationsCount = 1,
-    ruleName = 'Compatibilidad por Aforo y Equipamiento',
-  } = recommendation;
+  const rec = recommendation || incident.recommendation || {};
+  const classificationSource = rec.classification_source || incident?.classification_source || 'ai';
+  const alternatives = rec.alternatives || [];
+  const hasNoAlternatives = alternatives.length === 0 && !rec.targetRoomId && !rec.target_room_id;
 
-  const isAi = classification_source === 'ai';
-  const isAdmin = String(userRole).toUpperCase() === 'ADMIN';
+  const targetRoomName = rec.targetRoomName || rec.target_room_name || (alternatives[0]?.name) || 'Spooki';
+  const targetRoomId = rec.targetRoomId || rec.target_room_id || (alternatives[0]?.id) || 'SAL-004';
+  const reason = rec.reason || (alternatives[0]?.reason) || 'Aforo compatible y equipamiento técnico equivalente disponible sin conflictos.';
+  const confidence = rec.confidence || (rec.ai_model ? 0.95 : null);
+
+  const isAi = classificationSource === 'ai';
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
 
   return (
     <Card
       variant="elevated"
       className={`border-l-4 transition-all duration-200 ${
         isAi
-          ? 'border-l-[#0891B2] bg-gradient-to-r from-[#0891B2]/15 via-[#1C1C1E] to-[#1C1C1E] shadow-[0_0_25px_rgba(8,145,178,0.18)]'
+          ? 'border-l-[#0891B2] bg-gradient-to-r from-[#0891B2]/15 via-[#1C1C1E] to-[#1C1C1E] shadow-[0_0_25px_rgba(8,145,178,0.2)]'
           : 'border-l-[#A1A1A6] bg-gradient-to-r from-[#2C2C2E]/60 via-[#1C1C1E] to-[#1C1C1E]'
       } ${className}`}
       padding="p-5 sm:p-6"
     >
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        {/* Source Badge y Título */}
+        {/* Chips de Clasificación */}
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             {isAi ? (
@@ -51,14 +51,14 @@ export default function RecommendationCard({
                 <svg className="w-3.5 h-3.5 text-[#22D3EE]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                <span>Clasificación por IA</span>
+                <span>Clasificación IA</span>
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#2C2C2E] border border-[rgba(255,255,255,0.15)] text-[#A1A1A6]">
                 <svg className="w-3.5 h-3.5 text-[#A1A1A6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                <span>Clasificación por Reglas Locales (Fallback)</span>
+                <span>Reglas Locales (Fallback)</span>
               </span>
             )}
 
@@ -70,18 +70,19 @@ export default function RecommendationCard({
           </div>
 
           <h4 className="text-base sm:text-lg font-bold text-[#F5F5F7] tracking-tight">
-            Sala alternativa sugerida: <span className="text-[#22D3EE] font-extrabold">{targetRoomName}</span> ({targetRoomId})
+            Propuesta de Reubicación:{' '}
+            <span className="text-[#22D3EE] font-extrabold">{targetRoomName}</span> ({targetRoomId})
           </h4>
         </div>
 
-        {/* Botón Administrativo de Reubicación (HU-20) */}
-        <div className="shrink-0 flex flex-col items-end gap-1">
-          {isAdmin ? (
+        {/* Botón de Acción Administrativa (SOLO VISIBLE para admin) */}
+        {isAdmin && !hasNoAlternatives && (
+          <div className="shrink-0 flex items-center">
             <Button
               variant={isAi ? 'secondary' : 'primary'}
               size="md"
               isLoading={isConfirming}
-              onClick={() => onConfirm?.(recommendation)}
+              onClick={() => onConfirm?.({ ...rec, targetRoomId, targetRoomName, reason })}
               icon={
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -90,45 +91,38 @@ export default function RecommendationCard({
             >
               Confirmar Reubicación
             </Button>
-          ) : (
-            <div className="flex flex-col items-end">
-              <Button variant="outline" size="sm" disabled>
-                Confirmar Reubicación
-              </Button>
-              <span className="text-[10px] text-[#A1A1A6] mt-1">
-                Requiere rol Administrador
-              </span>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Justificación Operativa */}
-      <div className="mt-4 pt-4 border-t border-[rgba(255,255,255,0.06)] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-        <div className="md:col-span-2 space-y-1">
-          <span className="text-[#A1A1A6] font-bold uppercase tracking-wider block">
-            Justificación de Continuidad Operativa:
-          </span>
-          <p className="text-[#F5F5F7]/90 leading-relaxed text-xs sm:text-sm">
-            {reason}
-          </p>
-          {!isAi && ruleName && (
-            <p className="text-[11px] font-mono text-[#A1A1A6] pt-1">
-              Motor Heurístico: {ruleName}
+      {/* Caso Borde: Alerta si no existen alternativas viables */}
+      {hasNoAlternatives ? (
+        <div className="mt-4 p-3.5 rounded-[0.75rem] bg-[#FF453A]/10 border border-[#FF453A]/30 text-xs sm:text-sm text-[#FF453A] font-semibold flex items-center gap-2">
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>No hay salas alternativas con aforo y equipamiento disponible para este horario.</span>
+        </div>
+      ) : (
+        /* Justificación y Detalles Técnicos */
+        <div className="mt-4 pt-4 border-t border-[rgba(255,255,255,0.06)] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="md:col-span-2 space-y-1">
+            <span className="text-[#A1A1A6] font-bold uppercase tracking-wider block">
+              Justificación de Continuidad:
+            </span>
+            <p className="text-[#F5F5F7]/90 leading-relaxed text-xs sm:text-sm">
+              {reason}
             </p>
-          )}
-        </div>
+          </div>
 
-        <div className="p-3 rounded-xl bg-[#1C1C1E]/90 border border-[rgba(255,255,255,0.06)] flex flex-col justify-center">
-          <span className="text-[#A1A1A6] text-[11px]">Reservas por Mitigar</span>
-          <span className="text-xl font-extrabold text-[#FF9F0A] mt-0.5">
-            {affectedReservationsCount} sesión
-          </span>
-          <span className="text-[10px] text-[#A1A1A6] mt-0.5">
-            Preserva la actividad docente
-          </span>
+          <div className="p-3 rounded-xl bg-[#1C1C1E]/90 border border-[rgba(255,255,255,0.06)] flex flex-col justify-center">
+            <span className="text-[#A1A1A6] text-[11px]">Control de Acceso</span>
+            <span className="text-xs font-bold text-[#F5F5F7] mt-0.5">
+              {isAdmin ? 'Autorizado para mitigar' : 'Vista de solo lectura (Docente/Soporte)'}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </Card>
   );
 }

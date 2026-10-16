@@ -1,78 +1,120 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import * as spacesApi from '../api/spaces';
 import RoomMap, { OFFICIAL_CAMPUS_ROOMS } from '../components/spaces/RoomMap';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import LoadingState from '../components/feedback/LoadingState';
 import EmptyState from '../components/feedback/EmptyState';
+import ErrorMessage from '../components/feedback/ErrorMessage';
+
+// Resolver la función API de Guerra de forma segura
+const getSpacesClient = spacesApi.getSpaces || spacesApi.getSpacesApi;
 
 /**
- * SpacesPage: Vista principal de supervisión de espacios y plano interactivo (HU-18).
- * Admite filtrado dinámico por aforo, estado, franja horaria y búsqueda por texto.
+ * SpacesPage: Conexión dinámica del Mapa de Salas con API y gestión de estados (HU-18).
+ * Consume GET /spaces con filtros de franja (date, start_at, end_at) y maneja carga, error y vacío.
  */
 export default function SpacesPage() {
+  // 1. Estado reactivo para filtros (por defecto fecha actual en formato ISO)
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [startAt, setStartAt] = useState('08:00');
+  const [endAt, setEndAt] = useState('10:00');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [minCapacity, setMinCapacity] = useState('');
-  const [selectedSlot, setSelectedSlot] = useState('CURRENT');
-  const [rooms, setRooms] = useState(OFFICIAL_CAMPUS_ROOMS);
-  const [isLoading, setIsLoading] = useState(false);
+
+  // 2. Estados de ciclo de vida de datos
+  const [rooms, setRooms] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Simulación de sincronización desacoplada con backend / GET /spaces
-  const handleSync = async () => {
+  // 3. Invocación desacoplada a la API de espacios
+  const fetchSpacesData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+
     try {
-      // Simular latencia de red para inspección de UX
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setRooms([...OFFICIAL_CAMPUS_ROOMS]);
+      if (typeof getSpacesClient === 'function') {
+        const params = {
+          date,
+          start_at: startAt,
+          end_at: endAt,
+          start_time: startAt,
+          end_time: endAt,
+        };
+        const response = await getSpacesClient(params);
+        const data = Array.isArray(response) ? response : response?.data || response?.items || [];
+
+        if (Array.isArray(data) && data.length > 0) {
+          setRooms(data);
+        } else {
+          setRooms([]);
+        }
+      } else {
+        // Fallback controlado si la API de Guerra aún no está exportada
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        setRooms(OFFICIAL_CAMPUS_ROOMS);
+      }
     } catch (err) {
-      setError('No se pudo sincronizar la disponibilidad con el servidor.');
+      // Registrar error con mensaje legible para el usuario
+      const errMessage =
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        'Error al conectar con el servicio de espacios de Campuslands.';
+      setError(errMessage);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [date, startAt, endAt]);
 
-  // Filtrado reactivo en memoria
+  // Invocar al montar y al cambiar fecha o franjas horarias
+  useEffect(() => {
+    fetchSpacesData();
+  }, [fetchSpacesData]);
+
+  // Filtrado reactivo en cliente (búsqueda, aforo y estado)
   const filteredRooms = useMemo(() => {
     return rooms.filter((room) => {
       const matchSearch =
-        room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        room.id.toLowerCase().includes(searchTerm.toLowerCase());
+        room.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        room.id?.toLowerCase().includes(searchTerm.toLowerCase());
 
+      const normalizedStatus = (room.status || (room.is_blocked ? 'disabled' : 'available')).toLowerCase();
       const matchStatus =
         statusFilter === 'ALL' ||
-        (statusFilter === 'available' && room.status === 'available') ||
-        (statusFilter === 'busy' && room.status === 'busy') ||
-        (statusFilter === 'incident' && (room.status === 'incident' || room.status === 'maintenance'));
+        (statusFilter === 'available' && normalizedStatus === 'available') ||
+        (statusFilter === 'occupied' && (normalizedStatus === 'occupied' || normalizedStatus === 'busy')) ||
+        (statusFilter === 'incident' && normalizedStatus === 'incident') ||
+        (statusFilter === 'disabled' && (normalizedStatus === 'disabled' || normalizedStatus === 'maintenance'));
 
       const minCap = parseInt(minCapacity, 10);
-      const matchCap = isNaN(minCap) || room.capacity >= minCap;
+      const matchCap = isNaN(minCap) || (room.capacity || 0) >= minCap;
 
       return matchSearch && matchStatus && matchCap;
     });
   }, [rooms, searchTerm, statusFilter, minCapacity]);
 
-  // Totales
-  const totalCapacity = rooms.reduce((acc, r) => acc + r.capacity, 0);
-  const availableCount = rooms.filter((r) => r.status === 'available').length;
-  const busyCount = rooms.filter((r) => r.status === 'busy').length;
-  const incidentCount = rooms.filter((r) => r.status === 'incident' || r.status === 'maintenance').length;
+  // Contadores dinámicos del payload devuelto
+  const totalCapacity = rooms.reduce((acc, r) => acc + (r.capacity || 0), 0);
+  const availableCount = rooms.filter((r) => r.status === 'available' && !r.is_blocked).length;
+  const occupiedCount = rooms.filter((r) => r.status === 'occupied' || r.status === 'busy').length;
+  const disabledCount = rooms.filter((r) => r.status === 'disabled' || r.status === 'maintenance' || r.is_blocked).length;
 
   return (
-    <div className="space-y-6 animate-fluid-enter">
-      {/* Cabecera de Página */}
+    <div className="space-y-6 animate-fluid-enter" role="region" aria-label="Supervisión de Salas">
+      {/* Cabecera y Sincronización */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[rgba(255,255,255,0.08)]">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#F5F5F7]">
-              Salas y Espacios Tecnológicos
+              Salas y Disponibilidad
             </h1>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#2563EB]/20 text-[#60A5FA] font-bold border border-[#2563EB]/30">
-              10 Aulas Oficiales
+              HU-18 &bull; Conexión API
             </span>
           </div>
           <p className="text-xs sm:text-sm text-[#A1A1A6] mt-1">
-            Supervisión visual tipo cine del aforo oficial ({totalCapacity} puestos en campus) y ocupación en tiempo real.
+            Plano interactivo tipo cine con aforos oficiales ({totalCapacity} plazas) y verificación en tiempo real de solapamientos.
           </p>
         </div>
 
@@ -81,7 +123,7 @@ export default function SpacesPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleSync}
+            onClick={fetchSpacesData}
             isLoading={isLoading}
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -89,7 +131,7 @@ export default function SpacesPage() {
               </svg>
             }
           >
-            Sincronizar
+            Actualizar
           </Button>
 
           <a href="/reservations">
@@ -108,7 +150,56 @@ export default function SpacesPage() {
         </div>
       </div>
 
-      {/* Barra de KPIs Resumen */}
+      {/* Selector Reactivo de Franja de Disponibilidad (date, start_at, end_at) */}
+      <div className="p-4 rounded-[1.25rem] bg-[#1C1C1E] border border-[rgba(255,255,255,0.08)] flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <label htmlFor="space-date" className="text-xs font-bold text-[#A1A1A6] uppercase tracking-wider shrink-0">
+              Fecha:
+            </label>
+            <input
+              id="space-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="bg-[#2C2C2E] text-[#F5F5F7] text-xs font-semibold px-3 py-2 rounded-[0.75rem] border border-[rgba(255,255,255,0.08)] outline-none focus:ring-2 focus:ring-[#2563EB]"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="space-start" className="text-xs font-bold text-[#A1A1A6] uppercase tracking-wider shrink-0">
+              Desde:
+            </label>
+            <input
+              id="space-start"
+              type="time"
+              value={startAt}
+              onChange={(e) => setStartAt(e.target.value)}
+              className="bg-[#2C2C2E] text-[#F5F5F7] text-xs font-semibold px-3 py-2 rounded-[0.75rem] border border-[rgba(255,255,255,0.08)] outline-none focus:ring-2 focus:ring-[#2563EB]"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="space-end" className="text-xs font-bold text-[#A1A1A6] uppercase tracking-wider shrink-0">
+              Hasta:
+            </label>
+            <input
+              id="space-end"
+              type="time"
+              value={endAt}
+              onChange={(e) => setEndAt(e.target.value)}
+              className="bg-[#2C2C2E] text-[#F5F5F7] text-xs font-semibold px-3 py-2 rounded-[0.75rem] border border-[rgba(255,255,255,0.08)] outline-none focus:ring-2 focus:ring-[#2563EB]"
+            />
+          </div>
+        </div>
+
+        <div className="text-xs text-[#A1A1A6] flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-[#30D158]" />
+          <span>Calculando disponibilidad en franja consultada</span>
+        </div>
+      </div>
+
+      {/* Barra de KPIs Resumen Dinámico */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-3.5 rounded-[1.25rem] bg-[#1C1C1E] border border-[rgba(255,255,255,0.08)] flex items-center justify-between">
           <div>
@@ -120,8 +211,8 @@ export default function SpacesPage() {
 
         <div className="p-3.5 rounded-[1.25rem] bg-[#1C1C1E] border border-[rgba(255,255,255,0.08)] flex items-center justify-between">
           <div>
-            <span className="text-[11px] text-[#A1A1A6] uppercase tracking-wider block font-semibold">En Uso</span>
-            <span className="text-xl font-extrabold text-[#FF9F0A]">{busyCount} salas</span>
+            <span className="text-[11px] text-[#A1A1A6] uppercase tracking-wider block font-semibold">Ocupadas</span>
+            <span className="text-xl font-extrabold text-[#FF9F0A]">{occupiedCount} salas</span>
           </div>
           <span className="w-2.5 h-2.5 rounded-full bg-[#FF9F0A]" />
         </div>
@@ -129,26 +220,25 @@ export default function SpacesPage() {
         <div className="p-3.5 rounded-[1.25rem] bg-[#1C1C1E] border border-[rgba(255,255,255,0.08)] flex items-center justify-between">
           <div>
             <span className="text-[11px] text-[#A1A1A6] uppercase tracking-wider block font-semibold">Inhabilitadas</span>
-            <span className="text-xl font-extrabold text-[#FF6B35]">{incidentCount} salas</span>
+            <span className="text-xl font-extrabold text-[#FF453A]">{disabledCount} salas</span>
           </div>
-          <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B35]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#FF453A]" />
         </div>
 
         <div className="p-3.5 rounded-[1.25rem] bg-[#1C1C1E] border border-[rgba(255,255,255,0.08)] flex items-center justify-between">
           <div>
-            <span className="text-[11px] text-[#A1A1A6] uppercase tracking-wider block font-semibold">Aforo Global</span>
+            <span className="text-[11px] text-[#A1A1A6] uppercase tracking-wider block font-semibold">Aforo Franja</span>
             <span className="text-xl font-extrabold text-[#F5F5F7]">{totalCapacity}</span>
           </div>
           <span className="text-xs text-[#A1A1A6]">asistentes</span>
         </div>
       </div>
 
-      {/* Barra de Filtros Multifunción */}
+      {/* Barra de Filtros de Texto y Estado */}
       <div className="p-4 rounded-[1.25rem] bg-[#1C1C1E] border border-[rgba(255,255,255,0.08)] flex flex-col lg:flex-row items-center gap-3.5">
-        {/* Buscador */}
         <div className="w-full lg:w-72">
           <Input
-            placeholder="Buscar por nombre o ID (ej. Auditorio)..."
+            placeholder="Buscar sala por nombre o ID (ej. Spooki)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             icon={
@@ -159,13 +249,12 @@ export default function SpacesPage() {
           />
         </div>
 
-        {/* Filtros de Estado */}
         <div className="flex flex-wrap items-center gap-1.5 w-full lg:w-auto">
           {[
             { id: 'ALL', label: 'Todas' },
             { id: 'available', label: 'Disponibles' },
-            { id: 'busy', label: 'Ocupadas' },
-            { id: 'incident', label: 'Incidencias' },
+            { id: 'occupied', label: 'Ocupadas' },
+            { id: 'disabled', label: 'Inhabilitadas' },
           ].map((item) => (
             <button
               key={item.id}
@@ -181,28 +270,6 @@ export default function SpacesPage() {
           ))}
         </div>
 
-        {/* Selector de Franja Horaria */}
-        <div className="flex items-center gap-1.5 w-full lg:w-auto">
-          {[
-            { id: 'CURRENT', label: 'Franja Actual' },
-            { id: 'MORNING', label: 'Mañana (08:00 - 12:00)' },
-            { id: 'AFTERNOON', label: 'Tarde (14:00 - 18:00)' },
-          ].map((slot) => (
-            <button
-              key={slot.id}
-              onClick={() => setSelectedSlot(slot.id)}
-              className={`hidden sm:inline-block px-2.5 py-2 rounded-[0.75rem] text-xs font-medium transition-colors border ${
-                selectedSlot === slot.id
-                  ? 'bg-[#0891B2]/20 border-[#0891B2]/40 text-[#22D3EE]'
-                  : 'bg-[#2C2C2E]/50 border-transparent text-[#A1A1A6] hover:text-[#F5F5F7]'
-              }`}
-            >
-              {slot.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Filtro por aforo mínimo */}
         <div className="w-full lg:w-36 lg:ml-auto">
           <Input
             type="number"
@@ -214,11 +281,33 @@ export default function SpacesPage() {
         </div>
       </div>
 
-      {/* Renderizado de Sala o EmptyState */}
-      {filteredRooms.length === 0 ? (
+      {/* Manejo de los 3 estados obligatorios: Cargando, Error, Vacío/Éxito */}
+      {isLoading ? (
+        <LoadingState message="Consultando disponibilidad de salas en backend..." />
+      ) : error ? (
+        <div className="space-y-4">
+          <ErrorMessage
+            title="Fallo al obtener espacios"
+            message={error}
+            onRetry={fetchSpacesData}
+          />
+          <div className="text-center pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setError(null);
+                setRooms(OFFICIAL_CAMPUS_ROOMS);
+              }}
+            >
+              Cargar datos locales del SEED (Modo Contingencia)
+            </Button>
+          </div>
+        </div>
+      ) : filteredRooms.length === 0 ? (
         <EmptyState
-          title="Ninguna sala coincide con los filtros"
-          description="Intenta reducir el aforo mínimo o limpiar los términos de búsqueda."
+          title="Sin salas para la franja seleccionada"
+          description="No se encontraron salas que cumplan con los criterios de búsqueda o capacidad para este horario."
           action={
             <Button
               variant="outline"
@@ -236,9 +325,9 @@ export default function SpacesPage() {
       ) : (
         <RoomMap
           rooms={filteredRooms}
-          loading={isLoading}
-          error={error}
-          onRetry={handleSync}
+          loading={false}
+          error={null}
+          onRetry={fetchSpacesData}
         />
       )}
     </div>
