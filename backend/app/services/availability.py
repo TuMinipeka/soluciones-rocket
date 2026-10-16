@@ -17,14 +17,20 @@ from app.modules.spaces.models import Space
 OFFICIAL_SPACES = {
     "SAL-001": {"name": "Auditorio", "capacity": 100},
     "SAL-002": {"name": "Cosmos", "capacity": 25},
-    "SAL-003": {"name": "Skilab", "capacity": 20},
-    "SAL-004": {"name": "Spooki", "capacity": 38},
+    "SAL-003": {"name": "Skylab", "capacity": 20},
+    "SAL-004": {"name": "Sputnik", "capacity": 38},
     "SAL-005": {"name": "Apolo", "capacity": 34},
-    "SAL-006": {"name": "Blanca", "capacity": 12},
+    "SAL-006": {"name": "Sala Nueva", "capacity": 12},
     "SAL-007": {"name": "Azul", "capacity": 10},
     "SAL-008": {"name": "Amarillas", "capacity": 6},
     "SAL-009": {"name": "Verdes", "capacity": 6},
     "SAL-010": {"name": "Artemis", "capacity": 32},
+}
+
+LEGACY_SPACE_NAMES = {
+    "SAL-003": "Skilab",
+    "SAL-004": "Spooki",
+    "SAL-006": "Blanca",
 }
 
 def strip_accents(text: str) -> str:

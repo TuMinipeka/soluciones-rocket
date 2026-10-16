@@ -24,10 +24,10 @@ import SuccessMessage from '../components/feedback/SuccessMessage'
 const DEFAULT_OFFICIAL_SPACES = [
   { id: 'SAL-001', name: 'Auditorio', capacity: 100 },
   { id: 'SAL-002', name: 'Cosmos', capacity: 25 },
-  { id: 'SAL-003', name: 'Skilab', capacity: 20 },
-  { id: 'SAL-004', name: 'Spooki', capacity: 38 },
+  { id: 'SAL-003', name: 'Skylab', capacity: 20 },
+  { id: 'SAL-004', name: 'Sputnik', capacity: 38 },
   { id: 'SAL-005', name: 'Apolo', capacity: 34 },
-  { id: 'SAL-006', name: 'Blanca', capacity: 12 },
+  { id: 'SAL-006', name: 'Sala Nueva', capacity: 12 },
   { id: 'SAL-007', name: 'Azul', capacity: 10 },
   { id: 'SAL-008', name: 'Amarillas', capacity: 6 },
   { id: 'SAL-009', name: 'Verdes', capacity: 6 },

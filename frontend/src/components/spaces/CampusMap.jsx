@@ -37,7 +37,7 @@ export const INITIAL_ROOMS_SEED = [
   },
   {
     id: 'SAL-003',
-    name: 'Skilab',
+    name: 'Skylab',
     capacity: 20,
     building: 'Edificio Innovación',
     floor: 'Nivel 1',
@@ -46,7 +46,7 @@ export const INITIAL_ROOMS_SEED = [
   },
   {
     id: 'SAL-004',
-    name: 'Spooki',
+    name: 'Sputnik',
     capacity: 38,
     building: 'Pabellón A',
     floor: 'Nivel 1',
@@ -69,7 +69,7 @@ export const INITIAL_ROOMS_SEED = [
   },
   {
     id: 'SAL-006',
-    name: 'Blanca',
+    name: 'Sala Nueva',
     capacity: 12,
     building: 'Edificio Central',
     floor: 'Nivel 3',

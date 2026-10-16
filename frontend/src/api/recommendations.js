@@ -24,14 +24,14 @@ export const OFFICIAL_SPACES_CATALOG = [
   },
   {
     id: 'SAL-003',
-    name: 'Skilab',
+    name: 'Skylab',
     capacity: 20,
     features: ['Estaciones de trabajo iMac', 'Tabletas gráficas', 'Conectividad Gigabit'],
     keywords: ['diseño', 'ux', 'ui', 'imac', 'multimedia', 'codigo', 'frontend', 'desarrollo'],
   },
   {
     id: 'SAL-004',
-    name: 'Spooki',
+    name: 'Sputnik',
     capacity: 38,
     features: ['Proyector FHD', 'Aire acondicionado doble', 'Pizarra panorámica'],
     keywords: ['clase', 'bootcamp', 'evaluacion', 'grupo grande', 'sesion', 'teoria'],
@@ -45,7 +45,7 @@ export const OFFICIAL_SPACES_CATALOG = [
   },
   {
     id: 'SAL-006',
-    name: 'Blanca',
+    name: 'Sala Nueva',
     capacity: 12,
     features: ['Mesa de directorio', 'Pantalla 55"', 'Cámara 4K'],
     keywords: ['directorio', 'entrevista', 'comite', 'gestion', 'estrategia', 'reunion privada'],

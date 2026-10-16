@@ -16,6 +16,7 @@ from app.modules.auth.models import User
 from app.modules.resources.models import Loan, Resource
 from app.modules.resources.schemas import LoanCreate
 from app.modules.resources.service import create_loan, return_loan
+from app.modules.reservations.models import Reservation
 from app.modules.spaces.models import Space
 from app.scripts.seed_demo import seed_demo
 from app.services.resources import get_resource_alternatives
@@ -54,6 +55,38 @@ def test_seed_rejects_changed_official_room_without_partial_users(db_session):
         seed_demo(db_session, [("Admin Demo", "another@example.test", "DemoAdmin123", Role.ADMIN)])
     assert db_session.scalar(select(User).where(User.email == "another@example.test")) is None
     assert db_session.get(Space, "SAL-002").capacity == 30
+
+
+def test_seed_migrates_legacy_room_names_without_breaking_reservations(
+    db_session, teacher_user
+):
+    legacy_names = {
+        "SAL-003": "Skilab",
+        "SAL-004": "Spooki",
+        "SAL-006": "Blanca",
+    }
+    for space_id, legacy_name in legacy_names.items():
+        db_session.get(Space, space_id).name = legacy_name
+    reservation = Reservation(
+        space_id="SAL-004",
+        user_id=teacher_user.id,
+        date=datetime.now(timezone.utc).date() + timedelta(days=1),
+        start_time=datetime.strptime("08:00", "%H:%M").time(),
+        end_time=datetime.strptime("09:00", "%H:%M").time(),
+        attendees=10,
+        title="Reserva conservada",
+        status="confirmed",
+    )
+    db_session.add(reservation)
+    db_session.commit()
+    reservation_id = reservation.id
+
+    seed_demo(db_session, [])
+
+    assert db_session.get(Space, "SAL-003").name == "Skylab"
+    assert db_session.get(Space, "SAL-004").name == "Sputnik"
+    assert db_session.get(Space, "SAL-006").name == "Sala Nueva"
+    assert db_session.get(Reservation, reservation_id).space_id == "SAL-004"
 
 
 def test_inventory_and_loan_lifecycle(client, admin_token, teacher_token, support_token):

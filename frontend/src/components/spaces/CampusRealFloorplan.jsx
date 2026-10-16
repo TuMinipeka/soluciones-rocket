@@ -1,8 +1,8 @@
 /**
  * Componente: Plano Arquitectónico 2D Interactivo de Campuslands (HU-18, HU-17, HU-21)
  * Fiel a la geometría del plano físico de evacuación:
- * - Ala Izquierda (7 cols): Apolo (SAL-005), Spooki (SAL-004), Corredor de Evacuación,
- *   Artemis (SAL-010), Blanca (SAL-006), Cosmos (SAL-002) y Skilab (SAL-003).
+ * - Ala Izquierda (7 cols): Apolo (SAL-005), Sputnik (SAL-004), Corredor de Evacuación,
+ *   Artemis (SAL-010), Sala Nueva (SAL-006), Cosmos (SAL-002) y Skylab (SAL-003).
  * - Ala Derecha (5 cols): Pods Amarillas (SAL-008) y Verdes (SAL-009),
  *   Bloque Central Pasivo + Gran Auditorio (SAL-001), Pod Azul (SAL-007) + Área Técnica.
  * - 4 estados accesibles con doble canal (color y símbolo): Disponible (●), Ocupado (■),
@@ -16,13 +16,13 @@ import { useState } from 'react'
 export const CAMPUS_FLOORPLAN_SPACES = [
   // ALA IZQUIERDA SUPERIOR (Salones con chaflán inferior)
   { id: 'SAL-005', name: 'Apolo', capacity: 34, status: 'available', sector: 'Ala Norte • Izquierda', shape: 'chamfer-br' },
-  { id: 'SAL-004', name: 'Spooki', capacity: 38, status: 'available', sector: 'Ala Norte • Centro', shape: 'chamfer-bl' },
+  { id: 'SAL-004', name: 'Sputnik', capacity: 38, status: 'available', sector: 'Ala Norte • Centro', shape: 'chamfer-bl' },
 
-  // ALA IZQUIERDA INFERIOR (Artemis con chaflán superior + Blanca + Cosmos & Skilab)
+  // ALA IZQUIERDA INFERIOR (Artemis con chaflán superior + Sala Nueva + Cosmos & Skylab)
   { id: 'SAL-010', name: 'Artemis', capacity: 32, status: 'available', sector: 'Ala Sur • Izquierda', shape: 'chamfer-tr' },
-  { id: 'SAL-006', name: 'Blanca', capacity: 12, status: 'available', sector: 'Sala de Juntas Central', shape: 'rect' },
+  { id: 'SAL-006', name: 'Sala Nueva', capacity: 12, status: 'available', sector: 'Sala de Juntas Central', shape: 'rect' },
   { id: 'SAL-002', name: 'Cosmos', capacity: 25, status: 'available', sector: 'Laboratorio Sur', shape: 'rect' },
-  { id: 'SAL-003', name: 'Skilab', capacity: 20, status: 'available', sector: 'Laboratorio Este', shape: 'rect' },
+  { id: 'SAL-003', name: 'Skylab', capacity: 20, status: 'available', sector: 'Laboratorio Este', shape: 'rect' },
 
   // ALA DERECHA (Pods superiores, Auditorio principal y Pods inferiores)
   { id: 'SAL-008', name: 'Amarillas', capacity: 6, status: 'available', sector: 'Pods Terraza Norte', shape: 'pill' },
@@ -245,7 +245,7 @@ export default function CampusRealFloorplan({
           {/* ALA IZQUIERDA (7 Columnas: Núcleo de Entrenamiento Técnico)    */}
           {/* ============================================================== */}
           <div className="xl:col-span-7 flex flex-col justify-between bg-white/[0.015] p-3.5 sm:p-4 rounded-2xl border border-white/10 gap-3">
-            {/* Franja Superior Izquierda: Apolo y Spooki con Chaflán Inferior */}
+            {/* Franja Superior Izquierda: Apolo y Sputnik con Chaflán Inferior */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <RoomCard
                 id="SAL-005"
@@ -266,7 +266,7 @@ export default function CampusRealFloorplan({
               <span className="opacity-80">RUTA DE EVACUACIÓN ▷▷ LOBBY</span>
             </div>
 
-            {/* Franja Inferior Izquierda: Artemis (Chaflán Sup) + Blanca + Cosmos & Skilab */}
+            {/* Franja Inferior Izquierda: Artemis (Chaflán Sup) + Sala Nueva + Cosmos & Skylab */}
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
               {/* Artemis (Esquina superior derecha en chaflán) */}
               <RoomCard
@@ -274,14 +274,14 @@ export default function CampusRealFloorplan({
                 className="sm:col-span-5 min-h-[160px] rounded-tr-[36px]"
               />
 
-              {/* Blanca (Sala de juntas vertical adyacente a Artemis) */}
+              {/* Sala Nueva (Sala de juntas vertical adyacente a Artemis) */}
               <RoomCard
                 id="SAL-006"
                 compact
                 className="sm:col-span-2 min-h-[160px]"
               />
 
-              {/* Cosmos y Skilab (Laboratorios rectos apilados) */}
+              {/* Cosmos y Skylab (Laboratorios rectos apilados) */}
               <div className="sm:col-span-5 grid grid-cols-1 gap-3">
                 <RoomCard id="SAL-002" compact className="min-h-[74px]" />
                 <RoomCard id="SAL-003" compact className="min-h-[74px]" />
