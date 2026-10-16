@@ -44,7 +44,13 @@ class UserRegisterRequest(BaseModel):
     @field_validator("email")
     @classmethod
     def normalize_email(cls, value: str) -> str:
-        return value.strip().lower()
+        clean = value.strip().lower()
+        if "@" in clean:
+            _, domain = clean.split("@", 1)
+            first_seg = domain.split(".")[0]
+            if any(char.isdigit() for char in first_seg):
+                raise ValueError("El correo debe usar un dominio válido (.edu, .co, .com); no se permiten números en el dominio.")
+        return clean
 
     @field_validator("password")
     @classmethod
@@ -87,7 +93,13 @@ class UserLoginRequest(BaseModel):
     @field_validator("email")
     @classmethod
     def normalize_email(cls, value: str) -> str:
-        return value.strip().lower()
+        clean = value.strip().lower()
+        if "@" in clean:
+            _, domain = clean.split("@", 1)
+            first_seg = domain.split(".")[0]
+            if any(char.isdigit() for char in first_seg):
+                raise ValueError("El correo debe usar un dominio válido (.edu, .co, .com); no se permiten números en el dominio.")
+        return clean
 
 
 class UserPublicResponse(BaseModel):

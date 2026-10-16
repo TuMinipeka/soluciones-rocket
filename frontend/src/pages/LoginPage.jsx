@@ -52,10 +52,19 @@ export default function LoginPage({ initialMode }) {
   }
 
   const handleEmailChange = (e) => {
-    // Sanitizar en tiempo real: sin espacios, minúsculas, caracteres válidos para correo, máx 100 caracteres
-    const val = e.target.value.replace(/\s/g, '').toLowerCase()
-    if (/^[a-zA-Z0-9@._+-]*$/.test(val) && val.length <= 100) {
-      setEmail(val)
+    const raw = e.target.value.replace(/\s/g, '').toLowerCase()
+    // Si contiene '@', la parte del dominio sólo admite letras, puntos y guiones (bloquea números como eyu3u34u3u)
+    if (raw.includes('@')) {
+      const parts = raw.split('@')
+      if (parts.length > 2) return // No permitir múltiples '@'
+      const [local, domain] = parts
+      const cleanLocal = local.replace(/[^a-z0-9._+-]/g, '').slice(0, 50)
+      // La parte del dominio solo admite letras, puntos y guiones (sin números ni caracteres spam)
+      const cleanDomain = domain.replace(/[^a-z.-]/g, '').slice(0, 50)
+      setEmail(`${cleanLocal}@${cleanDomain}`)
+    } else {
+      // Antes de la arroba, se permiten letras, números y signos comunes
+      setEmail(raw.replace(/[^a-z0-9._+-]/g, '').slice(0, 50))
     }
   }
 
@@ -74,8 +83,29 @@ export default function LoginPage({ initialMode }) {
     setConfirmPassword(sanitized)
   }
 
-  // Validación reactiva para micro-feedback
-  const isEmailValid = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
+  // Validación reactiva de correo con dominio normal y legítimo (.edu, .co, .com, .org, etc.)
+  const isEmailValid = (() => {
+    if (!email || !email.includes('@')) return false
+    const parts = email.split('@')
+    if (parts.length !== 2) return false
+    const [local, domain] = parts
+    if (local.length < 2 || domain.length < 4) return false
+
+    // El dominio debe ser alfabético, contener al menos un punto y terminar en TLD normal (.edu, .co, .com, etc.)
+    const domainPattern = /^([a-zA-Z]+(-[a-zA-Z]+)*\.)+(edu|co|com|org|net|gov|io|test|[a-zA-Z]{2,6})$/i
+    if (!domainPattern.test(domain)) return false
+
+    // La parte local debe ser válida
+    const localPattern = /^[a-zA-Z0-9]+([._+-][a-zA-Z0-9]+)*$/i
+    if (!localPattern.test(local)) return false
+
+    // El nombre del dominio (ej. campuslands, campus, unal, gmail) debe tener al menos 2 letras
+    const domainName = domain.split('.')[0]
+    if (domainName.length < 2) return false
+
+    return true
+  })()
+
   const hasMinLength = password.length >= 8
   const hasLetter = /[a-zA-Z]/.test(password)
   const hasNumber = /\d/.test(password)
@@ -107,7 +137,7 @@ export default function LoginPage({ initialMode }) {
         return
       }
       if (!isEmailValid) {
-        setLocalError('Por favor ingresa un correo electrónico con formato válido (ej. usuario@campuslands.edu).')
+        setLocalError('Por favor ingresa un correo con dominio normal y legítimo (ej. usuario@campuslands.edu o .co).')
         return
       }
 
@@ -128,7 +158,7 @@ export default function LoginPage({ initialMode }) {
         return
       }
       if (!isEmailValid) {
-        setLocalError('Por favor ingresa un correo electrónico institucional válido.')
+        setLocalError('Por favor ingresa un correo con dominio institucional o legítimo (.edu, .co, .com).')
         return
       }
       if (password.length < 8) {
