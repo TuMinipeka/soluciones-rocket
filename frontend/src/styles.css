@@ -73,6 +73,15 @@
   }
 }
 
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
 .animate-fluid-enter {
   animation: fluidFadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -83,6 +92,10 @@
 
 .animate-pulse-subtle {
   animation: pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-float {
+  animation: floatSlow 6s ease-in-out infinite;
 }
 
 /* Estilos de paneles de vidrio Apple Dark Enclave */
