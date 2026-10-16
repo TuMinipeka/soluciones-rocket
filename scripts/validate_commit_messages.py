@@ -20,6 +20,13 @@ GITMOJI_BY_TYPE = {
 }
 TITLE_PATTERN = re.compile(r"^([a-z]+): :([a-z_]+): ([A-Z][a-zA-Z0-9]*)$")
 
+# Published teammate commits imported by the team integration PR. Rewriting them
+# would change shared history; only these exact hashes and subjects are exempt.
+LEGACY_COMMIT_EXCEPTIONS = {
+    "b9c0247ff3a4d610736438ac39bdc0568b9c36f3": "feat: :shield: EnforceCapacityHoursAndSpaceRecommendations",
+    "d080ec3fe55b05566f39d31a95266109b6afaa7f": "chore: :fire: UntrackGraphifyOutAndAddGitignore",
+}
+
 
 def validate(title: str) -> str | None:
     match = TITLE_PATTERN.fullmatch(title)
@@ -46,10 +53,10 @@ def main() -> int:
 
     subjects = []
     if args.title:
-        subjects.append(("PR title", args.title))
+        subjects.append(("PR title", None, args.title))
     if args.commit_range:
         result = subprocess.run(
-            ["git", "log", "--format=%s", args.commit_range],
+            ["git", "log", "--format=%H%x00%s", args.commit_range],
             capture_output=True,
             text=True,
             check=False,
@@ -57,10 +64,17 @@ def main() -> int:
         if result.returncode:
             print(result.stderr.strip(), file=sys.stderr)
             return result.returncode
-        subjects.extend(("commit", subject) for subject in result.stdout.splitlines())
+        subjects.extend(
+            ("commit", commit_hash, subject)
+            for commit_hash, subject in (
+                line.split("\x00", 1) for line in result.stdout.splitlines()
+            )
+        )
 
     failures = 0
-    for source, subject in subjects:
+    for source, commit_hash, subject in subjects:
+        if commit_hash and LEGACY_COMMIT_EXCEPTIONS.get(commit_hash) == subject:
+            continue
         error = validate(subject)
         if error:
             print(f"Invalid {source}: {subject!r} ({error})", file=sys.stderr)
