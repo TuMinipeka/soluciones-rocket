@@ -171,3 +171,41 @@ def test_get_space_calculates_availability_for_requested_interval(
     )
     assert available.status_code == 200
     assert available.json()["status"] == "available"
+
+
+def test_space_calendar_returns_persisted_slots_without_owner_data(
+    client, db_session, teacher_user, teacher_token
+):
+    add_reservation(db_session, teacher_user.id, "SAL-002", time(8), time(10))
+    add_reservation(
+        db_session,
+        teacher_user.id,
+        "SAL-002",
+        time(11),
+        time(12),
+        status="cancelled",
+    )
+
+    response = client.get(
+        "/spaces/SAL-002/reservations",
+        params={"date": "2026-10-20"},
+        headers=auth(teacher_token),
+    )
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "id": response.json()[0]["id"],
+            "date": "2026-10-20",
+            "start_time": "08:00:00",
+            "end_time": "10:00:00",
+            "status": "confirmed",
+        },
+        {
+            "id": response.json()[1]["id"],
+            "date": "2026-10-20",
+            "start_time": "11:00:00",
+            "end_time": "12:00:00",
+            "status": "cancelled",
+        },
+    ]
+    assert all("user_id" not in slot for slot in response.json())

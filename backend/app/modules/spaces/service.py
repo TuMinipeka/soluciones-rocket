@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import NotFoundError, ValidationError
 from app.modules.reservations.models import Reservation
 from app.modules.spaces.models import Space
-from app.modules.spaces.schemas import SpaceAvailabilityResponse
+from app.modules.spaces.schemas import SpaceAvailabilityResponse, SpaceReservationSlotResponse
 
 
 def _validate_interval(
@@ -92,3 +92,30 @@ def get_space(
         )
     )
     return _response(space, bool(has_conflict))
+
+
+def list_space_reservations(
+    space_id: str,
+    db: Session,
+    requested_date: date | None = None,
+) -> list[SpaceReservationSlotResponse]:
+    normalized_id = space_id.strip().upper()
+    if db.get(Space, normalized_id) is None:
+        raise NotFoundError("Sala no encontrada en el catálogo autorizado.")
+    statement = (
+        select(Reservation)
+        .where(Reservation.space_id == normalized_id)
+        .order_by(Reservation.date, Reservation.start_time, Reservation.id)
+    )
+    if requested_date is not None:
+        statement = statement.where(Reservation.date == requested_date)
+    return [
+        SpaceReservationSlotResponse(
+            id=reservation.id,
+            date=reservation.date,
+            start_time=reservation.start_time,
+            end_time=reservation.end_time,
+            status=reservation.status,
+        )
+        for reservation in db.scalars(statement).all()
+    ]
