@@ -56,7 +56,7 @@ class RecommendationService:
 
         # 2. Validación de recurso tecnológico
         detected_resource_id = resource_id
-        if detected_resource_id and not is_valid_resource(detected_resource_id):
+        if detected_resource_id and not is_valid_resource(detected_resource_id, db):
             warnings.append(
                 f"El identificador de recurso '{detected_resource_id}' no cumple con el formato válido y fue descartado."
             )

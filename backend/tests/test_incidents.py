@@ -135,7 +135,7 @@ def test_availability_blocking_and_restoring(client, support_token, teacher_toke
     """HU-14: Soporte reporta falla crítica con confirm_blocking -> inhabilita sala; al resolver restaura."""
     # Asegurar sala Cosmos desbloqueada al inicio
     set_space_status("SAL-002", is_blocked=False, _reason="test_init", _db=db_session)
-    assert not is_space_blocked("SAL-002")
+    assert not is_space_blocked("SAL-002", db_session)
 
     # 1. Docente reporta falla eléctrica crítica: suggests_blocking=True pero NO inhabilita sala
     res_teacher = client.post(
@@ -152,7 +152,7 @@ def test_availability_blocking_and_restoring(client, support_token, teacher_toke
     assert res_teacher.status_code == 201
     assert res_teacher.json()["suggests_blocking"] is True
     assert res_teacher.json()["is_blocking"] is False
-    assert not is_space_blocked("SAL-002")
+    assert not is_space_blocked("SAL-002", db_session)
 
     # 2. Soporte reporta y confirma bloqueo: sala queda inhabilitada
     res_support = client.post(
@@ -169,7 +169,7 @@ def test_availability_blocking_and_restoring(client, support_token, teacher_toke
     assert res_support.status_code == 201
     inc_sup_id = res_support.json()["id"]
     assert res_support.json()["is_blocking"] is True
-    assert is_space_blocked("SAL-002")
+    assert is_space_blocked("SAL-002", db_session)
 
     # 3. Soporte resuelve la incidencia bloqueante: la sala vuelve a estar disponible
     res_resolve = client.post(
@@ -177,4 +177,4 @@ def test_availability_blocking_and_restoring(client, support_token, teacher_toke
         headers={"Authorization": f"Bearer {support_token}"},
     )
     assert res_resolve.status_code == 200
-    assert not is_space_blocked("SAL-002")
+    assert not is_space_blocked("SAL-002", db_session)

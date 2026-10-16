@@ -1,43 +1,56 @@
-"""Punto de integración con el inventario y préstamos de Mayorga.
+"""Inventory hooks consumed by Diego's incident and recommendation services."""
 
-Gestiona la verificación de equipos autorizados, inhabilitación por daños
-y búsqueda de alternativas disponibles.
-"""
-
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.modules.resources.models import Loan, Resource
 
-_resource_block_status: dict[str, bool] = {}
 
-
-def is_valid_resource(resource_id: str | None) -> bool:
-    """Verifica si el identificador de recurso existe.
-    
-    Hasta que Mayorga cargue el dataset oficial de recursos, aceptamos identificadores
-    con formato estándar (ej. EQ-*, LAP-*, PROY-*) y respetamos que no se inventen registros.
-    """
-    if not resource_id:
-        return False
-    # Formato razonable de recurso
-    return len(resource_id.strip()) >= 3
+def is_valid_resource(resource_id: str | None, db: Session) -> bool:
+    return bool(resource_id and db.get(Resource, resource_id.upper()) is not None)
 
 
 def set_resource_status(resource_id: str, is_blocked: bool, _reason: str, _db: Session) -> bool:
-    """Punto de integración para marcar un recurso tecnológico como inhabilitado o disponible."""
-    if not resource_id:
+    """Stage a block in the caller's transaction; the incident service commits it."""
+    resource = _db.get(Resource, resource_id.upper())
+    if resource is None:
         return False
-    _resource_block_status[resource_id.upper()] = is_blocked
+    resource.is_blocked = is_blocked
+    _db.flush()
     return True
 
 
-def is_resource_blocked(resource_id: str) -> bool:
-    return _resource_block_status.get(resource_id.upper(), False)
+def is_resource_blocked(resource_id: str, db: Session) -> bool:
+    resource = db.get(Resource, resource_id.upper())
+    return bool(resource and resource.is_blocked)
 
 
-def get_resource_alternatives(resource_id: str, _db: Session) -> list[dict]:
-    """Punto de integración para buscar recursos de reemplazo disponibles.
-    
-    NOTA ESTRICTA: No inventamos inventario ficticio. Si el dataset oficial aún no está
-    cargado en la base de datos de Mayorga, se devuelve una lista vacía con honestidad.
-    """
-    return []
+def get_resource_alternatives(resource_id: str, db: Session) -> list[dict]:
+    """Suggest only registered, operational, unblocked equipment in the same category."""
+    original = db.get(Resource, resource_id.upper())
+    if original is None:
+        return []
+
+    candidates = db.scalars(
+        select(Resource)
+        .where(
+            Resource.id != original.id,
+            Resource.category == original.category,
+            Resource.condition == "operational",
+            Resource.is_blocked.is_(False),
+        )
+        .order_by(Resource.id)
+    ).all()
+    alternatives = []
+    for item in candidates:
+        active_loan = db.scalar(
+            select(Loan.id).where(Loan.resource_id == item.id, Loan.returned_at.is_(None)).limit(1)
+        )
+        if active_loan is None:
+            alternatives.append({
+                "kind": "resource",
+                "id": item.id,
+                "name": item.name,
+                "reason": "Equipo autorizado de la misma categoría, operativo y sin préstamo activo.",
+            })
+    return alternatives[:3]
