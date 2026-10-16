@@ -8,6 +8,7 @@
  */
 
 import React, { useMemo } from 'react'
+import { CalendarDaysIcon, LockClosedIcon, CheckIcon } from '@heroicons/react/24/outline'
 
 export const OPERATIONAL_HOURS = [
   '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
@@ -71,7 +72,7 @@ export default function RoomScheduleCalendar({
       {/* Cabecera del Calendario */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 mb-4 border-b border-white/[0.06] gap-2">
         <div className="flex items-center gap-2.5">
-          <span className="text-base text-cyan-400">📅</span>
+          <CalendarDaysIcon className="w-5 h-5 text-cyan-400" />
           <div>
             <h3 className="text-sm font-semibold text-white tracking-tight">
               Disponibilidad: <span className="text-cyan-400">{room?.name || 'Sala'}</span>
@@ -128,14 +129,14 @@ export default function RoomScheduleCalendar({
 
               <div className="mt-1">
                 {isOccupied ? (
-                  <span className="text-[10px] font-semibold text-blue-300 truncate block" title={`${start} - ${end}`}>
-                    🔒 {displayTitle}
+                  <span className="text-[10px] font-semibold text-blue-300 truncate flex items-center gap-1" title={`${start} - ${end}`}>
+                    <LockClosedIcon className="w-3 h-3 shrink-0" /> {displayTitle}
                   </span>
                 ) : !availabilityKnown ? (
                   <span className="text-[10px] text-zinc-400 block">Sin verificar</span>
                 ) : isSelected ? (
-                  <span className="text-[10px] font-semibold text-cyan-300 block">
-                    ✓ Elegido
+                  <span className="text-[10px] font-semibold text-cyan-300 flex items-center gap-1">
+                    <CheckIcon className="w-3 h-3 shrink-0" /> Elegido
                   </span>
                 ) : (
                   <span className="text-[10px] text-emerald-400 font-medium block">

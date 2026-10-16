@@ -11,6 +11,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
+import {
+  ShieldCheckIcon,
+  AcademicCapIcon,
+  WrenchScrewdriverIcon,
+  CheckIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
 
 export default function LoginPage({ initialMode }) {
   const { login, register, error: authError, clearError } = useAuth()
@@ -322,7 +329,7 @@ export default function LoginPage({ initialMode }) {
                   <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
                     email === 'admin@campuslands.edu' ? 'bg-amber-500 text-black' : 'bg-amber-500/10 text-amber-400'
                   }`}>
-                    ⚡
+                    <ShieldCheckIcon className="w-4 h-4" />
                   </div>
                   <span className="text-[11px] font-semibold leading-tight">Admin</span>
                   <span className="text-[9px] text-[#8e8e93] font-mono">Control total</span>
@@ -346,7 +353,7 @@ export default function LoginPage({ initialMode }) {
                   <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
                     email === 'carlos.mendoza@campuslands.edu' ? 'bg-[#2563eb] text-white' : 'bg-[#2563eb]/10 text-blue-400'
                   }`}>
-                    🎓
+                    <AcademicCapIcon className="w-4 h-4" />
                   </div>
                   <span className="text-[11px] font-semibold leading-tight">Docente</span>
                   <span className="text-[9px] text-[#8e8e93] font-mono">Reservas</span>
@@ -370,7 +377,7 @@ export default function LoginPage({ initialMode }) {
                   <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
                     email === 'soporte@campuslands.edu' ? 'bg-emerald-500 text-black' : 'bg-emerald-500/10 text-emerald-400'
                   }`}>
-                    🛠️
+                    <WrenchScrewdriverIcon className="w-4 h-4" />
                   </div>
                   <span className="text-[11px] font-semibold leading-tight">Soporte</span>
                   <span className="text-[9px] text-[#8e8e93] font-mono">Incidencias</span>

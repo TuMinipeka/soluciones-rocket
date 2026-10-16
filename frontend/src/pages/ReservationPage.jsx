@@ -288,10 +288,6 @@ export default function ReservationPage() {
               <span className="text-cyan-300">✨</span>
               <span>Asistente de salas</span>
             </button>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1c1c1e] text-[#a1a1a6] text-xs font-mono border border-white/[0.08]">
-              <span className="w-2 h-2 rounded-full bg-[#30D158] animate-pulse" />
-              <span>Gateway IoT Activo</span>
-            </div>
           </div>
         </div>
       </section>
@@ -538,7 +534,7 @@ export default function ReservationPage() {
                     {selectedSpace?.name}
                   </h3>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                    Operativa
+                    {selectedSpace?.status === 'disabled' ? 'Inhabilitada' : selectedSpace?.status === 'occupied' ? 'Ocupada' : 'Disponible'}
                   </span>
                 </div>
                 <p className="text-xs text-zinc-400">
