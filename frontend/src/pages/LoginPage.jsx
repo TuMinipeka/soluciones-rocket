@@ -423,8 +423,11 @@ export default function LoginPage({ initialMode }) {
                 <span className={`inline-flex items-center gap-1 ${hasMinLength ? 'text-[#30d158] font-medium' : 'text-[#8e8e93]'}`}>
                   <span>{hasMinLength ? '✓' : '•'}</span> 8+ caracteres
                 </span>
-                <span className={`inline-flex items-center gap-1 ${hasLetter && hasNumber ? 'text-[#30d158] font-medium' : 'text-[#8e8e93]'}`}>
-                  <span>{hasLetter && hasNumber ? '✓' : '•'}</span> Letras y números
+                <span className={`inline-flex items-center gap-1 ${hasLetter ? 'text-[#30d158] font-medium' : 'text-[#8e8e93]'}`}>
+                  <span>{hasLetter ? '✓' : '•'}</span> Letras
+                </span>
+                <span className={`inline-flex items-center gap-1 ${hasNumber ? 'text-[#30d158] font-medium' : 'text-[#8e8e93]'}`}>
+                  <span>{hasNumber ? '✓' : '•'}</span> Números
                 </span>
                 {confirmPassword.length > 0 && (
                   <span className={`inline-flex items-center gap-1 ${passwordsMatch ? 'text-[#30d158] font-medium' : 'text-[#ff453a]'}`}>
