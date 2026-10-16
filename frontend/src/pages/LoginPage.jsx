@@ -61,17 +61,18 @@ export default function LoginPage({ initialMode }) {
   }
 
   const handlePasswordChange = (e) => {
-    const val = e.target.value
-    if (val.length <= 128) {
-      setPassword(val)
-    }
+    const raw = e.target.value
+    // Restringir a letras, números y símbolos seguros para contraseñas (! @ # $ % & _ - + .)
+    // Bloquea comillas, corchetes, llaves, asteriscos, espacios y caracteres de inyección
+    const sanitized = raw.replace(/[^a-zA-Z0-9!@#$%&_+\-.]/g, '').slice(0, 64)
+    setPassword(sanitized)
   }
 
   const handleConfirmPasswordChange = (e) => {
-    const val = e.target.value
-    if (val.length <= 128) {
-      setConfirmPassword(val)
-    }
+    const raw = e.target.value
+    // Restringir con la misma regla estricta de sanitización
+    const sanitized = raw.replace(/[^a-zA-Z0-9!@#$%&_+\-.]/g, '').slice(0, 64)
+    setConfirmPassword(sanitized)
   }
 
   // Validación reactiva para micro-feedback
@@ -383,7 +384,7 @@ export default function LoginPage({ initialMode }) {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  maxLength={128}
+                  maxLength={64}
                   autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                   placeholder="••••••••••••"
                   value={password}
@@ -434,7 +435,7 @@ export default function LoginPage({ initialMode }) {
                   <input
                     id="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
-                    maxLength={128}
+                    maxLength={64}
                     autoComplete="new-password"
                     placeholder="••••••••••••"
                     value={confirmPassword}
@@ -457,8 +458,11 @@ export default function LoginPage({ initialMode }) {
                 <span className={`inline-flex items-center gap-1 ${hasMinLength ? 'text-[#30d158] font-medium' : 'text-[#8e8e93]'}`}>
                   <span>{hasMinLength ? '✓' : '•'}</span> 8+ caracteres
                 </span>
-                <span className={`inline-flex items-center gap-1 ${hasLetter && hasNumber ? 'text-[#30d158] font-medium' : 'text-[#8e8e93]'}`}>
-                  <span>{hasLetter && hasNumber ? '✓' : '•'}</span> Letras y números
+                <span className={`inline-flex items-center gap-1 ${hasLetter ? 'text-[#30d158] font-medium' : 'text-[#8e8e93]'}`}>
+                  <span>{hasLetter ? '✓' : '•'}</span> Letras
+                </span>
+                <span className={`inline-flex items-center gap-1 ${hasNumber ? 'text-[#30d158] font-medium' : 'text-[#8e8e93]'}`}>
+                  <span>{hasNumber ? '✓' : '•'}</span> Números
                 </span>
                 {confirmPassword.length > 0 && (
                   <span className={`inline-flex items-center gap-1 ${passwordsMatch ? 'text-[#30d158] font-medium' : 'text-[#ff453a]'}`}>
