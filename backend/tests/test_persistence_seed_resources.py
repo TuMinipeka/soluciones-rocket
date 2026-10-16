@@ -15,7 +15,7 @@ from app.modules.auth.enums import Role
 from app.modules.auth.models import User
 from app.modules.resources.models import Loan, Resource
 from app.modules.resources.schemas import LoanCreate
-from app.modules.resources.service import create_loan
+from app.modules.resources.service import create_loan, return_loan
 from app.modules.spaces.models import Space
 from app.scripts.seed_demo import seed_demo
 from app.services.resources import get_resource_alternatives
@@ -157,6 +157,50 @@ def test_sqlite_reopen_preserves_rows_and_enforces_foreign_keys(tmp_path):
         with pytest.raises(IntegrityError):
             db.commit()
         db.rollback()
+    reopened.dispose()
+
+
+def test_loan_and_return_state_survive_new_database_sessions(tmp_path):
+    database = tmp_path / "loan-persistence.db"
+    engine = create_engine(f"sqlite:///{database}")
+    event.listen(engine, "connect", enable_sqlite_foreign_keys)
+    Base.metadata.create_all(engine)
+    start = datetime.now(timezone.utc) + timedelta(hours=1)
+
+    with Session(engine) as db:
+        borrower = User(
+            name="Docente persistencia",
+            email="persistence@example.test",
+            password_hash="not-used-here",
+            role=Role.TEACHER.value,
+        )
+        db.add_all([borrower, Resource(id="EQ-PERSIST", name="Portátil", category="laptop")])
+        db.commit()
+        db.refresh(borrower)
+        loan = create_loan(
+            LoanCreate(
+                resource_id="EQ-PERSIST",
+                start_time=start,
+                expected_return=start + timedelta(hours=2),
+            ),
+            borrower,
+            db,
+        )
+        loan_id = loan.id
+        borrower_id = borrower.id
+
+    with Session(engine) as db:
+        persisted = db.get(Loan, loan_id)
+        assert persisted is not None
+        assert persisted.resource_id == "EQ-PERSIST"
+        assert persisted.returned_at is None
+        return_loan(loan_id, db.get(User, borrower_id), db)
+
+    engine.dispose()
+    reopened = create_engine(f"sqlite:///{database}")
+    event.listen(reopened, "connect", enable_sqlite_foreign_keys)
+    with Session(reopened) as db:
+        assert db.get(Loan, loan_id).returned_at is not None
     reopened.dispose()
 
 
