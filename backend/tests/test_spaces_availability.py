@@ -148,3 +148,103 @@ def test_get_space_returns_persisted_room_or_not_found(client, teacher_token):
     assert found.json()["capacity"] == 32
     assert missing.status_code == 404
     assert missing.json()["error"]["code"] == "NOT_FOUND"
+
+
+def test_get_space_calculates_availability_for_requested_interval(
+    client, db_session, teacher_user, teacher_token
+):
+    add_reservation(db_session, teacher_user.id, "SAL-002", time(9), time(10))
+
+    occupied = client.get(
+        "/spaces/SAL-002",
+        params={"date": "2026-10-20", "start_time": "09:30", "end_time": "10:30"},
+        headers=auth(teacher_token),
+    )
+    assert occupied.status_code == 200
+    assert occupied.json()["status"] == "occupied"
+    assert occupied.json()["has_conflict"] is True
+
+    available = client.get(
+        "/spaces/SAL-002",
+        params={"date": "2026-10-20", "start_time": "10:00", "end_time": "11:00"},
+        headers=auth(teacher_token),
+    )
+    assert available.status_code == 200
+    assert available.json()["status"] == "available"
+
+
+def test_space_calendar_returns_persisted_slots_without_owner_data(
+    client, db_session, teacher_user, teacher_token
+):
+    add_reservation(db_session, teacher_user.id, "SAL-002", time(8), time(10))
+    add_reservation(
+        db_session,
+        teacher_user.id,
+        "SAL-002",
+        time(11),
+        time(12),
+        status="cancelled",
+    )
+
+    response = client.get(
+        "/spaces/SAL-002/reservations",
+        params={"date": "2026-10-20"},
+        headers=auth(teacher_token),
+    )
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "id": response.json()[0]["id"],
+            "date": "2026-10-20",
+            "start_time": "08:00:00",
+            "end_time": "10:00:00",
+            "status": "confirmed",
+        },
+        {
+            "id": response.json()[1]["id"],
+            "date": "2026-10-20",
+            "start_time": "11:00:00",
+            "end_time": "12:00:00",
+            "status": "cancelled",
+        },
+    ]
+    assert all("user_id" not in slot for slot in response.json())
+
+
+def test_calendar_occupied_slot_is_rejected_when_posted_directly(
+    client, teacher_token
+):
+    first = client.post(
+        "/reservations",
+        json={
+            "space_id": "SAL-002",
+            "date": "2026-10-20",
+            "start_time": "08:00",
+            "end_time": "10:00",
+            "attendees": 10,
+            "title": "Reserva existente",
+        },
+        headers=auth(teacher_token),
+    )
+    assert first.status_code == 201
+    slots = client.get(
+        "/spaces/SAL-002/reservations",
+        params={"date": "2026-10-20"},
+        headers=auth(teacher_token),
+    ).json()
+    assert slots[0]["status"] == "confirmed"
+
+    conflict = client.post(
+        "/reservations",
+        json={
+            "space_id": "SAL-002",
+            "date": "2026-10-20",
+            "start_time": "09:00",
+            "end_time": "11:00",
+            "attendees": 5,
+            "title": "Intento manual",
+        },
+        headers=auth(teacher_token),
+    )
+    assert conflict.status_code == 409
+    assert conflict.json()["error"]["code"] == "CONFLICT"

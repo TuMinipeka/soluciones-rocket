@@ -15,20 +15,20 @@ import { useState } from 'react'
 
 export const CAMPUS_FLOORPLAN_SPACES = [
   // ALA IZQUIERDA SUPERIOR (Salones con chaflán inferior)
-  { id: 'SAL-005', sector: 'Ala Norte • Izquierda', shape: 'chamfer-br' },
-  { id: 'SAL-004', sector: 'Ala Norte • Centro', shape: 'chamfer-bl' },
+  { id: 'SAL-005', name: 'Apolo', capacity: 34, sector: 'Ala Norte • Izquierda', shape: 'chamfer-br' },
+  { id: 'SAL-004', name: 'Spooki', capacity: 38, sector: 'Ala Norte • Centro', shape: 'chamfer-bl' },
 
   // ALA IZQUIERDA INFERIOR (Artemis con chaflán superior + Blanca + Cosmos & Skilab)
-  { id: 'SAL-010', sector: 'Ala Sur • Izquierda', shape: 'chamfer-tr' },
-  { id: 'SAL-006', sector: 'Sala de Juntas Central', shape: 'rect' },
-  { id: 'SAL-002', sector: 'Laboratorio Sur', shape: 'rect' },
-  { id: 'SAL-003', sector: 'Laboratorio Este', shape: 'rect' },
+  { id: 'SAL-010', name: 'Artemis', capacity: 32, sector: 'Ala Sur • Izquierda', shape: 'chamfer-tr' },
+  { id: 'SAL-006', name: 'Blanca', capacity: 12, sector: 'Sala de Juntas Central', shape: 'rect' },
+  { id: 'SAL-002', name: 'Cosmos', capacity: 25, sector: 'Laboratorio Sur', shape: 'rect' },
+  { id: 'SAL-003', name: 'Skilab', capacity: 20, sector: 'Laboratorio Este', shape: 'rect' },
 
   // ALA DERECHA (Pods superiores, Auditorio principal y Pods inferiores)
-  { id: 'SAL-008', sector: 'Pods Terraza Norte', shape: 'pill' },
-  { id: 'SAL-009', sector: 'Pods Terraza Norte', shape: 'pill' },
-  { id: 'SAL-001', sector: 'Núcleo Principal Este', shape: 'auditorium' },
-  { id: 'SAL-007', sector: 'Pods Terraza Sur', shape: 'pill' },
+  { id: 'SAL-008', name: 'Amarillas', capacity: 6, sector: 'Pods Terraza Norte', shape: 'pill' },
+  { id: 'SAL-009', name: 'Verdes', capacity: 6, sector: 'Pods Terraza Norte', shape: 'pill' },
+  { id: 'SAL-001', name: 'Auditorio', capacity: 100, sector: 'Núcleo Principal Este', shape: 'auditorium' },
+  { id: 'SAL-007', name: 'Azul', capacity: 10, sector: 'Pods Terraza Sur', shape: 'pill' },
 ]
 
 export const STATUS_STYLES = {
@@ -70,6 +70,16 @@ export const STATUS_STYLES = {
   },
 }
 
+// Mapeo de imágenes locales en frontend/public
+const ROOM_LOCAL_IMAGES = {
+  'SAL-001': '/imagenes_salones/auditorio.png',
+  'SAL-004': '/imagenes_salones/sputnik.png',
+  'SAL-005': '/imagenes_salones/apolo.png',
+  'SAL-008': '/imagenes_salones/amarilla_1.png',
+  'SAL-009': '/imagenes_salones/amarilla_2.png',
+  'SAL-010': '/imagenes_salones/artemis.png',
+}
+
 export default function CampusRealFloorplan({
   spaces = [],
   selectedSpaceId = null,
@@ -77,7 +87,7 @@ export default function CampusRealFloorplan({
   onBook,
   onReportIncident,
 }) {
-  const [internalSelectedId, setInternalSelectedId] = useState(null)
+  const [internalSelectedId, setInternalSelectedId] = useState(selectedSpaceId)
   const [imageErrorMap, setImageErrorMap] = useState({})
 
   const currentSelectedId = selectedSpaceId || internalSelectedId || spaces[0]?.id
@@ -86,7 +96,7 @@ export default function CampusRealFloorplan({
   const getSpace = (id) => {
     const live = spaces.find((s) => s.id === id)
     if (!live) return null
-    const layout = CAMPUS_FLOORPLAN_SPACES.find((s) => s.id === id)
+    const defaultMeta = CAMPUS_FLOORPLAN_SPACES.find((s) => s.id === id)
 
     // Determinar estado accesible
     let status = live.status
@@ -100,7 +110,12 @@ export default function CampusRealFloorplan({
       status = 'available'
     }
 
-    return { ...layout, ...live, status }
+    return {
+      ...defaultMeta,
+      ...live,
+      status,
+      capacity: live.capacity,
+    }
   }
 
   const handleSelect = (space) => {
@@ -174,9 +189,9 @@ export default function CampusRealFloorplan({
   }
 
   const activeSpace = getSpace(currentSelectedId)
-  const activeStatus = activeSpace ? STATUS_STYLES[activeSpace.status] || STATUS_STYLES.available : null
+  const activeStatus = activeSpace ? (STATUS_STYLES[activeSpace.status] || STATUS_STYLES.available) : null
   const activeImagePath =
-    activeSpace ? `/assets/rooms/${activeSpace.id}.jpg` : null
+    activeSpace ? (ROOM_LOCAL_IMAGES[activeSpace.id] || `/assets/rooms/${activeSpace.id}.jpg`) : null
   const hasImageFailed = activeSpace ? imageErrorMap[activeSpace.id] : false
 
   return (
@@ -190,14 +205,14 @@ export default function CampusRealFloorplan({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#22d3ee]">
-              Plano interactivo • Campuslands
+              Esquema interactivo • Campuslands
             </span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              {spaces.length} salas registradas
+              10 Salas en Enclave
             </span>
           </div>
           <h2 className="text-2xl sm:text-[26px] font-bold tracking-tight text-white mt-1">
-            Esquema de Salas y Disponibilidad
+            Distribución Física y Disponibilidad Telemática
           </h2>
         </div>
 
@@ -247,9 +262,9 @@ export default function CampusRealFloorplan({
             <div className="my-1 py-2.5 px-4 rounded-xl bg-emerald-500/[0.05] border border-dashed border-emerald-500/25 flex items-center justify-between text-[11px] font-mono text-emerald-400 select-none">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span className="font-semibold tracking-wider">•••▷ PASILLO CENTRAL</span>
+                <span className="font-semibold tracking-wider">•••▷ CORREDOR CENTRAL CAMPUSLANDS</span>
               </div>
-              <span className="opacity-80">CONEXIÓN ENTRE ÁREAS ▷▷</span>
+              <span className="opacity-80">RUTA DE EVACUACIÓN ▷▷ LOBBY</span>
             </div>
 
             {/* Franja Inferior Izquierda: Artemis (Chaflán Sup) + Blanca + Cosmos & Skilab */}
@@ -357,7 +372,7 @@ export default function CampusRealFloorplan({
               <p className="text-xs text-zinc-400">
                 Capacidad autorizada:{' '}
                 <strong className="text-zinc-200 font-semibold">{activeSpace.capacity} asistentes</strong>
-                {' '}&bull; Sector del esquema: <span className="text-zinc-300">{activeSpace.sector}</span>
+                {' '}&bull; Ubicación: <span className="text-zinc-300">{activeSpace.sector}</span>
               </p>
               {activeSpace.resources && activeSpace.resources.length > 0 && (
                 <p className="text-[11px] text-zinc-400 mt-1 line-clamp-1">
@@ -383,7 +398,7 @@ export default function CampusRealFloorplan({
               className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] active:scale-95 border border-white/10 text-xs font-semibold text-zinc-200 hover:text-white transition-all cursor-pointer flex items-center justify-center gap-1.5"
             >
               <span className="text-amber-400">⚡</span>
-              <span>Reportar Incidencia</span>
+              <span>Reportar Incidencia con IA</span>
             </button>
           </div>
         </div>

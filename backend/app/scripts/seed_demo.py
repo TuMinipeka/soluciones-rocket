@@ -13,7 +13,7 @@ from app.modules.auth.schemas import UserRegisterRequest
 from app.modules.spaces.models import Space
 from app.scripts.create_admin import ensure_user
 from app.scripts.init_db import init_db
-from app.services.availability import OFFICIAL_SPACES
+from app.services.availability import LEGACY_SPACE_NAMES, OFFICIAL_SPACES
 
 
 def _demo_accounts_from_env() -> list[tuple[str, str, str, Role]]:
@@ -44,7 +44,11 @@ def seed_demo(db: Session, accounts: list[tuple[str, str, str, Role]]) -> dict[s
             if room is None:
                 db.add(Space(id=sid, name=official["name"], capacity=official["capacity"]))
                 created_rooms += 1
-            elif (room.name, room.capacity) != (official["name"], official["capacity"]):
+            elif room.capacity != official["capacity"]:
+                raise ValueError(f"La sala {sid} difiere del catálogo autorizado; no se sobrescribió.")
+            elif room.name == LEGACY_SPACE_NAMES.get(sid):
+                room.name = official["name"]
+            elif room.name != official["name"]:
                 raise ValueError(f"La sala {sid} difiere del catálogo autorizado; no se sobrescribió.")
 
         for name, email, password, role in accounts:

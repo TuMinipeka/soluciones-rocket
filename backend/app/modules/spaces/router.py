@@ -14,7 +14,7 @@ from app.modules.spaces.recommendation import (
     SpaceRecommendationResponse,
     recommend_space,
 )
-from app.modules.spaces.schemas import SpaceAvailabilityResponse
+from app.modules.spaces.schemas import SpaceAvailabilityResponse, SpaceReservationSlotResponse
 
 
 router = APIRouter(prefix="/spaces", tags=["spaces"])
@@ -43,7 +43,20 @@ def list_spaces(
 @router.get("/{space_id}", response_model=SpaceAvailabilityResponse)
 def get_space(
     space_id: str,
+    requested_date: date | None = Query(default=None, alias="date"),
+    start_time: time | None = Query(default=None),
+    end_time: time | None = Query(default=None),
     _user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> SpaceAvailabilityResponse:
-    return service.get_space(space_id, db)
+    return service.get_space(space_id, db, requested_date, start_time, end_time)
+
+
+@router.get("/{space_id}/reservations", response_model=list[SpaceReservationSlotResponse])
+def list_space_reservations(
+    space_id: str,
+    requested_date: date | None = Query(default=None, alias="date"),
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[SpaceReservationSlotResponse]:
+    return service.list_space_reservations(space_id, db, requested_date)

@@ -7,6 +7,7 @@ from threading import Barrier
 import pytest
 from sqlalchemy import create_engine, event, func, select, text
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
@@ -15,7 +16,8 @@ from app.modules.auth.enums import Role
 from app.modules.auth.models import User
 from app.modules.resources.models import Loan, Resource
 from app.modules.resources.schemas import LoanCreate
-from app.modules.resources.service import create_loan
+from app.modules.resources.service import create_loan, return_loan
+from app.modules.reservations.models import Reservation
 from app.modules.spaces.models import Space
 from app.scripts.seed_demo import seed_demo
 from app.services.resources import get_resource_alternatives
@@ -56,6 +58,38 @@ def test_seed_rejects_changed_official_room_without_partial_users(db_session):
     assert db_session.get(Space, "SAL-002").capacity == 30
 
 
+def test_seed_migrates_legacy_room_names_without_breaking_reservations(
+    db_session, teacher_user
+):
+    legacy_names = {
+        "SAL-003": "Skylab",
+        "SAL-004": "Sputnik",
+        "SAL-006": "Sala Nueva",
+    }
+    for space_id, legacy_name in legacy_names.items():
+        db_session.get(Space, space_id).name = legacy_name
+    reservation = Reservation(
+        space_id="SAL-004",
+        user_id=teacher_user.id,
+        date=datetime.now(timezone.utc).date() + timedelta(days=1),
+        start_time=datetime.strptime("08:00", "%H:%M").time(),
+        end_time=datetime.strptime("09:00", "%H:%M").time(),
+        attendees=10,
+        title="Reserva conservada",
+        status="confirmed",
+    )
+    db_session.add(reservation)
+    db_session.commit()
+    reservation_id = reservation.id
+
+    seed_demo(db_session, [])
+
+    assert db_session.get(Space, "SAL-003").name == "Skilab"
+    assert db_session.get(Space, "SAL-004").name == "Spooki"
+    assert db_session.get(Space, "SAL-006").name == "Blanca"
+    assert db_session.get(Reservation, reservation_id).space_id == "SAL-004"
+
+
 def test_inventory_and_loan_lifecycle(client, admin_token, teacher_token, support_token):
     data = {"id": "EQ-001", "name": "Proyector autorizado", "category": "projector"}
     assert client.post("/resources", json=data, headers=auth(teacher_token)).status_code == 403
@@ -64,6 +98,17 @@ def test_inventory_and_loan_lifecycle(client, admin_token, teacher_token, suppor
     assert created.json()["status"] == "available"
     assert client.get("/resources", headers=auth(teacher_token)).json()[0]["id"] == "EQ-001"
     assert client.post("/resources", json=data, headers=auth(admin_token)).status_code == 409
+
+    support_resource = {
+        "id": "EQ-SUPPORT",
+        "name": "Equipo autorizado por soporte",
+        "category": "laptop",
+    }
+    support_created = client.post(
+        "/resources", json=support_resource, headers=auth(support_token)
+    )
+    assert support_created.status_code == 201
+    assert support_created.json()["id"] == "EQ-SUPPORT"
 
     start = datetime.now(timezone.utc) + timedelta(minutes=2)
     payload = {
@@ -117,6 +162,96 @@ def test_incident_resource_block_is_persisted(client, db_session, admin_token, s
     assert db_session.get(Resource, "EQ-002").is_blocked is False
 
 
+def test_confirming_and_returning_loan_updates_resource_availability(
+    client, admin_token, teacher_token
+):
+    headers = auth(admin_token)
+    created = client.post(
+        "/resources",
+        json={"id": "EQ-STATUS", "name": "Equipo de estado", "category": "laptop"},
+        headers=headers,
+    )
+    assert created.status_code == 201
+    assert created.json()["status"] == "available"
+
+    start = datetime.now(timezone.utc) + timedelta(minutes=5)
+    loan = client.post(
+        "/resources/loans",
+        json={
+            "resource_id": "EQ-STATUS",
+            "start_time": start.isoformat(),
+            "expected_return": (start + timedelta(hours=1)).isoformat(),
+        },
+        headers=auth(teacher_token),
+    )
+    assert loan.status_code == 201
+    assert client.get("/resources/EQ-STATUS", headers=headers).json()["status"] == "loaned"
+
+    returned = client.post(
+        f"/resources/loans/{loan.json()['id']}/return",
+        headers=auth(teacher_token),
+    )
+    assert returned.status_code == 200
+    assert client.get("/resources/EQ-STATUS", headers=headers).json()["status"] == "available"
+
+
+def test_teacher_can_list_and_request_support_authorized_resource(
+    client, support_token, teacher_token
+):
+    created = client.post(
+        "/resources",
+        json={"id": "EQ-AUTHORIZED", "name": "Tableta autorizada", "category": "tablet"},
+        headers=auth(support_token),
+    )
+    assert created.status_code == 201
+
+    resources = client.get("/resources", headers=auth(teacher_token))
+    assert resources.status_code == 200
+    assert "EQ-AUTHORIZED" in {resource["id"] for resource in resources.json()}
+
+    start = datetime.now(timezone.utc) + timedelta(minutes=5)
+    requested = client.post(
+        "/resources/loans",
+        json={
+            "resource_id": "EQ-AUTHORIZED",
+            "start_time": start.isoformat(),
+            "expected_return": (start + timedelta(hours=2)).isoformat(),
+            "notes": "Clase autorizada",
+        },
+        headers=auth(teacher_token),
+    )
+    assert requested.status_code == 201
+    assert requested.json()["resource_id"] == "EQ-AUTHORIZED"
+
+
+def test_failed_loan_commit_never_reports_success_or_persists_partial_row(
+    client, db_session, teacher_token, monkeypatch
+):
+    db_session.add(Resource(id="EQ-ROLLBACK", name="Equipo transaccional", category="laptop"))
+    db_session.commit()
+
+    def fail_commit():
+        raise OperationalError("COMMIT", {}, RuntimeError("disk unavailable"))
+
+    monkeypatch.setattr(db_session, "commit", fail_commit)
+    start = datetime.now(timezone.utc) + timedelta(minutes=5)
+    response = client.post(
+        "/resources/loans",
+        json={
+            "resource_id": "EQ-ROLLBACK",
+            "start_time": start.isoformat(),
+            "expected_return": (start + timedelta(hours=1)).isoformat(),
+        },
+        headers=auth(teacher_token),
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "DATABASE_UNAVAILABLE"
+    assert db_session.scalar(
+        select(func.count()).select_from(Loan).where(Loan.resource_id == "EQ-ROLLBACK")
+    ) == 0
+
+
 def test_incident_rejects_unknown_equipment(client, support_token):
     response = client.post(
         "/incidents",
@@ -157,6 +292,50 @@ def test_sqlite_reopen_preserves_rows_and_enforces_foreign_keys(tmp_path):
         with pytest.raises(IntegrityError):
             db.commit()
         db.rollback()
+    reopened.dispose()
+
+
+def test_loan_and_return_state_survive_new_database_sessions(tmp_path):
+    database = tmp_path / "loan-persistence.db"
+    engine = create_engine(f"sqlite:///{database}")
+    event.listen(engine, "connect", enable_sqlite_foreign_keys)
+    Base.metadata.create_all(engine)
+    start = datetime.now(timezone.utc) + timedelta(hours=1)
+
+    with Session(engine) as db:
+        borrower = User(
+            name="Docente persistencia",
+            email="persistence@example.test",
+            password_hash="not-used-here",
+            role=Role.TEACHER.value,
+        )
+        db.add_all([borrower, Resource(id="EQ-PERSIST", name="Portátil", category="laptop")])
+        db.commit()
+        db.refresh(borrower)
+        loan = create_loan(
+            LoanCreate(
+                resource_id="EQ-PERSIST",
+                start_time=start,
+                expected_return=start + timedelta(hours=2),
+            ),
+            borrower,
+            db,
+        )
+        loan_id = loan.id
+        borrower_id = borrower.id
+
+    with Session(engine) as db:
+        persisted = db.get(Loan, loan_id)
+        assert persisted is not None
+        assert persisted.resource_id == "EQ-PERSIST"
+        assert persisted.returned_at is None
+        return_loan(loan_id, db.get(User, borrower_id), db)
+
+    engine.dispose()
+    reopened = create_engine(f"sqlite:///{database}")
+    event.listen(reopened, "connect", enable_sqlite_foreign_keys)
+    with Session(reopened) as db:
+        assert db.get(Loan, loan_id).returned_at is not None
     reopened.dispose()
 
 

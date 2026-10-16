@@ -27,6 +27,12 @@ OFFICIAL_SPACES = {
     "SAL-010": {"name": "Artemis", "capacity": 32},
 }
 
+LEGACY_SPACE_NAMES = {
+    "SAL-003": "Skylab",
+    "SAL-004": "Sputnik",
+    "SAL-006": "Sala Nueva",
+}
+
 def strip_accents(text: str) -> str:
     """Normaliza texto eliminando acentos y diacríticos."""
     nfkd = unicodedata.normalize("NFKD", text)

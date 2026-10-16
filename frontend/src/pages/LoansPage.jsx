@@ -20,20 +20,10 @@ import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
 import SuccessMessage from '../components/feedback/SuccessMessage'
 
-// Inventario de muestra representativo de Campuslands si el SEED aún no se ejecuta
-const DEFAULT_RESOURCES = [
-  { id: 'REC-001', name: 'MacBook Pro M2 (16GB)', category: 'Computación', serial_number: 'C02-K9812-M2', status: 'available', location: 'Laboratorio Skilab' },
-  { id: 'REC-002', name: 'Proyector Epson Pro 4K', category: 'Audiovisual', serial_number: 'EP-4K-88219', status: 'available', location: 'Auditorio' },
-  { id: 'REC-003', name: 'Tableta Wacom Cintiq Pro', category: 'Diseño', serial_number: 'WC-24P-1092', status: 'available', location: 'Skilab' },
-  { id: 'REC-004', name: 'Kit Arduino + Sensores IoT', category: 'Electrónica', serial_number: 'ARD-IOT-V2', status: 'available', location: 'Cosmos' },
-  { id: 'REC-005', name: 'Cámara 4K Poly Studio', category: 'Audiovisual', serial_number: 'PLY-4K-3391', status: 'available', location: 'Sala Blanca' },
-  { id: 'REC-006', name: 'Laptop Dell XPS 15 (Dev)', category: 'Computación', serial_number: 'DL-XPS-9520', status: 'available', location: 'Artemis' },
-]
-
 export default function LoansPage() {
   const { user } = useAuth()
 
-  const [resources, setResources] = useState(DEFAULT_RESOURCES)
+  const [resources, setResources] = useState([])
   const [loans, setLoans] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -56,12 +46,16 @@ export default function LoansPage() {
     setError(null)
     try {
       const [resData, loansData] = await Promise.all([
-        getResourcesApi().catch(() => DEFAULT_RESOURCES),
-        getLoansApi().catch(() => []),
+        getResourcesApi(),
+        getLoansApi(),
       ])
-      const resList = Array.isArray(resData) ? resData : resData?.resources || DEFAULT_RESOURCES
-      setResources(resList.length > 0 ? resList : DEFAULT_RESOURCES)
+      const resList = Array.isArray(resData) ? resData : resData?.resources || []
+      setResources(resList)
       setLoans(Array.isArray(loansData) ? loansData : loansData?.loans || [])
+    } catch (err) {
+      setResources([])
+      setLoans([])
+      setError(err.message || 'No fue posible consultar el inventario y los préstamos.')
     } finally {
       setIsLoading(false)
     }
@@ -339,6 +333,11 @@ export default function LoansPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredResources.length === 0 && (
+              <p className="col-span-full py-8 text-center text-sm text-[#a1a1a6]">
+                No hay recursos autorizados registrados.
+              </p>
+            )}
             {filteredResources.map((res) => (
               <Card key={res.id} className="flex flex-col justify-between hover:border-white/[0.15] transition-all">
                 <div>

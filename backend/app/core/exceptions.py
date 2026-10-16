@@ -4,6 +4,7 @@ from typing import Any
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
@@ -135,7 +136,10 @@ def register_exception_handlers(app: FastAPI) -> None:
             401: "UNAUTHORIZED",
             403: "FORBIDDEN",
             404: "NOT_FOUND",
+            405: "METHOD_NOT_ALLOWED",
             409: "CONFLICT",
+            413: "PAYLOAD_TOO_LARGE",
+            415: "UNSUPPORTED_MEDIA_TYPE",
             422: "VALIDATION_ERROR",
             429: "TOO_MANY_REQUESTS",
             500: "INTERNAL_SERVER_ERROR",
@@ -155,6 +159,19 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=exc.status_code,
             content=content,
             headers=exc.headers,
+        )
+
+    @app.exception_handler(SQLAlchemyError)
+    async def database_error_handler(_request: Request, _exc: SQLAlchemyError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "error": {
+                    "code": "DATABASE_UNAVAILABLE",
+                    "message": "La base de datos no está disponible temporalmente.",
+                    "details": None,
+                }
+            },
         )
 
     @app.exception_handler(Exception)
