@@ -63,7 +63,12 @@ class AIProvider(Protocol):
 
 
 class ChatCompletionsAIProvider:
-    """Implementación de proveedor de IA compatible con la API de Chat Completions (OpenAI/vLLM/Ollama/etc)."""
+    """Proveedor de triaje compatible con Chat Completions de OpenAI y Groq."""
+
+    PROVIDER_BASE_URLS = {
+        "openai": "https://api.openai.com/v1",
+        "groq": "https://api.groq.com/openai/v1",
+    }
 
     def __init__(self, transport: httpx.AsyncBaseTransport | None = None):
         self.transport = transport
@@ -71,11 +76,15 @@ class ChatCompletionsAIProvider:
     async def classify(
         self, description: str, context: str | None
     ) -> tuple[AIClassificationResult | None, str | None, int, FallbackReason | None]:
-        # Si no hay API KEY, base URL o modelo configurado, falla rápido hacia el fallback local
+        # La clave y el modelo son obligatorios para evitar llamadas accidentales.
         if not settings.AI_API_KEY or not settings.AI_MODEL:
             return None, None, 0, FallbackReason.NOT_CONFIGURED
 
-        base_url = (settings.AI_BASE_URL or "https://api.openai.com/v1").rstrip("/")
+        provider = (settings.AI_PROVIDER or "openai").strip().lower()
+        base_url = settings.AI_BASE_URL or self.PROVIDER_BASE_URLS.get(provider)
+        if not base_url:
+            return None, None, 0, FallbackReason.NOT_CONFIGURED
+        base_url = base_url.rstrip("/")
         endpoint = f"{base_url}/chat/completions"
 
         context_section = ""

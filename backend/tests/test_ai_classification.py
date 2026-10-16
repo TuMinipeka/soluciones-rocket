@@ -11,6 +11,44 @@ from app.modules.recommendations.service import RecommendationService
 
 
 @pytest.mark.asyncio
+async def test_groq_provider_uses_endpoint_and_json_mode(monkeypatch):
+    monkeypatch.setattr(settings, "AI_PROVIDER", "groq")
+    monkeypatch.setattr(settings, "AI_BASE_URL", None)
+    monkeypatch.setattr(settings, "AI_MODEL", "llama-3.3-70b-versatile")
+    requests = []
+
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps({
+            "category": "electrical",
+            "priority": "high",
+            "responsible_team": "maintenance",
+            "recommendation": "Desconectar el circuito.",
+            "explanation": "Hay riesgo eléctrico.",
+            "suggests_blocking": True,
+        })}}]})
+
+    provider = ChatCompletionsAIProvider(transport=httpx.MockTransport(mock_handler))
+    result, model, _, fallback = await provider.classify("El tomacorriente echa chispas.", None)
+
+    assert result is not None
+    assert result.category == "electrical"
+    assert model == "llama-3.3-70b-versatile"
+    assert fallback is None
+    assert str(requests[0].url) == "https://api.groq.com/openai/v1/chat/completions"
+    assert json.loads(requests[0].content)["response_format"] == {"type": "json_object"}
+
+
+@pytest.mark.asyncio
+async def test_unknown_provider_without_base_url_falls_back(monkeypatch):
+    monkeypatch.setattr(settings, "AI_PROVIDER", "unknown")
+    monkeypatch.setattr(settings, "AI_BASE_URL", None)
+    provider = ChatCompletionsAIProvider()
+    result, model, latency, fallback = await provider.classify("El tomacorriente echa chispas.", None)
+    assert (result, model, latency, fallback) == (None, None, 0, FallbackReason.NOT_CONFIGURED)
+
+
+@pytest.mark.asyncio
 async def test_ai_classification_valid_response(db_session):
     """HU-15: Respuesta válida del modelo se valida con Pydantic y retorna classification_source='ai'."""
     ai_response_payload = {
