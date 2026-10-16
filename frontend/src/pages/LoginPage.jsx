@@ -264,7 +264,7 @@ export default function LoginPage({ initialMode }) {
           </div>
 
           {/* Segmented Control iOS Dark con Pastilla Deslizante Física (Cero Parpadeo) */}
-          <div className="relative bg-[#161618] p-1 rounded-2xl flex items-center mb-6 border border-white/[0.06] select-none">
+          <div className="relative bg-[#161618] p-1 rounded-2xl flex items-center mb-5 border border-white/[0.06] select-none">
             {/* Pastilla deslizante animada */}
             <div
               className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-[#2c2c2e] border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.5)] transition-transform duration-300"
@@ -293,6 +293,92 @@ export default function LoginPage({ initialMode }) {
               Registrarse
             </button>
           </div>
+
+          {/* Selector Rápido de Roles para Login (Administrador, Docente, Soporte) */}
+          {mode === 'login' && (
+            <div className="mb-5 p-3 rounded-2xl bg-[#161618]/90 border border-white/[0.08] shadow-sm animate-tab-fade">
+              <div className="flex items-center justify-between mb-2 px-1">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-[#8e8e93] flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#22d3ee] animate-pulse" />
+                  Acceso directo por rol
+                </span>
+                <span className="text-[10px] font-mono text-[#22d3ee]">Oficial SEED</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {/* Botón Admin */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('admin@campuslands.edu')
+                    setPassword('CampusAdmin2026!')
+                    setLocalError(null)
+                    clearError()
+                  }}
+                  className={`p-2 rounded-xl border text-center transition-all duration-200 cursor-pointer flex flex-col items-center gap-1 ${
+                    email === 'admin@campuslands.edu'
+                      ? 'bg-amber-500/20 border-amber-500/80 text-white shadow-[0_0_12px_rgba(245,158,11,0.25)]'
+                      : 'bg-[#1c1c1e] border-white/[0.06] text-[#8e8e93] hover:text-white hover:border-amber-500/40'
+                  }`}
+                >
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
+                    email === 'admin@campuslands.edu' ? 'bg-amber-500 text-black' : 'bg-amber-500/10 text-amber-400'
+                  }`}>
+                    ⚡
+                  </div>
+                  <span className="text-[11px] font-semibold leading-tight">Admin</span>
+                  <span className="text-[9px] text-[#8e8e93] font-mono">Control total</span>
+                </button>
+
+                {/* Botón Docente */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('carlos.mendoza@campuslands.edu')
+                    setPassword('DocenteCampus2026!')
+                    setLocalError(null)
+                    clearError()
+                  }}
+                  className={`p-2 rounded-xl border text-center transition-all duration-200 cursor-pointer flex flex-col items-center gap-1 ${
+                    email === 'carlos.mendoza@campuslands.edu'
+                      ? 'bg-[#2563eb]/20 border-[#2563eb] text-white shadow-[0_0_12px_rgba(37,99,235,0.25)]'
+                      : 'bg-[#1c1c1e] border-white/[0.06] text-[#8e8e93] hover:text-white hover:border-[#2563eb]/40'
+                  }`}
+                >
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
+                    email === 'carlos.mendoza@campuslands.edu' ? 'bg-[#2563eb] text-white' : 'bg-[#2563eb]/10 text-blue-400'
+                  }`}>
+                    🎓
+                  </div>
+                  <span className="text-[11px] font-semibold leading-tight">Docente</span>
+                  <span className="text-[9px] text-[#8e8e93] font-mono">Reservas</span>
+                </button>
+
+                {/* Botón Soporte */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('soporte@campuslands.edu')
+                    setPassword('SoporteCampus2026!')
+                    setLocalError(null)
+                    clearError()
+                  }}
+                  className={`p-2 rounded-xl border text-center transition-all duration-200 cursor-pointer flex flex-col items-center gap-1 ${
+                    email === 'soporte@campuslands.edu'
+                      ? 'bg-emerald-500/20 border-emerald-500/80 text-white shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+                      : 'bg-[#1c1c1e] border-white/[0.06] text-[#8e8e93] hover:text-white hover:border-emerald-500/40'
+                  }`}
+                >
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
+                    email === 'soporte@campuslands.edu' ? 'bg-emerald-500 text-black' : 'bg-emerald-500/10 text-emerald-400'
+                  }`}>
+                    🛠️
+                  </div>
+                  <span className="text-[11px] font-semibold leading-tight">Soporte</span>
+                  <span className="text-[9px] text-[#8e8e93] font-mono">Incidencias</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Alerta de Error Sutil Pastel */}
           {(localError || authError) && (
