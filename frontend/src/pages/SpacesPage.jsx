@@ -10,27 +10,14 @@ import RoomMap from '../components/spaces/RoomMap'
 import RoomDetails from '../components/spaces/RoomDetails'
 import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
+import EmptyState from '../components/feedback/EmptyState'
 import Input from '../components/ui/Input'
 import Card from '../components/ui/Card'
 
-// Catálogo oficial de las 10 salas del campus (Fuente: backend/app/services/availability.py)
-const DEFAULT_OFFICIAL_SPACES = [
-  { id: 'SAL-001', code: 'SAL-001', name: 'Auditorio', capacity: 100, status: 'available', resources: ['Proyector láser', 'Sistema de sonido', 'Micrófonos inalámbricos', 'Escenario'] },
-  { id: 'SAL-002', code: 'SAL-002', name: 'Cosmos', capacity: 25, status: 'available', resources: ['Smart TV 75"', 'Cámaras de videoconferencia', 'Pizarra acrílica'] },
-  { id: 'SAL-003', code: 'SAL-003', name: 'Skilab', capacity: 20, status: 'available', resources: ['Estaciones de trabajo iMac', 'Tabletas gráficas', 'Conectividad Gigabit'] },
-  { id: 'SAL-004', code: 'SAL-004', name: 'Spooki', capacity: 38, status: 'available', resources: ['Proyector FHD', 'Aire acondicionado doble', 'Pizarra panorámica'] },
-  { id: 'SAL-005', code: 'SAL-005', name: 'Apolo', capacity: 34, status: 'available', resources: ['Pizarra interactiva', 'Audio distribuido', 'Conexiones HDMI individuales'] },
-  { id: 'SAL-006', code: 'SAL-006', name: 'Blanca', capacity: 12, status: 'available', resources: ['Mesa de directorio', 'Pantalla 55"', 'Cámara 4K'] },
-  { id: 'SAL-007', code: 'SAL-007', name: 'Azul', capacity: 10, status: 'available', resources: ['Pizarra de cristal', 'Videoconferencia Polycom'] },
-  { id: 'SAL-008', code: 'SAL-008', name: 'Amarillas', capacity: 6, status: 'available', resources: ['Monitor 43"', 'Mesa redonda'] },
-  { id: 'SAL-009', code: 'SAL-009', name: 'Verdes', capacity: 6, status: 'available', resources: ['Monitor 43"', 'Pizarra pequeña'] },
-  { id: 'SAL-010', code: 'SAL-010', name: 'Artemis', capacity: 32, status: 'available', resources: ['Laptops de desarrollo', 'Proyector 4K', 'Audio envolvente'] },
-]
-
 export default function SpacesPage() {
   const navigate = useNavigate()
-  const [spaces, setSpaces] = useState(DEFAULT_OFFICIAL_SPACES)
-  const [selectedRoom, setSelectedRoom] = useState(DEFAULT_OFFICIAL_SPACES[1]) // Cosmos preseleccionado
+  const [spaces, setSpaces] = useState([])
+  const [selectedRoom, setSelectedRoom] = useState(null)
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [startTime, setStartTime] = useState('08:00')
   const [endTime, setEndTime] = useState('10:00')
@@ -43,16 +30,12 @@ export default function SpacesPage() {
     try {
       const data = await getSpacesApi({ date, start_time: startTime, end_time: endTime })
       const list = Array.isArray(data) ? data : data?.spaces || []
-      if (list.length > 0) {
-        setSpaces(list)
-        if (selectedRoom) {
-          const updated = list.find((s) => s.id === selectedRoom.id)
-          if (updated) setSelectedRoom(updated)
-        }
-      }
-    } catch {
-      // Si la API aún no tiene endpoint de salas montado por Conde, usamos el catálogo oficial como base determinista
-      setSpaces(DEFAULT_OFFICIAL_SPACES)
+      setSpaces(list)
+      setSelectedRoom((current) => list.find((room) => room.id === current?.id) || null)
+    } catch (err) {
+      setSpaces([])
+      setSelectedRoom(null)
+      setError(err.message || 'No se pudo consultar la disponibilidad de salas.')
     } finally {
       setIsLoading(false)
     }
@@ -115,10 +98,12 @@ export default function SpacesPage() {
         </div>
       </Card>
 
-      {error && <ErrorMessage message={error} onRetry={loadSpaces} />}
-
       {isLoading ? (
         <LoadingState message="Consultando disponibilidad de salas…" />
+      ) : error ? (
+        <ErrorMessage message={error} onRetry={loadSpaces} />
+      ) : spaces.length === 0 ? (
+        <EmptyState title="Sin salas disponibles" description="No hay salas registradas para mostrar." />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           <div className="lg:col-span-2">

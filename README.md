@@ -110,6 +110,7 @@ Toda la documentación técnica y operativa está organizada en la carpeta `docs
 - [Contrato: Autenticación, Usuarios e Incidencias](docs/contracts/authIncidents.md)
 - [Contrato: Salas, Disponibilidad y Reservas](docs/contracts/spacesAvailability.md)
 - [Contrato: Recursos Tecnológicos y Préstamos](docs/contracts/resourcesLoans.md)
+- [Contrato: Resumen Operativo del Dashboard](docs/contracts/dashboardSummary.md)
 
 ### 4. Guías de Handoff y Escalabilidad
 - [Handoff: Estado Operativo y Cobertura del Backend](docs/handoffs/backendStatus.md)
