@@ -182,7 +182,8 @@ export default function ReservationPage() {
       }
 
       const result = await createReservationApi(payload)
-      const reservationId = result.id || result.reservation_id || 'RES-' + Math.floor(1000 + Math.random() * 9000)
+      const reservationId = result?.id || result?.reservation_id
+      if (!reservationId) throw new Error('El servidor no confirmó el identificador de la reserva.')
 
       setSuccess(`Reserva confirmada con identificador oficial: #${reservationId}`)
       setTitle('')

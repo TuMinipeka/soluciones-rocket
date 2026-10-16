@@ -158,7 +158,8 @@ export default function IncidentPage() {
       }
 
       const created = await createIncidentApi(payload)
-      const incidentId = created.id || created.incident_id || 'INC-' + Math.floor(100 + Math.random() * 900)
+      const incidentId = created?.id || created?.incident_id
+      if (!incidentId) throw new Error('El servidor no confirmó el identificador de la incidencia.')
 
       setCreatedIncidentId(incidentId)
       setCurrentStep(3)
