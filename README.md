@@ -41,6 +41,7 @@ Consulta la [matriz de versiones y las comprobaciones de reproducibilidad](docs/
 - [Contrato de API: Auth e Incidencias](docs/contracts/auth_incidents.md).
 - [Contrato de API: Recursos y Préstamos](docs/contracts/resources_loans.md).
 - [Arquitectura de Seguridad, IA y Fallback](docs/AUTH_IA.md).
+- [Playbook de pruebas, casos borde y sustentación](docs/testing-and-defense-playbook.md).
 
 ## Trabajo en equipo
 
