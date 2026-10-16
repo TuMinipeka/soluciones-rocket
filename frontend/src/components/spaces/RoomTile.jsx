@@ -1,33 +1,41 @@
-import React from 'react';
-
 /**
  * RoomTile: Butaca/Espacio interactivo tipo cine (HU-18).
  * Admite navegación por teclado (Enter / Espacio), aforos numéricos con chip y estados accesibles.
  * El color y diseño se determinan estrictamente del payload devuelto por la API.
+ * Área: MAFE (HU-18).
  */
+
+import React from 'react';
+
 export default function RoomTile({
   room,
   isSelected = false,
   onClick,
-  className = '',
+  onSelect,
 }) {
   const {
     id = 'SAL-000',
+    code,
     name = 'Sala',
     capacity = 0,
-    status = 'available', // 'available' | 'occupied' | 'busy' | 'incident' | 'disabled' | 'maintenance'
+    status = 'available',
     is_blocked = false,
     currentReservation = null,
     equipment = [],
   } = room || {};
 
+  const handleSelect = (r) => {
+    if (onClick) onClick(r);
+    if (onSelect) onSelect(r);
+  };
+
   // Normalizar el estado directamente del payload de la API
-  let normalizedStatus = status.toLowerCase();
-  if (is_blocked || normalizedStatus === 'disabled') {
+  let normalizedStatus = (status || 'available').toLowerCase();
+  if (is_blocked || normalizedStatus === 'disabled' || normalizedStatus === 'maintenance') {
     normalizedStatus = 'disabled';
-  } else if (normalizedStatus === 'occupied') {
+  } else if (normalizedStatus === 'occupied' || normalizedStatus === 'busy') {
     normalizedStatus = 'occupied';
-  } else if (normalizedStatus === 'incident') {
+  } else if (normalizedStatus === 'incident' || normalizedStatus === 'en revisión') {
     normalizedStatus = 'incident';
   } else {
     normalizedStatus = 'available';
@@ -42,7 +50,6 @@ export default function RoomTile({
       glow: 'hover:shadow-[0_0_20px_rgba(48,209,88,0.25)]',
       dot: 'bg-[#30D158]',
       icon: '✓',
-      cardBg: 'bg-[#1C1C1E]',
       desc: 'Disponible para asignación',
     },
     occupied: {
@@ -53,7 +60,6 @@ export default function RoomTile({
       glow: 'hover:shadow-[0_0_20px_rgba(255,159,10,0.25)]',
       dot: 'bg-[#FF9F0A]',
       icon: '⏳',
-      cardBg: 'bg-[#1C1C1E]',
       desc: 'Con reserva confirmada',
     },
     incident: {
@@ -64,18 +70,16 @@ export default function RoomTile({
       glow: 'hover:shadow-[0_0_20px_rgba(255,107,53,0.3)]',
       dot: 'bg-[#FF6B35]',
       icon: '⚠️',
-      cardBg: 'bg-[#1C1C1E]',
       desc: 'Reporte técnico activo',
     },
     disabled: {
       label: 'Inhabilitada',
       color: 'text-[#FF453A]',
       badgeBg: 'bg-[#FF453A]/15 border-[#FF453A]/30',
-      border: 'border-[#FF453A]/30',
+      border: 'border-[#FF453A]/30 opacity-75',
       glow: '',
       dot: 'bg-[#FF453A]',
       icon: '⛔',
-      cardBg: 'hatch-disabled',
       desc: 'Fuera de servicio / Bloqueada',
     },
   };
@@ -85,34 +89,31 @@ export default function RoomTile({
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onClick?.(room);
+      handleSelect(room);
     }
   };
+
+  const displayCode = code || id;
 
   return (
     <div
       role="button"
       tabIndex={0}
-      aria-pressed={isSelected}
-      aria-label={`Sala ${name}, código ${id}, aforo ${capacity} personas, estado ${current.label}`}
-      onClick={() => onClick?.(room)}
+      aria-label={`Sala ${name}, aforo ${capacity}, estado ${current.label}`}
+      onClick={() => handleSelect(room)}
       onKeyDown={handleKeyDown}
-      className={`relative rounded-[1.25rem] p-4 border transition-all duration-200 select-none cursor-pointer flex flex-col justify-between min-h-[145px]
-        ${current.cardBg}
-        ${isSelected
-          ? 'ring-2 ring-[#2563EB] border-transparent shadow-[0_0_25px_rgba(37,99,235,0.45)] scale-[1.02]'
-          : current.border
-        }
-        ${current.glow}
-        focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2 focus:ring-offset-[#000000]
-        active:scale-[0.98]
-        ${className}
-      `}
+      className={`group relative flex flex-col justify-between p-4 rounded-[18px] border text-left transition-all duration-150 ease-out active:scale-[0.97] cursor-pointer select-none bg-[#1C1C1E] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2 focus:ring-offset-[#000000] ${
+        current.border
+      } ${current.glow} ${
+        isSelected
+          ? 'ring-2 ring-[#2563EB] ring-offset-2 ring-offset-[#0E0E10] shadow-[0_8px_24px_rgba(37,99,235,0.3)] scale-[1.02] bg-[#222226] z-10'
+          : 'hover:scale-[1.01]'
+      }`}
     >
       {/* Top Header: ID & Status Badge accesible */}
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] font-mono font-bold tracking-wider text-[#A1A1A6]">
-          {id}
+          {displayCode}
         </span>
         <span
           className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full border ${current.badgeBg} ${current.color}`}

@@ -1,74 +1,60 @@
-import React from 'react';
-
 /**
- * Reusable data table component with dark theme styling and responsive wrapper.
+ * Tabla de datos limpia y minimalista.
+ * Área: UI Compartida (MAFE placeholder funcional para consumo de GUERRA).
  */
+
 export default function Table({
   columns = [],
   data = [],
-  keyExtractor,
-  emptyMessage = 'No hay datos disponibles',
-  isLoading = false,
+  keyExtractor = (item, index) => item.id || index,
+  emptyMessage = 'No hay registros disponibles',
   className = '',
-  onRowClick,
 }) {
   return (
-    <div className={`w-full overflow-x-auto rounded-[1.25rem] border border-[rgba(255,255,255,0.08)] bg-[#1C1C1E] ${className}`}>
-      <table className="w-full text-left text-sm text-[#F5F5F7] border-collapse">
-        <thead className="bg-[#2C2C2E]/60 text-xs uppercase tracking-wider text-[#A1A1A6] border-b border-[rgba(255,255,255,0.08)]">
+    <div className={`overflow-x-auto rounded-[20px] bg-[#1c1c1e] border-t border-white/[0.09] border-x border-white/[0.04] border-b border-black/50 shadow-[0_12px_32px_rgba(0,0,0,0.4)] ${className}`}>
+      <table className="min-w-full divide-y divide-white/[0.08] text-left text-sm">
+        <thead className="bg-[#131315]/90">
           <tr>
-            {columns.map((col, idx) => (
+            {columns.map((col, index) => (
               <th
-                key={col.key || idx}
-                className={`py-3.5 px-4 font-semibold ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'} ${col.className || ''}`}
+                key={col.key || index}
+                scope="col"
+                className={`px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] ${col.headerClassName || ''}`}
               >
                 {col.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-[rgba(255,255,255,0.06)]">
-          {isLoading ? (
+        <tbody className="divide-y divide-white/[0.06] bg-[#1c1c1e]">
+          {data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="py-12 text-center text-[#A1A1A6]">
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <svg className="animate-spin h-6 w-6 text-[#2563EB]" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  <span>Cargando registros...</span>
-                </div>
-              </td>
-            </tr>
-          ) : data.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="py-10 text-center text-sm text-[#A1A1A6]">
+              <td
+                colSpan={columns.length}
+                className="px-4 py-8 text-center text-sm text-[#8d90a0]"
+              >
                 {emptyMessage}
               </td>
             </tr>
           ) : (
-            data.map((row, rowIdx) => {
-              const rowKey = keyExtractor ? keyExtractor(row, rowIdx) : row.id || rowIdx;
-              return (
-                <tr
-                  key={rowKey}
-                  onClick={() => onRowClick?.(row)}
-                  className={`transition-colors duration-150 ${onRowClick ? 'cursor-pointer hover:bg-[#2C2C2E]/60' : 'hover:bg-[#2C2C2E]/30'}`}
-                >
-                  {columns.map((col, colIdx) => (
-                    <td
-                      key={col.key || colIdx}
-                      className={`py-3.5 px-4 ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'} ${col.cellClassName || ''}`}
-                    >
-                      {col.render ? col.render(row[col.key], row, rowIdx) : row[col.key]}
-                    </td>
-                  ))}
-                </tr>
-              );
-            })
+            data.map((row, rowIndex) => (
+              <tr
+                key={keyExtractor(row, rowIndex)}
+                className="hover:bg-[#262a31] transition-colors"
+              >
+                {columns.map((col, colIndex) => (
+                  <td
+                    key={col.key || colIndex}
+                    className={`px-4 py-3.5 text-[#e4e2e4] whitespace-nowrap ${col.cellClassName || ''}`}
+                  >
+                    {col.render ? col.render(row, rowIndex) : row[col.accessor]}
+                  </td>
+                ))}
+              </tr>
+            ))
           )}
         </tbody>
       </table>
     </div>
-  );
+  )
 }

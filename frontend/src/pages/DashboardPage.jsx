@@ -36,6 +36,7 @@ const FALLBACK_DASHBOARD_DATA = {
 /**
  * DashboardPage: Panel de control operativo conectado a GET /dashboard/summary (HU-19).
  * Incluye auto-refresco por foco/pestaña, selector dinámico y manejo defensivo de estados.
+ * Área: MAFE (consumidor de api/dashboard.js preparado por GUERRA).
  */
 export default function DashboardPage() {
   const [summary, setSummary] = useState(null);
@@ -54,7 +55,12 @@ export default function DashboardPage() {
 
     try {
       if (typeof client === 'function') {
-        const response = await client({ date: selectedDate, time_slot: selectedSlot });
+        const response = await client({
+          date: selectedDate,
+          time_slot: selectedSlot,
+          start_time: '08:00',
+          end_time: '20:00',
+        });
         if (response === null) {
           setSummary(null);
         } else {
@@ -100,6 +106,16 @@ export default function DashboardPage() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [fetchDashboardData]);
+
+  // Valores normalizados entre los diferentes formatos devueltos por backend
+  const spacesFree = summary ? (summary.spaces_free ?? summary.available_spaces ?? 0) : 0;
+  const spacesOccupied = summary ? (summary.spaces_occupied ?? summary.occupied_spaces ?? 0) : 0;
+  const spacesTotal = summary ? (summary.spaces_total ?? (spacesFree + spacesOccupied) ?? 10) : 10;
+  const activeLoans = summary ? (summary.active_loans ?? 0) : 0;
+  const disabledResources = summary ? (summary.disabled_resources ?? 0) : 0;
+  const openIncidents = summary ? (summary.open_incidents ?? 0) : 0;
+  const inProgressIncidents = summary ? (summary.in_progress_incidents ?? 0) : 0;
+  const totalOperations = summary ? (summary.total_operations_today ?? (spacesOccupied + activeLoans + openIncidents) ?? 0) : 0;
 
   return (
     <div className="space-y-8 animate-fluid-enter" role="region" aria-label="Dashboard Operativo Campus Control">
@@ -216,12 +232,12 @@ export default function DashboardPage() {
             {/* 1. Espacios libres vs. ocupados */}
             <StatCard
               title="Espacios Libres vs. Ocupados"
-              value={`${summary.spaces_free ?? 0} / ${summary.spaces_total ?? 10}`}
-              subtitle={`${summary.spaces_occupied ?? 0} salas ocupadas actualmente`}
+              value={`${spacesFree} / ${spacesTotal}`}
+              subtitle={`${spacesOccupied} salas ocupadas actualmente`}
               color="ok"
               trend={{
-                positive: (summary.spaces_free ?? 0) >= 5,
-                label: `${(summary.spaces_free ?? 0) * 10}% libres`,
+                positive: spacesFree >= 5,
+                label: `${spacesFree * 10}% libres`,
               }}
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -233,12 +249,12 @@ export default function DashboardPage() {
             {/* 2. Préstamos activos vs. recursos inhabilitados */}
             <StatCard
               title="Préstamos Activos"
-              value={`${summary.active_loans ?? 0}`}
-              subtitle={`${summary.disabled_resources ?? 0} recursos inhabilitados`}
+              value={`${activeLoans}`}
+              subtitle={`${disabledResources} recursos inhabilitados`}
               color="secondary"
               trend={{
-                positive: (summary.disabled_resources ?? 0) === 0,
-                label: `${summary.disabled_resources ?? 0} bloqueados`,
+                positive: disabledResources === 0,
+                label: `${disabledResources} bloqueados`,
               }}
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -250,8 +266,8 @@ export default function DashboardPage() {
             {/* 3. Incidencias abiertas vs. en proceso */}
             <StatCard
               title="Incidencias Técnicas"
-              value={`${summary.open_incidents ?? 0}`}
-              subtitle={`${summary.in_progress_incidents ?? 0} en proceso de mitigación`}
+              value={`${openIncidents}`}
+              subtitle={`${inProgressIncidents} en proceso de mitigación`}
               color="danger"
               trend={{ positive: false, label: 'Triaje Activo' }}
               icon={
@@ -264,7 +280,7 @@ export default function DashboardPage() {
             {/* 4. Total de operaciones del día */}
             <StatCard
               title="Operaciones del Día"
-              value={`${summary.total_operations_today ?? 0}`}
+              value={`${totalOperations}`}
               subtitle="Reservas, préstamos e incidencias"
               color="primary"
               trend={{ positive: true, label: 'Actividad OK' }}

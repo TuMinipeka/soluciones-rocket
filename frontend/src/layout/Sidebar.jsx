@@ -1,35 +1,46 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-
 /**
- * Secondary/Collapsible Sidebar component for management views.
+ * Sidebar opcional para navegación extendida (HU-17).
+ * Área: MAFE (placeholder).
  */
-export default function Sidebar({ items = [], className = '' }) {
-  if (!items || items.length === 0) return null;
+
+import { NavLink } from 'react-router-dom'
+
+export default function Sidebar({ isOpen, onClose }) {
+  if (!isOpen) return null
+
+  const items = [
+    { to: '/spaces', label: 'Mapa y Salas', icon: '🏛️' },
+    { to: '/reservations', label: 'Reservas de Espacios', icon: '📅' },
+    { to: '/loans', label: 'Recursos y Préstamos', icon: '💻' },
+    { to: '/incidents', label: 'Reportar Incidencias', icon: '⚠️' },
+    { to: '/incidents-list', label: 'Historial de Incidencias', icon: '📋' },
+    { to: '/dashboard', label: 'Dashboard Operativo', icon: '📊' },
+  ]
 
   return (
-    <aside className={`w-64 shrink-0 bg-[#1C1C1E] border-r border-[rgba(255,255,255,0.08)] p-4 flex flex-col gap-2 ${className}`}>
-      <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[#A1A1A6]">
-        Gestión
-      </div>
-      <nav className="flex flex-col gap-1">
+    <aside className="w-64 border-r border-zinc-200/80 bg-white p-4 h-full flex flex-col justify-between">
+      <div className="space-y-1">
+        <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          Navegación
+        </div>
         {items.map((item) => (
           <NavLink
-            key={item.path}
-            to={item.path}
+            key={item.to}
+            to={item.to}
+            onClick={onClose}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-[0.75rem] text-sm font-medium transition-colors ${
+              `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
                 isActive
-                  ? 'bg-[#2C2C2E] text-[#F5F5F7] border border-[rgba(255,255,255,0.1)]'
-                  : 'text-[#A1A1A6] hover:text-[#F5F5F7] hover:bg-[#2C2C2E]/40'
+                  ? 'bg-zinc-100 font-semibold text-zinc-900'
+                  : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
               }`
             }
           >
-            {item.icon && <span>{item.icon}</span>}
+            <span>{item.icon}</span>
             <span>{item.label}</span>
           </NavLink>
         ))}
-      </nav>
+      </div>
     </aside>
-  );
+  )
 }

@@ -1,44 +1,42 @@
-import React from 'react';
-
 /**
- * Accessible Success Message feedback banner.
+ * Mensaje de confirmación y éxito.
+ * Área: Feedback Compartido (MAFE placeholder funcional para consumo de GUERRA).
  */
+
 export default function SuccessMessage({
   title = 'Operación exitosa',
   message,
-  onClose,
+  onDismiss,
   className = '',
 }) {
-  if (!message && !title) return null;
+  if (!message) return null
 
   return (
     <div
       role="status"
-      className={`flex items-start gap-3 p-4 rounded-[0.75rem] bg-[#30D158]/10 border border-[#30D158]/30 text-[#F5F5F7] ${className}`}
+      className={`rounded-xl border border-[#30d158]/30 bg-[#30d158]/15 p-4 text-[#30d158] transition-all ${className}`}
     >
-      <div className="shrink-0 text-[#30D158] mt-0.5">
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5">
+          <span className="inline-block mt-0.5 text-[#30d158] font-bold">✓</span>
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#30d158]">
+              {title}
+            </h4>
+            <p className="mt-0.5 text-xs text-[#e4e2e4] leading-relaxed">{message}</p>
+          </div>
+        </div>
+        {onDismiss && (
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="text-[#a1a1a6] hover:text-white text-sm font-semibold"
+            aria-label="Cerrar mensaje"
+          >
+            ✕
+          </button>
+        )}
       </div>
-
-      <div className="flex-1 min-w-0">
-        {title && <h4 className="text-sm font-semibold text-[#30D158]">{title}</h4>}
-        {message && <p className="text-xs sm:text-sm text-[#F5F5F7]/90 mt-0.5">{message}</p>}
-      </div>
-
-      {onClose && (
-        <button
-          type="button"
-          onClick={onClose}
-          className="shrink-0 text-[#A1A1A6] hover:text-[#F5F5F7] p-1 rounded hover:bg-[#30D158]/20 transition-colors"
-          aria-label="Cerrar notificación"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      )}
     </div>
-  );
+  )
 }

@@ -1,13 +1,15 @@
+/**
+ * RecommendationCard: Tarjeta de recomendación de triaje y reubicación inteligente (HU-15, HU-16, HU-20, HU-24).
+ * - Distingue 'ai' (chip cian #0891B2 "Clasificación IA / Inteligencia Artificial") vs 'rules' (#A1A1A6 "Fallback por Reglas Locales").
+ * - Caso borde: Si no hay alternativas disponibles, renderiza alerta explícita en texto claro.
+ * - Restricción por rol: El botón "Confirmar Reubicación" SOLO es visible y ejecutable si el usuario tiene rol de Administrador.
+ * Área: MAFE & GUERRA
+ */
+
 import React from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 
-/**
- * RecommendationCard: Tarjeta de recomendación de triaje y reubicación inteligente (HU-20).
- * - Distingue 'ai' (chip cian #0891B2 "Clasificación IA") vs 'rules' (#A1A1A6 "Reglas Locales (Fallback)").
- * - Caso borde: Si alternatives.length === 0, renderiza alerta explícita en texto claro.
- * - Restricción por rol: El botón "Confirmar Reubicación" SOLO es visible y ejecutable si user?.role === 'admin'.
- */
 export default function RecommendationCard({
   recommendation,
   incident,
@@ -15,25 +17,60 @@ export default function RecommendationCard({
   onConfirm,
   isConfirming = false,
   className = '',
+  // Props complementarias de Guerra
+  source,
+  explanation,
+  suggestsBlocking = false,
+  alternatives: propAlternatives,
+  aiModel,
+  latencyMs,
+  isConfirmed = false,
+  onConfirmReallocation,
+  canConfirm,
 }) {
-  if (!recommendation && !incident?.recommendation) return null;
+  if (!recommendation && !incident?.recommendation && !explanation) return null;
 
-  const rec = recommendation || incident.recommendation || {};
-  const classificationSource = rec.classification_source || incident?.classification_source || 'ai';
-  const alternatives = rec.alternatives || [];
-  const hasNoAlternatives = alternatives.length === 0 && !rec.targetRoomId && !rec.target_room_id;
+  const rec =
+    typeof recommendation === 'object' && recommendation !== null
+      ? recommendation
+      : incident?.recommendation || {};
 
-  const targetRoomName = rec.targetRoomName || rec.target_room_name || (alternatives[0]?.name) || 'Spooki';
-  const targetRoomId = rec.targetRoomId || rec.target_room_id || (alternatives[0]?.id) || 'SAL-004';
-  const reason = rec.reason || (alternatives[0]?.reason) || 'Aforo compatible y equipamiento técnico equivalente disponible sin conflictos.';
-  const confidence = rec.confidence || (rec.ai_model ? 0.95 : null);
+  const classificationSource =
+    source ||
+    rec.classification_source ||
+    incident?.classification_source ||
+    (rec.ai_model || aiModel ? 'ai' : 'rules');
 
   const isAi = classificationSource === 'ai';
-  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  const isAdmin = canConfirm !== undefined ? canConfirm : user?.role?.toLowerCase() === 'admin';
+
+  const alternatives = propAlternatives || rec.alternatives || [];
+  const hasNoAlternatives = alternatives.length === 0 && !rec.targetRoomId && !rec.target_room_id;
+
+  const targetRoomName =
+    rec.targetRoomName ||
+    rec.target_room_name ||
+    alternatives[0]?.name ||
+    'Spooki';
+
+  const targetRoomId =
+    rec.targetRoomId ||
+    rec.target_room_id ||
+    alternatives[0]?.id ||
+    'SAL-004';
+
+  const reason =
+    rec.reason ||
+    explanation ||
+    alternatives[0]?.reason ||
+    (typeof recommendation === 'string' ? recommendation : null) ||
+    'Aforo compatible y equipamiento técnico equivalente disponible sin conflictos.';
+
+  const confidence = rec.confidence || (aiModel ? 0.95 : null);
+  const handleAction = onConfirm || onConfirmReallocation;
 
   return (
     <Card
-      variant="elevated"
       className={`border-l-4 transition-all duration-200 ${
         isAi
           ? 'border-l-[#0891B2] bg-gradient-to-r from-[#0891B2]/15 via-[#1C1C1E] to-[#1C1C1E] shadow-[0_0_25px_rgba(8,145,178,0.2)]'
@@ -67,6 +104,22 @@ export default function RecommendationCard({
                 Confianza: {(confidence * 100).toFixed(0)}%
               </span>
             )}
+
+            {latencyMs && (
+              <span className="text-[10px] font-mono text-[#8d90a0]">
+                {latencyMs}ms
+              </span>
+            )}
+
+            {isConfirmed ? (
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-[#30d158]/20 text-[#30d158] border border-[#30d158]/40">
+                ✓ Reubicación Confirmada
+              </span>
+            ) : suggestsBlocking ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-[#93000a]/30 text-[#ffb4ab] border border-[#ff453a]/30">
+                Requiere Bloqueo
+              </span>
+            ) : null}
           </div>
 
           <h4 className="text-base sm:text-lg font-bold text-[#F5F5F7] tracking-tight">
@@ -76,13 +129,13 @@ export default function RecommendationCard({
         </div>
 
         {/* Botón de Acción Administrativa (SOLO VISIBLE para admin) */}
-        {isAdmin && !hasNoAlternatives && (
+        {isAdmin && !hasNoAlternatives && !isConfirmed && (
           <div className="shrink-0 flex items-center">
             <Button
               variant={isAi ? 'secondary' : 'primary'}
               size="md"
               isLoading={isConfirming}
-              onClick={() => onConfirm?.({ ...rec, targetRoomId, targetRoomName, reason })}
+              onClick={() => handleAction?.({ ...rec, targetRoomId, targetRoomName, reason })}
               icon={
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

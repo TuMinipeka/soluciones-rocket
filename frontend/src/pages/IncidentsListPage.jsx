@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import * as incidentsApi from '../api/incidents';
-import * as reservationsApi from '../api/reservations';
+import { getIncidentsApi } from '../api/incidents';
+import { confirmReallocationApi } from '../api/reservations';
 import * as authModule from '../auth/useAuth';
 import IncidentCard from '../components/incidents/IncidentCard';
 import RecommendationCard from '../components/incidents/RecommendationCard';
@@ -139,6 +139,7 @@ const OFFICIAL_SEED_INCIDENTS = [
 /**
  * Incidencias y Triaje con IA y Reglas Deterministas (HU-20).
  * Protege la confirmación de reubicación exclusivamente para rol 'admin'.
+ * Área: MAFE & GUERRA
  */
 export default function IncidentsListPage() {
   const { user } = useCurrentAuth();
@@ -159,10 +160,9 @@ export default function IncidentsListPage() {
     setErrorMessage(null);
 
     try {
-      const getIncidentsClient = incidentsApi.getIncidentsApi || incidentsApi.getIncidents;
-      if (typeof getIncidentsClient === 'function') {
-        const response = await getIncidentsClient();
-        const data = Array.isArray(response) ? response : response?.data || response?.items;
+      if (typeof getIncidentsApi === 'function') {
+        const response = await getIncidentsApi();
+        const data = Array.isArray(response) ? response : response?.data || response?.items || response?.incidents;
         if (Array.isArray(data) && data.length > 0) {
           setIncidents(data);
         } else {
@@ -188,7 +188,7 @@ export default function IncidentsListPage() {
   const filteredIncidents = useMemo(() => {
     return incidents.filter((item) => {
       const title = item.title || item.description || '';
-      const space = item.spaceName || item.space_id || '';
+      const space = item.spaceName || item.space_name || item.space_id || '';
       const id = String(item.id || '');
 
       const matchSearch =
@@ -225,22 +225,18 @@ export default function IncidentsListPage() {
     setErrorMessage(null);
     setFeedbackMessage(null);
 
-    const reservationId = incident?.reservation_id || incident?.id || 1;
-    const targetSpaceId = recommendation.targetRoomId || recommendation.target_room_id || 'SAL-004';
+    const reservationId = incident?.reservation_id || incident?.affected_reservation_id || incident?.id || 1;
+    const targetSpaceId = recommendation.targetRoomId || recommendation.target_room_id || recommendation.id || 'SAL-004';
 
     try {
-      const relocateReservationClient =
-        reservationsApi.confirmReallocationApi ||
-        reservationsApi.relocateReservation ||
-        incidentsApi.relocateReservation;
-      if (typeof relocateReservationClient === 'function') {
+      if (typeof confirmReallocationApi === 'function') {
         try {
-          await relocateReservationClient(reservationId, {
+          await confirmReallocationApi(reservationId, {
             new_space_id: targetSpaceId,
-            notes: recommendation.reason || 'Reubicación por contingencia de incidencia',
+            notes: recommendation.reason || `Reubicación confirmada por administrador ${user?.name || user?.email || 'Admin'}`,
           });
         } catch (apiErr) {
-          // Si el endpoint de reubicación aún está en mock, registrar localmente
+          // Si el endpoint de reubicación responde o aún está en mock, registrar localmente
         }
       } else {
         await new Promise((resolve) => setTimeout(resolve, 600));
@@ -301,7 +297,7 @@ export default function IncidentsListPage() {
             Sincronizar
           </Button>
 
-          <a href="/incidents/new">
+          <a href="/incidents">
             <Button
               variant="danger"
               size="sm"
@@ -425,24 +421,11 @@ export default function IncidentsListPage() {
 
       {/* Manejo de Estados: Loading, Empty, Lista */}
       {isLoading ? (
-        <LoadingState message="Cargando incidencias registradas..." />
+        <LoadingState message="Cargando incidencias registradas…" />
       ) : filteredIncidents.length === 0 ? (
         <EmptyState
-          title="No hay incidencias que coincidan"
-          description="Todos los servicios del campus se encuentran en estado óptimo bajo estos criterios de búsqueda."
-          action={
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setSearchTerm('');
-                setPriorityFilter('ALL');
-                setStatusFilter('ALL');
-              }}
-            >
-              Restablecer Filtros
-            </Button>
-          }
+          title="No hay incidencias reportadas"
+          description="Todas las instalaciones y equipos operan con normalidad o no coinciden con los filtros aplicados."
         />
       ) : (
         <div className="space-y-4">
@@ -451,7 +434,7 @@ export default function IncidentsListPage() {
               key={incident.id}
               incident={{
                 ...incident,
-                spaceName: incident.spaceName || incident.space_id,
+                spaceName: incident.spaceName || incident.space_name || incident.space_id,
                 hasRecommendation: Boolean(incident.recommendation),
               }}
               onResolve={(inc) => {

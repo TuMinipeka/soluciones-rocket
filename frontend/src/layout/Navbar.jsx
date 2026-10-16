@@ -1,172 +1,142 @@
-import React, { useState } from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
-
 /**
- * Navbar: Barra de navegación fija con foco accesible, badge de rol y drawer móvil oscuro.
+ * Barra de navegación principal con diseño Apple Glassmorphic (HU-17, HU-21).
+ * Área: MAFE (consumida en AppLayout).
  */
-export default function Navbar({ userRole = 'ADMIN', userName = 'Mafe' }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+import React from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/useAuth'
+import Button from '../components/ui/Button'
+
+export default function Navbar({ userRole, userName }) {
+  const auth = useAuth ? useAuth() : null;
+  const user = auth?.user || (userRole ? { role: userRole.toLowerCase(), name: userName } : null);
+  const logout = auth?.logout;
   const navigate = useNavigate();
 
   const navItems = [
-    { name: 'Salas', path: '/spaces', icon: '🏢' },
-    { name: 'Dashboard', path: '/dashboard', icon: '📊' },
-    { name: 'Incidencias', path: '/incidents', icon: '⚠️' },
-    { name: 'Reservas', path: '/reservations', icon: '📅' },
-    { name: 'Préstamos', path: '/loans', icon: '💻' },
+    { to: '/spaces', label: 'Salas y Mapa' },
+    { to: '/reservations', label: 'Reservas' },
+    { to: '/loans', label: 'Recursos y Préstamos' },
+    { to: '/incidents', label: 'Reportar Incidencia' },
+    { to: '/incidents-list', label: 'Historial' },
+    { to: '/dashboard', label: 'Dashboard' },
   ];
 
   const handleLogout = () => {
+    if (typeof logout === 'function') {
+      logout();
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('campus_auth_token');
     localStorage.removeItem('user');
     navigate('/login');
   };
 
-  return (
-    <nav
-      role="navigation"
-      aria-label="Navegación principal"
-      className="fixed top-0 left-0 right-0 z-40 bg-[#1C1C1E]/95 backdrop-blur-xl border-b border-[rgba(255,255,255,0.08)]"
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo / Brand oficial */}
-          <div className="flex items-center gap-3">
-            <Link
-              to="/dashboard"
-              className="flex items-center gap-2.5 group select-none rounded-[0.75rem] p-1 focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
-              aria-label="Ir al Dashboard de Campus Control"
-            >
-              <img
-                src="/campuslands_helmet.png"
-                alt="Campuslands Helmet"
-                className="h-8 w-auto object-contain drop-shadow-[0_0_10px_rgba(34,211,238,0.35)] group-hover:scale-105 transition-transform"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              <div className="flex items-baseline gap-1.5 leading-none font-sans">
-                <span className="text-[19px] font-bold text-white tracking-tight lowercase">
-                  campuslands
-                </span>
-                <span className="text-[19px] font-bold text-[#22D3EE] tracking-tight lowercase">
-                  control
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#30D158] inline-block animate-pulse ml-0.5" title="Sistema Activo" />
-              </div>
-            </Link>
-          </div>
+  const roleStyles = {
+    admin: { label: 'Admin', dot: 'bg-violet-500' },
+    teacher: { label: 'Docente', dot: 'bg-emerald-500' },
+    support: { label: 'Soporte', dot: 'bg-blue-500' },
+  };
 
-          {/* Desktop Navigation Links con foco visible */}
-          <div className="hidden md:flex items-center gap-1.5">
+  const currentRole = roleStyles[user?.role?.toLowerCase()] || {
+    label: user?.role || 'Docente',
+    dot: 'bg-emerald-500',
+  };
+
+  return (
+    <header className="sticky top-0 z-40 w-full glass-header transition-all bg-[#1C1C1E]/95 backdrop-blur-xl border-b border-white/[0.08]">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Brand / Logo */}
+        <div className="flex items-center gap-6 lg:gap-8">
+          <NavLink to="/spaces" className="flex items-center gap-2.5 group select-none">
+            <img
+              src="/campuslands_helmet.png"
+              alt="Campuslands Helmet"
+              className="h-8 w-auto object-contain drop-shadow-[0_0_10px_rgba(34,211,238,0.3)] group-hover:scale-105 transition-transform"
+            />
+            <div className="flex items-baseline gap-1.5 font-brand leading-none">
+              <span className="text-[20px] font-bold text-white tracking-normal lowercase">
+                campuslands
+              </span>
+              <span className="text-[20px] font-bold text-[#22d3ee] tracking-normal lowercase">
+                control
+              </span>
+            </div>
+          </NavLink>
+
+          {/* Enlaces de navegación con selector deslizante / pill */}
+          <nav className="hidden md:flex items-center gap-1 bg-[#1c1c1e] p-1 rounded-full border border-white/[0.08]">
             {navItems.map((item) => (
               <NavLink
-                key={item.path}
-                to={item.path}
+                key={item.to}
+                to={item.to}
                 className={({ isActive }) =>
-                  `px-3.5 py-2 rounded-[0.75rem] text-sm font-medium transition-all duration-150 flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#2563EB] ${
+                  `px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-150 active:scale-95 select-none ${
                     isActive
-                      ? 'bg-[#2C2C2E] text-[#F5F5F7] border border-[rgba(255,255,255,0.12)] shadow-sm'
-                      : 'text-[#A1A1A6] hover:text-[#F5F5F7] hover:bg-[#2C2C2E]/50'
+                      ? 'bg-[#2563eb] text-white font-semibold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]'
+                      : 'text-[#a1a1a6] hover:text-white hover:bg-white/[0.04]'
                   }`
                 }
               >
-                <span aria-hidden="true">{item.icon}</span>
-                <span>{item.name}</span>
+                {item.label}
               </NavLink>
             ))}
-          </div>
-
-          {/* User info, Role Badge & Logout */}
-          <div className="hidden md:flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-[0.75rem] bg-[#2C2C2E]/60 border border-[rgba(255,255,255,0.06)]">
-              <div className="w-6 h-6 rounded-full bg-[#2563EB]/25 border border-[#2563EB]/40 flex items-center justify-center text-xs font-semibold text-[#60A5FA]">
-                {userName.charAt(0).toUpperCase()}
-              </div>
-              <span className="text-xs font-medium text-[#F5F5F7]">{userName}</span>
-              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-[#0891B2]/20 text-[#22D3EE] border border-[#0891B2]/40 tracking-wider">
-                {userRole}
-              </span>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              title="Cerrar sesión"
-              aria-label="Cerrar sesión"
-              className="p-2 text-[#A1A1A6] hover:text-[#FF453A] rounded-[0.75rem] hover:bg-[#2C2C2E] focus:outline-none focus:ring-2 focus:ring-[#FF453A] transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Botón hamburguesa móvil */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-[0.75rem] text-[#A1A1A6] hover:text-[#F5F5F7] hover:bg-[#2C2C2E] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
-              aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
-              aria-expanded={mobileMenuOpen}
-            >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {mobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
-          </div>
+          </nav>
         </div>
-      </div>
 
-      {/* Menú móvil desplegable oscuro */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-b border-[rgba(255,255,255,0.08)] bg-[#1C1C1E] px-4 pt-3 pb-5 space-y-2 animate-fluid-enter shadow-[0_12px_32px_rgba(0,0,0,0.8)]">
-          <div className="flex items-center justify-between pb-3 border-b border-[rgba(255,255,255,0.06)] px-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[#A1A1A6]">Usuario:</span>
-              <span className="text-xs font-semibold text-[#F5F5F7]">{userName}</span>
-            </div>
-            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#0891B2]/20 text-[#22D3EE] border border-[#0891B2]/40">
-              {userRole}
+        {/* Sección de usuario & Logout */}
+        <div className="flex items-center gap-3">
+          {/* Badge de Telemetría Enclave Seguro */}
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-[#2a2a2c]/80 border border-white/[0.08]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#2fd9f4] animate-pulse" />
+            <span className="text-[11px] font-mono text-[#a1a1a6] uppercase tracking-wider">
+              Enclave Seguro
             </span>
           </div>
 
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={() => setMobileMenuOpen(false)}
-              className={({ isActive }) =>
-                `block px-3 py-2.5 rounded-[0.75rem] text-sm font-medium transition-colors flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-[#2563EB] ${
-                  isActive
-                    ? 'bg-[#2C2C2E] text-[#F5F5F7] font-semibold border border-[rgba(255,255,255,0.08)]'
-                    : 'text-[#A1A1A6] hover:text-[#F5F5F7] hover:bg-[#2C2C2E]/50'
-                }`
-              }
-            >
-              <span aria-hidden="true">{item.icon}</span>
-              <span>{item.name}</span>
-            </NavLink>
-          ))}
-
-          <div className="pt-2 border-t border-[rgba(255,255,255,0.06)]">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                handleLogout();
-              }}
-              className="w-full text-left px-3 py-2.5 rounded-[0.75rem] text-sm font-medium text-[#FF453A] hover:bg-[#FF453A]/10 transition-colors flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-[#FF453A]"
-            >
-              <span aria-hidden="true">🚪</span>
-              <span>Cerrar sesión</span>
-            </button>
-          </div>
+          {user && (
+            <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#1c1c1e] border border-white/[0.08]">
+              <span className={`w-2 h-2 rounded-full ${currentRole.dot} animate-pulse-subtle`} />
+              <div className="flex flex-col text-right">
+                <span className="text-xs font-semibold text-white leading-tight">
+                  {user.name || user.email}
+                </span>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#a1a1a6]">
+                  {currentRole.label}
+                </span>
+              </div>
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="text-xs text-[#8d90a0] hover:text-[#ff453a] hover:bg-white/[0.04]"
+          >
+            Salir
+          </Button>
         </div>
-      )}
-    </nav>
+      </div>
+
+      {/* Navegación móvil secundaria horizontal */}
+      <div className="flex md:hidden overflow-x-auto border-t border-white/[0.06] bg-[#131315]/95 px-3 py-2 gap-1.5 scrollbar-none">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              `shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                isActive
+                  ? 'bg-[#2563eb] text-white shadow-xs font-semibold'
+                  : 'text-[#a1a1a6] bg-[#1c1c1e] border border-white/[0.06]'
+              }`
+            }
+          >
+            {item.label}
+          </NavLink>
+        ))}
+      </div>
+    </header>
   );
 }

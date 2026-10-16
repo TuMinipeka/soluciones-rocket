@@ -1,35 +1,35 @@
-import React, { useEffect } from 'react';
-
 /**
- * Accessible modal dialog with backdrop blur and modal pop-in animation.
+ * Modal accesible y fluido con fondo difuminado y escala física 0.96 -> 1.0 (sin scale-0).
+ * Área: UI Compartida (MAFE placeholder funcional para consumo de GUERRA).
  */
+
+import { useEffect } from 'react'
+
 export default function Modal({
   isOpen,
   onClose,
   title,
   subtitle,
   children,
-  footer,
   maxWidth = 'max-w-lg',
-  className = '',
 }) {
   useEffect(() => {
     function handleKeyDown(e) {
       if (e.key === 'Escape' && isOpen) {
-        onClose?.();
+        onClose()
       }
     }
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden'
+      window.addEventListener('keydown', handleKeyDown)
     }
     return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen, onClose]);
+      document.body.style.overflow = 'unset'
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, onClose])
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div
@@ -37,50 +37,34 @@ export default function Modal({
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
     >
-      {/* Backdrop */}
+      {/* Fondo translúcido difuminado con fade suave */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-[#000000]/80 backdrop-blur-sm transition-opacity duration-200"
+        className="fixed inset-0 bg-black/75 backdrop-blur-xl transition-opacity duration-200"
       />
 
-      {/* Modal Card */}
+      {/* Caja física del modal: entrada con escala 0.96 a 1.0 (Emil Kowalski) */}
       <div
-        className={`relative w-full ${maxWidth} bg-[#1C1C1E] border border-[rgba(255,255,255,0.12)] rounded-[1.25rem] shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden z-10 animate-modal-pop ${className}`}
+        className={`relative w-full ${maxWidth} rounded-[24px] bg-[#1c1c1e] p-6 sm:p-7 shadow-[0_24px_64px_rgba(0,0,0,0.8)] border-t border-white/[0.12] border-x border-white/[0.04] border-b border-black/80 text-[#e4e2e4] animate-modal-pop`}
       >
-        {/* Header */}
-        {(title || onClose) && (
-          <div className="px-6 py-5 flex items-start justify-between border-b border-[rgba(255,255,255,0.08)] bg-[#2C2C2E]/40">
-            <div>
-              {title && <h3 className="text-lg font-semibold text-[#F5F5F7] tracking-tight">{title}</h3>}
-              {subtitle && <p className="text-xs sm:text-sm text-[#A1A1A6] mt-0.5">{subtitle}</p>}
-            </div>
-            {onClose && (
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Cerrar modal"
-                className="text-[#A1A1A6] hover:text-[#F5F5F7] p-1.5 rounded-lg hover:bg-[#2C2C2E] transition-colors -mr-1"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
+        <div className="flex items-start justify-between border-b border-white/[0.08] pb-4 mb-5">
+          <div>
+            <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>
+            {subtitle && <p className="text-xs text-[#a1a1a6] mt-0.5">{subtitle}</p>}
           </div>
-        )}
-
-        {/* Body Content */}
-        <div className="p-6 max-h-[calc(85vh-8rem)] overflow-y-auto">
-          {children}
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-[#a1a1a6] hover:text-white bg-[#2c2c2e] hover:bg-[#3a3a3c] active:scale-95 rounded-full p-1.5 transition-all"
+            aria-label="Cerrar modal"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-
-        {/* Footer */}
-        {footer && (
-          <div className="px-6 py-4 bg-[#2C2C2E]/30 border-t border-[rgba(255,255,255,0.08)] flex items-center justify-end gap-3">
-            {footer}
-          </div>
-        )}
+        <div className="max-h-[75vh] overflow-y-auto pr-1">{children}</div>
       </div>
     </div>
-  );
+  )
 }

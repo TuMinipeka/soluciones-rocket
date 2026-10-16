@@ -1,6 +1,17 @@
 services:
+  db-init:
+    build: ./backend
+    command: ["python", "-m", "app.scripts.init_db"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/campus.db}
+    volumes:
+      - campus_data:/app/data
+
   backend:
     build: ./backend
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
     environment:
       APP_ENV: ${APP_ENV:-development}
       DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/campus.db}
@@ -9,6 +20,10 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      TEACHER_EMAIL: ${TEACHER_EMAIL:-}
+      TEACHER_PASSWORD: ${TEACHER_PASSWORD:-}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:-}
+      SUPPORT_PASSWORD: ${SUPPORT_PASSWORD:-}
       AI_PROVIDER: ${AI_PROVIDER:-}
       AI_MODEL: ${AI_MODEL:-}
       AI_API_KEY: ${AI_API_KEY:-}
@@ -39,6 +54,12 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5173/api/health').then(async response => { if (!response.ok || (await response.json()).status !== 'ok') process.exit(1) }).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
 volumes:
   campus_data:

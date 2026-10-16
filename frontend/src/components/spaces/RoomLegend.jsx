@@ -2,6 +2,7 @@ import React from 'react';
 
 /**
  * RoomLegend: Leyenda accesible con indicador de color, icono y etiqueta textual (HU-18).
+ * Área: MAFE (HU-18).
  */
 export default function RoomLegend({ className = '' }) {
   const items = [

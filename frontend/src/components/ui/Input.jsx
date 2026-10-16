@@ -1,76 +1,59 @@
-import React, { forwardRef } from 'react';
-
 /**
- * Atomic Input component supporting labels, icons, error messages, and control tokens.
+ * Input minimalista con foco suave y soporte para errores y etiquetas accesibles.
+ * Área: UI Compartida (MAFE placeholder funcional para consumo de GUERRA).
  */
+
+import { forwardRef } from 'react'
+
 const Input = forwardRef(function Input(
   {
     label,
     error,
     helperText,
-    icon = null,
-    endIcon = null,
-    className = '',
-    containerClassName = '',
     id,
     type = 'text',
-    disabled = false,
+    className = '',
+    required = false,
     ...props
   },
   ref
 ) {
-  const inputId = id || (label ? `input-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined);
+  const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
 
   return (
-    <div className={`w-full flex flex-col gap-1.5 ${containerClassName}`}>
+    <div className="w-full space-y-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-xs sm:text-sm font-medium text-[#A1A1A6] select-none">
-          {label}
+        <label
+          htmlFor={inputId}
+          className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]"
+        >
+          <span>
+            {label} {required && <span className="text-[#ff453a] font-bold">*</span>}
+          </span>
         </label>
       )}
-      <div className="relative flex items-center">
-        {icon && (
-          <span className="absolute left-3.5 text-[#A1A1A6] pointer-events-none flex items-center justify-center">
-            {icon}
-          </span>
-        )}
-        <input
-          ref={ref}
-          id={inputId}
-          type={type}
-          disabled={disabled}
-          className={`w-full bg-[#1C1C1E] text-[#F5F5F7] placeholder-[#636366] text-sm rounded-[0.75rem] border transition-all duration-200 outline-none
-            ${icon ? 'pl-10' : 'pl-3.5'}
-            ${endIcon ? 'pr-10' : 'pr-3.5'}
-            py-2.5
-            ${error
-              ? 'border-[#FF453A] focus:border-[#FF453A] focus:ring-2 focus:ring-[#FF453A]/20'
-              : 'border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.16)] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/25'
-            }
-            disabled:opacity-50 disabled:cursor-not-allowed
-            ${className}
-          `}
-          {...props}
-        />
-        {endIcon && (
-          <span className="absolute right-3.5 text-[#A1A1A6] flex items-center justify-center">
-            {endIcon}
-          </span>
-        )}
-      </div>
+      <input
+        ref={ref}
+        id={inputId}
+        type={type}
+        required={required}
+        className={`w-full rounded-[12px] border bg-[#2c2c2e] px-3.5 py-2.5 text-sm text-[#f5f5f7] shadow-inner transition-all duration-150 ease-out placeholder:text-[#636366] focus:outline-none ${
+          error
+            ? 'border-[#ff453a] focus:border-[#ff453a] focus:ring-2 focus:ring-[#ff453a]/20'
+            : 'border-white/[0.08] hover:border-white/[0.15] focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/40'
+        } ${className}`}
+        {...props}
+      />
       {error && (
-        <p className="text-xs text-[#FF453A] flex items-center gap-1 mt-0.5">
-          <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
-          <span>{error}</span>
+        <p className="text-xs text-[#ffb4ab] font-medium flex items-center gap-1 animate-fluid-enter">
+          <span>•</span> {error}
         </p>
       )}
-      {!error && helperText && (
-        <p className="text-xs text-[#A1A1A6] mt-0.5">{helperText}</p>
+      {helperText && !error && (
+        <p className="text-[11px] text-[#8d90a0] font-normal leading-normal">{helperText}</p>
       )}
     </div>
-  );
-});
+  )
+})
 
-export default Input;
+export default Input

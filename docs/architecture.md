@@ -1,6 +1,6 @@
 # Estructura del proyecto
 
-Esta estructura organiza el **mismo MVP integrado** descrito en [el contexto](../contexto.md), [las historias](trabajo-x-hacer.md) y [las decisiones técnicas](hackaton-rubricas-informacion.md). Las carpetas de dominio son límites de trabajo, no funcionalidades implementadas ni entregas separadas. Las decisiones de producto pendientes siguen pendientes.
+Esta estructura organiza el **mismo MVP integrado** descrito en [las historias de usuario](userStories.md) y [las decisiones técnicas y rúbricas](hackathonRubrics.md). Las carpetas de dominio son límites de trabajo, no funcionalidades implementadas ni entregas separadas. Las decisiones de producto pendientes siguen pendientes.
 
 ```text
 .
@@ -42,7 +42,7 @@ Los nombres concretos de archivos internos (`router.py`, `service.py`, `schemas.
 ## Contratos y decisiones por cerrar
 
 - Documentar en `docs/` las rutas, payloads, códigos de error y reglas compartidas antes de conectar módulos. La única ruta implementada en esta base es `GET /health`; FastAPI ofrece `/docs` para la API disponible.
-- Definir con el equipo qué roles pueden reservar; [la decisión técnica](hackaton-rubricas-informacion.md) la deja pendiente. No inferir permisos de un ejemplo o de una historia aislada.
+- Definir con el equipo qué roles pueden reservar; [la decisión técnica](hackathonRubrics.md) la deja pendiente. No inferir permisos de un ejemplo o de una historia aislada.
 - Confirmar el dataset oficial y su permiso de uso antes de importarlo. Mantener datos de prueba separados y no inventar resultados de IA ni información oficial.
 - Los componentes compartidos de frontend y los contratos entre frontend/backend tienen propietario acordado por cambio; Mafe y Guerra no editan simultáneamente el mismo archivo.
 

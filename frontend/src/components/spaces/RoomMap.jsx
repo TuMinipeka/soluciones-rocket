@@ -1,12 +1,3 @@
-/*
- * INSTRUCCIÓN PARA GUERRA:
- * Este componente RoomMap es el contenedor interactivo del mapa tipo cine (HU-18).
- * Debes conectar el hook/llamada a `api/spaces.js` (GET /spaces?start_at=...&end_at=...)
- * e iterar sobre las 10 salas oficiales: Auditorio (100), Cosmos (25), Skilab (20),
- * Spooki (38), Apolo (34), Blanca (12), Azul (10), Amarillas (6), Verdes (6), Artemis (32).
- * Utiliza los componentes <RoomTile/> y <RoomLegend/> aquí exportados.
- */
-
 import React, { useState } from 'react';
 import RoomTile from './RoomTile';
 import RoomLegend from './RoomLegend';
@@ -24,7 +15,7 @@ export const OFFICIAL_CAMPUS_ROOMS = [
     status: 'available',
     tier: 'major',
     equipment: ['Pantalla Gigante Láser', 'Sonido Dolby Surround', '4x Micrófonos Inalámbricos', 'Atril de Control'],
-    description: 'Auditorio principal para conferencias magistrales, lanzamientos de proyectos y hackatones.'
+    description: 'Auditorio principal para conferencias magistrales, lanzamientos de proyectos y hackatones.',
   },
   {
     id: 'SAL-004',
@@ -33,7 +24,7 @@ export const OFFICIAL_CAMPUS_ROOMS = [
     status: 'available',
     tier: 'major',
     equipment: ['38 Workstations Dual-Monitor', 'Proyector 4K', 'Pizarra Smart Digital'],
-    description: 'Aula especializada en desarrollo de software avanzado y computación gráfica.'
+    description: 'Aula especializada en desarrollo de software avanzado y computación gráfica.',
   },
   {
     id: 'SAL-005',
@@ -43,7 +34,7 @@ export const OFFICIAL_CAMPUS_ROOMS = [
     tier: 'major',
     currentReservation: { title: 'Taller de Arquitectura Cloud', start: '10:00', end: '13:00' },
     equipment: ['Proyector 4K', 'Sistema de Climatización', '34 Puestos LAN Gigabit'],
-    description: 'Laboratorio de infraestructura en mitigación técnica por sobrecalentamiento.'
+    description: 'Laboratorio de infraestructura en mitigación técnica por sobrecalentamiento.',
   },
   {
     id: 'SAL-010',
@@ -52,7 +43,7 @@ export const OFFICIAL_CAMPUS_ROOMS = [
     status: 'available',
     tier: 'major',
     equipment: ['32 Laptops Workstation', 'Audio de Conferencia', '2x Monitores Guía'],
-    description: 'Espacio de innovación y entrenamiento intensivo de bootcamps.'
+    description: 'Espacio de innovación y entrenamiento intensivo de bootcamps.',
   },
   {
     id: 'SAL-002',
@@ -62,7 +53,7 @@ export const OFFICIAL_CAMPUS_ROOMS = [
     tier: 'major',
     currentReservation: { title: 'Bootcamp Backend Python & FastAPI', start: '08:00', end: '12:00' },
     equipment: ['Proyector HD', '25 PCs All-in-One', 'Pizarra Blanca'],
-    description: 'Aula para desarrollo intensivo de APIs y bases de datos relacionales.'
+    description: 'Aula para desarrollo intensivo de APIs y bases de datos relacionales.',
   },
 
   // Fila Inferior: Salas de Trabajo Colaborativo, Mentoría y Workshops
@@ -73,7 +64,7 @@ export const OFFICIAL_CAMPUS_ROOMS = [
     status: 'available',
     tier: 'workshop',
     equipment: ['Monitores Duales', 'Pizarra Smart', 'Mesa de Brainstorming'],
-    description: 'Espacio ágil para sprints de diseño de producto y mentorías técnicas.'
+    description: 'Espacio ágil para sprints de diseño de producto y mentorías técnicas.',
   },
   {
     id: 'SAL-006',
@@ -82,7 +73,7 @@ export const OFFICIAL_CAMPUS_ROOMS = [
     status: 'maintenance',
     tier: 'collab',
     equipment: ['Mesa de Reuniones', 'Smart TV 65"', 'Cámara 360°'],
-    description: 'Sala de juntas ejecutiva en mantenimiento preventivo de mobiliario.'
+    description: 'Sala de juntas ejecutiva en mantenimiento preventivo de mobiliario.',
   },
   {
     id: 'SAL-007',
@@ -91,7 +82,7 @@ export const OFFICIAL_CAMPUS_ROOMS = [
     status: 'available',
     tier: 'collab',
     equipment: ['Monitor 4K', 'Pizarra Magnética', 'Sistema Meet'],
-    description: 'Sala de trabajo en equipo para comités evaluadores y defensas de proyectos.'
+    description: 'Sala de trabajo en equipo para comités evaluadores y defensas de proyectos.',
   },
   {
     id: 'SAL-008',
@@ -100,7 +91,7 @@ export const OFFICIAL_CAMPUS_ROOMS = [
     status: 'available',
     tier: 'mini',
     equipment: ['Smart TV 50"', 'Cámara HD', 'Mesa Colaborativa'],
-    description: 'Espacio cerrado para sesiones de pair programming y entrevistas técnicas.'
+    description: 'Espacio cerrado para sesiones de pair programming y entrevistas técnicas.',
   },
   {
     id: 'SAL-009',
@@ -110,12 +101,13 @@ export const OFFICIAL_CAMPUS_ROOMS = [
     tier: 'mini',
     currentReservation: { title: 'Reunión de Coordinación Académica', start: '09:00', end: '11:00' },
     equipment: ['Smart TV 50"', 'Micrófono ambiental'],
-    description: 'Espacio reservado para sincronización docente y seguimiento operativo.'
+    description: 'Espacio reservado para sincronización docente y seguimiento operativo.',
   },
 ];
 
 export default function RoomMap({
-  rooms = OFFICIAL_CAMPUS_ROOMS,
+  rooms,
+  spaces,
   loading = false,
   error = null,
   selectedRoomId = null,
@@ -123,6 +115,8 @@ export default function RoomMap({
   onRetry,
 }) {
   const [modalRoom, setModalRoom] = useState(null);
+
+  const roomList = rooms || spaces || OFFICIAL_CAMPUS_ROOMS;
 
   const handleTileClick = (room) => {
     setModalRoom(room);
@@ -144,27 +138,17 @@ export default function RoomMap({
   }
 
   // Separación arquitectónica (Salas de gran aforo arriba, salas de trabajo colaborativo abajo)
-  const majorRooms = rooms.filter((r) => r.capacity >= 25);
-  const collabRooms = rooms.filter((r) => r.capacity < 25);
+  const majorRooms = roomList.filter((r) => r.capacity >= 25);
+  const collabRooms = roomList.filter((r) => r.capacity < 25);
 
   return (
     <section className="space-y-6" aria-label="Plano de distribución de salas">
-      {/* Banner / Tarjeta Placeholder con Instrucciones Explícitas para Guerra */}
-      <div className="p-4 rounded-[1.25rem] bg-[#2C2C2E]/60 border border-[#0891B2]/30 flex items-start gap-3.5 text-xs sm:text-sm text-[#F5F5F7] shadow-sm">
-        <div className="shrink-0 p-2 rounded-xl bg-[#0891B2]/20 text-[#22D3EE] font-extrabold text-sm">
-          HU-18
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-[#22D3EE] flex flex-wrap items-center gap-2">
-            <span>Mapa Interactivo de Campuslands (Tipo Cine)</span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#2563EB]/20 text-[#60A5FA] font-mono border border-[#2563EB]/30">
-              Desacoplado &bull; Contrato api/spaces.js
-            </span>
-          </p>
-          <p className="text-xs text-[#A1A1A6] mt-1 leading-relaxed">
-            Plano interactivo organizado por capacidad: auditorios y laboratorios principales al frente, y espacios colaborativos de mentoría en el sector posterior. Haz clic o presiona Enter en cualquier sala para inspeccionar aforo y equipamiento.
-          </p>
-        </div>
+      {/* Indicador de Escenario / Curva tipo Cine */}
+      <div className="flex flex-col items-center justify-center pt-2 pb-2">
+        <div className="w-3/4 max-w-md h-2 rounded-t-full bg-gradient-to-r from-blue-900/40 via-[#22d3ee] to-blue-900/40 shadow-[0_0_20px_rgba(34,211,238,0.5)]" />
+        <span className="text-[10px] uppercase font-mono font-bold tracking-widest text-[#22d3ee] mt-2 select-none">
+          Pabellón Central • Campuslands
+        </span>
       </div>
 
       {/* Leyenda Accesible */}
@@ -188,6 +172,7 @@ export default function RoomMap({
               room={room}
               isSelected={selectedRoomId === room.id || modalRoom?.id === room.id}
               onClick={handleTileClick}
+              onSelect={handleTileClick}
             />
           ))}
         </div>
@@ -211,6 +196,7 @@ export default function RoomMap({
               room={room}
               isSelected={selectedRoomId === room.id || modalRoom?.id === room.id}
               onClick={handleTileClick}
+              onSelect={handleTileClick}
             />
           ))}
         </div>
@@ -223,7 +209,6 @@ export default function RoomMap({
         onClose={() => setModalRoom(null)}
         onReserve={(room) => {
           setModalRoom(null);
-          // Redirección para conectar con el flujo de reservas de Guerra
           window.location.href = `/reservations?space_id=${room.id}`;
         }}
         onReportIncident={(room) => {

@@ -7,20 +7,21 @@ import ErrorBoundary from '../components/feedback/ErrorBoundary';
 
 /**
  * AppLayout: Contenedor principal con fondo #000000, Navbar superior fija y <Outlet />.
- * Soporta banners/toasts globales de feedback (HU-17).
+ * Soporta banners/toasts globales de feedback y ErrorBoundary defensivo (HU-17).
+ * Área: MAFE (consumido por todas las páginas autenticadas de GUERRA y MAFE).
  */
 export default function AppLayout() {
   const [globalFeedback, setGlobalFeedback] = useState(null);
 
   // Leer usuario guardado o fallback seguro
-  let currentUser = { role: 'ADMIN', name: 'Mafe Q' };
+  let currentUser = { role: 'ADMIN', name: 'Usuario' };
   try {
     const stored = localStorage.getItem('user');
     if (stored) {
       currentUser = JSON.parse(stored);
     }
   } catch (e) {
-    // fallback
+    // fallback seguro
   }
 
   // Listener para eventos de feedback personalizados entre componentes desacoplados
@@ -35,7 +36,7 @@ export default function AppLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#000000] text-[#F5F5F7] flex flex-col selection:bg-[#2563EB] selection:text-white antialiased">
+    <div className="min-h-screen bg-[#000000] text-[#F5F5F7] flex flex-col font-sans antialiased selection:bg-[#2563EB] selection:text-white">
       {/* Skip to main content accessible link */}
       <a
         href="#main-content"
@@ -45,7 +46,7 @@ export default function AppLayout() {
       </a>
 
       {/* Navbar Superior Fija */}
-      <Navbar userRole={currentUser.role || 'ADMIN'} userName={currentUser.name || 'Mafe'} />
+      <Navbar userRole={currentUser.role || 'ADMIN'} userName={currentUser.name || 'Usuario'} />
 
       {/* Main Content Area */}
       <main id="main-content" className="flex-1 pt-16 flex flex-col w-full focus:outline-none" tabIndex={-1}>
@@ -76,15 +77,15 @@ export default function AppLayout() {
         </div>
       </main>
 
-      {/* Footer del Sistema */}
-      <footer className="border-t border-[rgba(255,255,255,0.08)] bg-[#1C1C1E]/60 py-4 text-center text-xs text-[#A1A1A6]">
+      {/* Pie sutil con estética Apple Dark Enclave */}
+      <footer className="border-t border-white/[0.08] bg-[#0E0E10] py-4 text-center text-xs text-[#8D90A0]">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#30D158] inline-block" />
             <span className="font-medium text-[#F5F5F7]">Campus Control &bull; Monolito Modular Campuslands</span>
           </div>
-          <span className="font-mono text-[11px] text-[#A1A1A6]">
-            React 19 &bull; Vite &bull; Tailwind CSS &bull; HU-17 a HU-20
+          <span className="font-mono text-[11px] text-[#22D3EE]">
+            React 19 &bull; Vite &bull; Tailwind CSS &bull; Enclave Seguro
           </span>
         </div>
       </footer>

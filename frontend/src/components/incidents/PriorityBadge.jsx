@@ -1,51 +1,29 @@
-import React from 'react';
-
 /**
- * PriorityBadge: Mapea prioridades operativas a colores exactos de diseño (HU-20).
- * Alta: #FF453A, Media: #FF9F0A, Baja: #30D158.
+ * Badge de prioridad de incidencia (alta, media, baja, crítica).
+ * Área: MAFE / GUERRA (HU-14, HU-20, HU-24).
  */
-export default function PriorityBadge({ priority = 'MEDIA', className = '' }) {
-  const normalized = String(priority).toUpperCase();
 
-  const configs = {
-    ALTA: {
-      label: 'Alta',
-      bg: 'bg-[#FF453A]/15',
-      border: 'border-[#FF453A]/30',
-      text: 'text-[#FF453A]',
-      dot: 'bg-[#FF453A]',
-    },
-    CRITICA: {
-      label: 'Crítica',
-      bg: 'bg-[#FF453A]/25',
-      border: 'border-[#FF453A]/50',
-      text: 'text-[#FF453A]',
-      dot: 'bg-[#FF453A] animate-ping',
-    },
-    MEDIA: {
-      label: 'Media',
-      bg: 'bg-[#FF9F0A]/15',
-      border: 'border-[#FF9F0A]/30',
-      text: 'text-[#FF9F0A]',
-      dot: 'bg-[#FF9F0A]',
-    },
-    BAJA: {
-      label: 'Baja',
-      bg: 'bg-[#30D158]/15',
-      border: 'border-[#30D158]/30',
-      text: 'text-[#30D158]',
-      dot: 'bg-[#30D158]',
-    },
-  };
+export default function PriorityBadge({ priority = 'media' }) {
+  const norm = String(priority).toLowerCase()
 
-  const current = configs[normalized] || configs.MEDIA;
+  const styles = {
+    critica: 'bg-[#93000a]/30 text-[#ffb4ab] border-[#ff453a]/40',
+    critical: 'bg-[#93000a]/30 text-[#ffb4ab] border-[#ff453a]/40',
+    alta: 'bg-[#ff9f0a]/20 text-[#ff9f0a] border-[#ff9f0a]/40',
+    high: 'bg-[#ff9f0a]/20 text-[#ff9f0a] border-[#ff9f0a]/40',
+    media: 'bg-[#2563eb]/20 text-[#6cd3f7] border-[#2563eb]/40',
+    medium: 'bg-[#2563eb]/20 text-[#6cd3f7] border-[#2563eb]/40',
+    baja: 'bg-[#2a2a2c] text-[#a1a1a6] border-white/[0.08]',
+    low: 'bg-[#2a2a2c] text-[#a1a1a6] border-white/[0.08]',
+  }
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${current.bg} ${current.border} ${current.text} ${className}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border ${
+        styles[norm] || styles.media
+      }`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${current.dot}`} />
-      <span>{current.label}</span>
+      {priority}
     </span>
-  );
+  )
 }

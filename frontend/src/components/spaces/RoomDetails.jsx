@@ -5,23 +5,28 @@ import Button from '../ui/Button';
 /**
  * RoomDetails: Modal/Ficha técnica accesible que despliega el detalle de la sala seleccionada (HU-18).
  * Muestra aforo máximo, estado actual, equipamiento y botones de acción.
+ * Área: MAFE (HU-18).
  */
 export default function RoomDetails({
   room,
-  isOpen,
+  isOpen = true,
   onClose,
   onReserve,
+  onBook,
   onReportIncident,
 }) {
   if (!room) return null;
 
+  const handleBook = onReserve || onBook;
+
   const {
     id = 'SAL-001',
+    code,
     name = 'Sala',
     capacity = 0,
     status = 'available',
     description = 'Espacio de trabajo colaborativo optimizado para sesiones académicas y talleres técnicos de Campuslands.',
-    equipment = ['Proyector láser 4K', 'Sistema de audio', 'Pizarra interactiva', 'Conexión Gigabit LAN'],
+    equipment = room.resources || ['Proyector láser 4K', 'Sistema de audio', 'Pizarra interactiva', 'Conexión Gigabit LAN'],
     currentReservation,
   } = room;
 
@@ -29,24 +34,29 @@ export default function RoomDetails({
 
   const statusConfig = {
     available: { label: 'Disponible', color: 'text-[#30D158]', bg: 'bg-[#30D158]/15 border-[#30D158]/30', dot: 'bg-[#30D158]' },
+    occupied: { label: 'Ocupada', color: 'text-[#FF9F0A]', bg: 'bg-[#FF9F0A]/15 border-[#FF9F0A]/30', dot: 'bg-[#FF9F0A]' },
     busy: { label: 'Ocupada', color: 'text-[#FF9F0A]', bg: 'bg-[#FF9F0A]/15 border-[#FF9F0A]/30', dot: 'bg-[#FF9F0A]' },
     incident: { label: 'Con Incidencia', color: 'text-[#FF6B35]', bg: 'bg-[#FF6B35]/15 border-[#FF6B35]/30', dot: 'bg-[#FF6B35]' },
+    disabled: { label: 'Inhabilitada', color: 'text-[#FF453A]', bg: 'bg-[#FF453A]/15 border-[#FF453A]/30', dot: 'bg-[#FF453A]' },
     maintenance: { label: 'Inhabilitada', color: 'text-[#FF453A]', bg: 'bg-[#FF453A]/15 border-[#FF453A]/30', dot: 'bg-[#FF453A]' },
   };
 
   const currentStatus = statusConfig[status] || statusConfig.available;
+  const displayId = code || id;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`${name} — ${id}`}
+      title={`${name} — ${displayId}`}
       subtitle="Ficha técnica de espacio y equipamiento"
       footer={
         <div className="flex flex-wrap items-center justify-end gap-2.5 w-full">
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Cerrar
-          </Button>
+          {onClose && (
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Cerrar
+            </Button>
+          )}
           {onReportIncident && (
             <Button
               variant="danger"
@@ -61,11 +71,11 @@ export default function RoomDetails({
               Reportar Falla
             </Button>
           )}
-          {onReserve && isAvailable && (
+          {handleBook && isAvailable && (
             <Button
               variant="primary"
               size="sm"
-              onClick={() => onReserve(room)}
+              onClick={() => handleBook(room)}
               icon={
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />

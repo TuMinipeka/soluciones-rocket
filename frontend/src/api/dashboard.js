@@ -11,8 +11,11 @@ import { api } from './client'
  * - Espacios disponibles y ocupados
  * - Préstamos activos y recursos inhabilitados
  * - Incidencias abiertas y en proceso
- * @param {Object} params - { date, time_slot }
+ * @param {Object} params - { date, time_slot, start_time, end_time }
  */
 export async function getDashboardSummaryApi(params = {}) {
   return api.get('/dashboard/summary', params)
 }
+
+// Alias de conveniencia
+export const getDashboardSummary = getDashboardSummaryApi;

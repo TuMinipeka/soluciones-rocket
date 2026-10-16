@@ -4,6 +4,7 @@ import Card from '../ui/Card';
 /**
  * StatCard: Tarjeta de métricas clave (KPI) de alto impacto (HU-19).
  * Incluye foco accesible, valor grande en #F5F5F7, iconos temáticos y microinteracciones.
+ * Área: MAFE (consumida en DashboardPage).
  */
 export default function StatCard({
   title,
@@ -11,12 +12,18 @@ export default function StatCard({
   subtitle,
   icon,
   trend,
-  color = 'primary', // 'primary' | 'secondary' | 'ok' | 'busy' | 'incident' | 'danger'
+  color = 'primary', // 'primary' | 'secondary' | 'ok' | 'busy' | 'incident' | 'danger' | 'emerald' | 'amber' | 'rose' | 'blue' | 'zinc'
   onClick,
   className = '',
 }) {
   const colorMap = {
     primary: {
+      text: 'text-[#60A5FA]',
+      bg: 'bg-[#2563EB]/15 border-[#2563EB]/30',
+      dot: 'bg-[#2563EB]',
+      glow: 'group-hover:border-[#2563EB]/40 group-hover:shadow-[0_0_20px_rgba(37,99,235,0.25)]',
+    },
+    blue: {
       text: 'text-[#60A5FA]',
       bg: 'bg-[#2563EB]/15 border-[#2563EB]/30',
       dot: 'bg-[#2563EB]',
@@ -34,7 +41,19 @@ export default function StatCard({
       dot: 'bg-[#30D158]',
       glow: 'group-hover:border-[#30D158]/40 group-hover:shadow-[0_0_20px_rgba(48,209,88,0.25)]',
     },
+    emerald: {
+      text: 'text-[#30D158]',
+      bg: 'bg-[#30D158]/15 border-[#30D158]/30',
+      dot: 'bg-[#30D158]',
+      glow: 'group-hover:border-[#30D158]/40 group-hover:shadow-[0_0_20px_rgba(48,209,88,0.25)]',
+    },
     busy: {
+      text: 'text-[#FF9F0A]',
+      bg: 'bg-[#FF9F0A]/15 border-[#FF9F0A]/30',
+      dot: 'bg-[#FF9F0A]',
+      glow: 'group-hover:border-[#FF9F0A]/40 group-hover:shadow-[0_0_20px_rgba(255,159,10,0.25)]',
+    },
+    amber: {
       text: 'text-[#FF9F0A]',
       bg: 'bg-[#FF9F0A]/15 border-[#FF9F0A]/30',
       dot: 'bg-[#FF9F0A]',
@@ -52,6 +71,18 @@ export default function StatCard({
       dot: 'bg-[#FF453A]',
       glow: 'group-hover:border-[#FF453A]/40 group-hover:shadow-[0_0_20px_rgba(255,69,58,0.25)]',
     },
+    rose: {
+      text: 'text-[#FF453A]',
+      bg: 'bg-[#FF453A]/15 border-[#FF453A]/30',
+      dot: 'bg-[#FF453A]',
+      glow: 'group-hover:border-[#FF453A]/40 group-hover:shadow-[0_0_20px_rgba(255,69,58,0.25)]',
+    },
+    zinc: {
+      text: 'text-[#A1A1A6]',
+      bg: 'bg-[#2A2A2C] border-white/[0.08]',
+      dot: 'bg-[#A1A1A6]',
+      glow: '',
+    },
   };
 
   const current = colorMap[color] || colorMap.primary;
@@ -62,6 +93,9 @@ export default function StatCard({
       onClick();
     }
   };
+
+  const trendLabel = typeof trend === 'object' && trend !== null ? trend.label : trend;
+  const isPositive = typeof trend === 'object' && trend !== null ? trend.positive : true;
 
   return (
     <Card
@@ -92,10 +126,10 @@ export default function StatCard({
 
       <div className="mt-4 pt-3 border-t border-[rgba(255,255,255,0.06)] flex items-center justify-between text-xs">
         <span className="text-[#A1A1A6] font-medium truncate">{subtitle}</span>
-        {trend && (
-          <span className={`font-semibold shrink-0 flex items-center gap-1 ${trend.positive ? 'text-[#30D158]' : 'text-[#FF453A]'}`}>
-            <span aria-hidden="true">{trend.positive ? '↑' : '↓'}</span>
-            <span>{trend.label}</span>
+        {trendLabel && (
+          <span className={`font-semibold shrink-0 flex items-center gap-1 ${isPositive ? 'text-[#30D158]' : 'text-[#FF453A]'}`}>
+            <span aria-hidden="true">{isPositive ? '↑' : '↓'}</span>
+            <span>{trendLabel}</span>
           </span>
         )}
       </div>
