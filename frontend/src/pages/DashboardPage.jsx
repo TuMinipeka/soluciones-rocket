@@ -11,6 +11,16 @@ import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
 import EmptyState from '../components/feedback/EmptyState'
 import Input from '../components/ui/Input'
+import {
+  BuildingOffice2Icon,
+  UserGroupIcon,
+  ComputerDesktopIcon,
+  ExclamationTriangleIcon,
+  WrenchScrewdriverIcon,
+  Cog6ToothIcon,
+  ClockIcon,
+  CheckCircleIcon,
+} from '@heroicons/react/24/outline'
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -79,8 +89,8 @@ export default function DashboardPage() {
 
           {/* Reloj y Fecha Oficial Institucional */}
           <div className="flex flex-col items-start lg:items-end bg-black/30 backdrop-blur-md p-4 rounded-2xl border border-white/[0.06] space-y-1">
-            <span className="text-xs font-mono uppercase tracking-widest text-[#22d3ee]">
-              Horario del Campus
+            <span className="text-xs font-mono uppercase tracking-widest text-[#22d3ee] flex items-center gap-1.5">
+              <ClockIcon className="w-4 h-4 text-[#22d3ee]" /> Horario del Campus
             </span>
             <div className="text-2xl sm:text-3xl font-mono font-bold text-white tracking-wider">
               {formattedCurrentTime}
@@ -96,7 +106,7 @@ export default function DashboardPage() {
       <div className="rounded-[20px] border border-white/[0.08] bg-[#1c1c1e] p-5 shadow-sm">
         <div className="flex items-center justify-between mb-3 border-b border-white/[0.06] pb-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6] flex items-center gap-2">
-            <span>⏱️</span> Intervalo Operativo de Consulta
+            <ClockIcon className="w-4 h-4 text-[#22d3ee]" /> Intervalo Operativo de Consulta
           </span>
           <span className="text-[11px] font-mono text-[#22d3ee]">
             Rango institucional: 06:00 – 22:00 hrs
@@ -157,8 +167,8 @@ export default function DashboardPage() {
             <h2 className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]">
               Indicadores Principales
             </h2>
-            <span className="text-[11px] font-mono text-[#30d158]">
-              Sincronizado ✓
+            <span className="text-[11px] font-mono text-[#30d158] flex items-center gap-1">
+              <CheckCircleIcon className="w-3.5 h-3.5" /> Sincronizado
             </span>
           </div>
 
@@ -168,42 +178,42 @@ export default function DashboardPage() {
               value={summary.available_spaces}
               trend="Operativas"
               color="emerald"
-              icon="🏛️"
+              icon={<BuildingOffice2Icon className="w-5 h-5 text-[#30d158]" />}
             />
             <StatCard
               title="Salas Ocupadas"
               value={summary.occupied_spaces}
               trend="En uso"
               color="blue"
-              icon="👥"
+              icon={<UserGroupIcon className="w-5 h-5 text-[#6cd3f7]" />}
             />
             <StatCard
               title="Préstamos Activos"
               value={summary.active_loans}
               trend="Equipos en uso"
               color="amber"
-              icon="💻"
+              icon={<ComputerDesktopIcon className="w-5 h-5 text-[#ff9f0a]" />}
             />
             <StatCard
               title="Incidencias Abiertas"
               value={summary.open_incidents}
               trend={summary.open_incidents > 0 ? 'Atención urgente' : 'Sin pendientes'}
               color={summary.open_incidents > 0 ? 'rose' : 'zinc'}
-              icon="⚠️"
+              icon={<ExclamationTriangleIcon className="w-5 h-5 text-[#ff453a]" />}
             />
             <StatCard
               title="Recursos Inhabilitados"
               value={summary.disabled_resources}
               trend="Mantenimiento"
               color="rose"
-              icon="🛠️"
+              icon={<WrenchScrewdriverIcon className="w-5 h-5 text-[#ff453a]" />}
             />
             <StatCard
               title="Incidencias En Proceso"
               value={summary.in_progress_incidents}
               trend="Brigada asignada"
               color="amber"
-              icon="🔧"
+              icon={<Cog6ToothIcon className="w-5 h-5 text-[#ff9f0a]" />}
             />
           </div>
         </div>

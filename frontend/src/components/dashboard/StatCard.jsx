@@ -26,7 +26,13 @@ export default function StatCard({
         <span className="text-xs font-semibold uppercase tracking-wider text-[#a1a1a6]">
           {title}
         </span>
-        {icon && <span className="text-base">{icon}</span>}
+        {icon && (
+          typeof icon === 'string' ? (
+            <span className="text-base">{icon}</span>
+          ) : (
+            <span className="text-white/80">{icon}</span>
+          )
+        )}
       </div>
       <div className="mt-3 flex items-baseline gap-2.5">
         <span className="text-3xl font-bold tracking-tight text-white font-mono">{value}</span>

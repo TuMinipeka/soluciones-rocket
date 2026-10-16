@@ -20,6 +20,7 @@ import Table from '../components/ui/Table'
 import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
 import SuccessMessage from '../components/feedback/SuccessMessage'
+import { PlusIcon, MapPinIcon } from '@heroicons/react/24/outline'
 
 // Inventario de muestra representativo de Campuslands si el SEED aún no se ejecuta
 const DEFAULT_RESOURCES = [
@@ -325,7 +326,7 @@ export default function LoansPage() {
                 className="rounded-xl flex items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.3)]"
                 onClick={() => setIsCreateModalOpen(true)}
               >
-                <span>➕</span>
+                <PlusIcon className="w-4 h-4" />
                 <span>Nuevo Recurso</span>
               </Button>
             )}
@@ -421,7 +422,7 @@ export default function LoansPage() {
                   )}
                   {res.location && (
                     <p className="text-[11px] text-[#8d90a0] mt-1 flex items-center gap-1">
-                      <span>📍</span> {res.location}
+                      <MapPinIcon className="w-3.5 h-3.5 text-[#22d3ee] shrink-0" /> {res.location}
                     </p>
                   )}
                 </div>

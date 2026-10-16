@@ -23,6 +23,7 @@ import SuccessMessage from '../components/feedback/SuccessMessage'
 import SpaceConciergeModal from '../components/spaces/SpaceConciergeModal'
 import RoomScheduleCalendar from '../components/spaces/RoomScheduleCalendar'
 import { ROOM_PHOTO_MAP } from '../components/spaces/CampusMap'
+import { SparklesIcon, BuildingOffice2Icon } from '@heroicons/react/24/outline'
 
 
 // Catálogo oficial de las 10 salas del campus (Fuente: backend/app/services/availability.py)
@@ -263,7 +264,7 @@ export default function ReservationPage() {
               onClick={() => setIsConciergeOpen(true)}
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-600/30 via-cyan-500/20 to-blue-600/30 hover:from-blue-600/45 hover:to-cyan-500/35 text-white text-xs font-semibold border border-cyan-400/40 shadow-[0_0_15px_rgba(34,211,238,0.25)] hover:shadow-[0_0_20px_rgba(34,211,238,0.4)] active:scale-95 transition-all cursor-pointer"
             >
-              <span className="text-cyan-300">✨</span>
+              <SparklesIcon className="w-4 h-4 text-cyan-300" />
               <span>Asistente IA Groq</span>
             </button>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1c1c1e] text-[#a1a1a6] text-xs font-mono border border-white/[0.08]">
@@ -283,7 +284,7 @@ export default function ReservationPage() {
         <div className="lg:col-span-5 bg-[#1c1c1e] rounded-[20px] p-6 sm:p-7 border-t border-white/[0.09] border-x border-white/[0.04] border-b border-black/50 shadow-[0_12px_32px_rgba(0,0,0,0.45)]">
           <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.06] mb-5">
             <div className="flex items-center gap-2.5">
-              <span className="text-base text-[#22d3ee]">🏛️</span>
+              <BuildingOffice2Icon className="w-5 h-5 text-[#22d3ee]" />
               <h2 className="text-base font-semibold text-white tracking-tight">Detalles de la Reserva</h2>
             </div>
             <span className="text-xs text-[#8d90a0] font-mono">Campos obligatorios *</span>
@@ -293,7 +294,7 @@ export default function ReservationPage() {
             {/* Banner sugerencia Asistente IA Groq */}
             <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-950/40 via-[#1c1c1e] to-cyan-950/30 border border-blue-500/25 flex items-center justify-between gap-3 shadow-[0_0_15px_rgba(37,99,235,0.1)]">
               <div className="flex items-center gap-2.5">
-                <span className="text-base text-cyan-400">✨</span>
+                <SparklesIcon className="w-5 h-5 text-cyan-400 shrink-0" />
                 <div>
                   <p className="text-xs font-semibold text-white">¿Dudas sobre qué sala elegir?</p>
                   <p className="text-[11px] text-[#a1a1a6]">Pídele a Groq recomendaciones por aforo y equipamiento</p>

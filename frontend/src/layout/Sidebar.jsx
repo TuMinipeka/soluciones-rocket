@@ -4,17 +4,25 @@
  */
 
 import { NavLink } from 'react-router-dom'
+import {
+  BuildingOffice2Icon,
+  CalendarDaysIcon,
+  ComputerDesktopIcon,
+  ExclamationTriangleIcon,
+  ClipboardDocumentListIcon,
+  ChartBarIcon,
+} from '@heroicons/react/24/outline'
 
 export default function Sidebar({ isOpen, onClose }) {
   if (!isOpen) return null
 
   const items = [
-    { to: '/spaces', label: 'Mapa y Salas', icon: '🏛️' },
-    { to: '/reservations', label: 'Reservas de Espacios', icon: '📅' },
-    { to: '/loans', label: 'Recursos y Préstamos', icon: '💻' },
-    { to: '/incidents', label: 'Reportar Incidencias', icon: '⚠️' },
-    { to: '/incidents-list', label: 'Historial de Incidencias', icon: '📋' },
-    { to: '/dashboard', label: 'Dashboard Operativo', icon: '📊' },
+    { to: '/spaces', label: 'Mapa y Salas', icon: BuildingOffice2Icon },
+    { to: '/reservations', label: 'Reservas de Espacios', icon: CalendarDaysIcon },
+    { to: '/loans', label: 'Recursos y Préstamos', icon: ComputerDesktopIcon },
+    { to: '/incidents', label: 'Reportar Incidencias', icon: ExclamationTriangleIcon },
+    { to: '/incidents-list', label: 'Historial de Incidencias', icon: ClipboardDocumentListIcon },
+    { to: '/dashboard', label: 'Dashboard Operativo', icon: ChartBarIcon },
   ]
 
   return (
@@ -23,23 +31,26 @@ export default function Sidebar({ isOpen, onClose }) {
         <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
           Navegación
         </div>
-        {items.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            onClick={onClose}
-            className={({ isActive }) =>
-              `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                isActive
-                  ? 'bg-zinc-100 font-semibold text-zinc-900'
-                  : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
-              }`
-            }
-          >
-            <span>{item.icon}</span>
-            <span>{item.label}</span>
-          </NavLink>
-        ))}
+        {items.map((item) => {
+          const Icon = item.icon
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  isActive
+                    ? 'bg-zinc-100 font-semibold text-zinc-900'
+                    : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
+                }`
+              }
+            >
+              <Icon className="w-5 h-5 text-zinc-500" />
+              <span>{item.label}</span>
+            </NavLink>
+          )
+        })}
       </div>
     </aside>
   )

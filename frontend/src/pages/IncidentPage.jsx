@@ -19,6 +19,14 @@ import RecommendationCard from '../components/incidents/RecommendationCard'
 import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
 import SuccessMessage from '../components/feedback/SuccessMessage'
+import {
+  ShieldCheckIcon,
+  SparklesIcon,
+  BoltIcon,
+  CheckCircleIcon,
+  BuildingOffice2Icon,
+  ComputerDesktopIcon,
+} from '@heroicons/react/24/outline'
 
 // Catálogo oficial de respaldo si el backend aún no expone /spaces
 const DEFAULT_OFFICIAL_SPACES = [
@@ -223,7 +231,7 @@ export default function IncidentPage() {
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pt-1">
           <div>
             <div className="inline-flex items-center gap-1.5 text-[#22d3ee] text-xs font-mono uppercase tracking-wider mb-1">
-              <span>🛡️</span>
+              <ShieldCheckIcon className="w-4 h-4 text-[#22d3ee]" />
               <span>Sistema Táctico de Resolución Técnica</span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-white">
@@ -322,7 +330,7 @@ export default function IncidentPage() {
                       : 'text-[#a1a1a6] hover:text-white'
                   }`}
                 >
-                  <span className="text-sm">🏛️</span>
+                  <BuildingOffice2Icon className="w-4 h-4 text-white" />
                   <span>Sala o Espacio</span>
                 </button>
                 <button
@@ -334,7 +342,7 @@ export default function IncidentPage() {
                       : 'text-[#a1a1a6] hover:text-white'
                   }`}
                 >
-                  <span className="text-sm">💻</span>
+                  <ComputerDesktopIcon className="w-4 h-4 text-white" />
                   <span>Equipo / Recurso</span>
                 </button>
               </div>
@@ -435,10 +443,11 @@ export default function IncidentPage() {
                 type="submit"
                 variant="ai"
                 size="md"
-                className="w-full sm:w-auto px-6 h-11 rounded-full font-semibold text-xs tracking-wide"
+                className="w-full sm:w-auto px-6 h-11 rounded-full font-semibold text-xs tracking-wide flex items-center justify-center gap-2"
                 isLoading={isAnalyzing}
               >
-                {isAnalyzing ? 'Analizando diagnóstico…' : '✨ Analizar con Inteligencia Artificial'}
+                <SparklesIcon className="w-4 h-4 text-cyan-300" />
+                <span>{isAnalyzing ? 'Analizando diagnóstico…' : 'Analizar con Inteligencia Artificial'}</span>
               </Button>
             </div>
           </form>
@@ -452,7 +461,7 @@ export default function IncidentPage() {
             </h3>
             {analysisResult && (
               <span className="text-[11px] font-mono text-[#22d3ee] flex items-center gap-1">
-                Token verificado ✓
+                <CheckCircleIcon className="w-3.5 h-3.5" /> Token verificado
               </span>
             )}
           </div>
@@ -464,7 +473,7 @@ export default function IncidentPage() {
           ) : !analysisResult ? (
             <div className="h-80 rounded-[20px] border border-dashed border-white/[0.1] bg-[#141416]/60 flex flex-col items-center justify-center p-8 text-center text-[#8d90a0]">
               <div className="w-12 h-12 rounded-2xl bg-[#2a2a2c] flex items-center justify-center text-xl mb-3 text-[#22d3ee]">
-                ⚡
+                <BoltIcon className="w-6 h-6 text-[#22d3ee]" />
               </div>
               <p className="text-xs font-medium max-w-sm leading-relaxed text-[#a1a1a6]">
                 Ingresa los síntomas en el formulario y haz clic en «Analizar con Inteligencia Artificial» para obtener severidad, categoría y propuestas de reubicación instantáneas.
