@@ -148,3 +148,26 @@ def test_get_space_returns_persisted_room_or_not_found(client, teacher_token):
     assert found.json()["capacity"] == 32
     assert missing.status_code == 404
     assert missing.json()["error"]["code"] == "NOT_FOUND"
+
+
+def test_get_space_calculates_availability_for_requested_interval(
+    client, db_session, teacher_user, teacher_token
+):
+    add_reservation(db_session, teacher_user.id, "SAL-002", time(9), time(10))
+
+    occupied = client.get(
+        "/spaces/SAL-002",
+        params={"date": "2026-10-20", "start_time": "09:30", "end_time": "10:30"},
+        headers=auth(teacher_token),
+    )
+    assert occupied.status_code == 200
+    assert occupied.json()["status"] == "occupied"
+    assert occupied.json()["has_conflict"] is True
+
+    available = client.get(
+        "/spaces/SAL-002",
+        params={"date": "2026-10-20", "start_time": "10:00", "end_time": "11:00"},
+        headers=auth(teacher_token),
+    )
+    assert available.status_code == 200
+    assert available.json()["status"] == "available"

@@ -67,8 +67,28 @@ def list_spaces(
     return [_response(space, bool(has_conflict)) for space, has_conflict in rows]
 
 
-def get_space(space_id: str, db: Session) -> SpaceAvailabilityResponse:
+def get_space(
+    space_id: str,
+    db: Session,
+    requested_date: date | None = None,
+    start_time: time | None = None,
+    end_time: time | None = None,
+) -> SpaceAvailabilityResponse:
     space = db.get(Space, space_id.strip().upper())
     if space is None:
         raise NotFoundError("Sala no encontrada en el catálogo autorizado.")
-    return _response(space)
+    has_interval = _validate_interval(requested_date, start_time, end_time)
+    if not has_interval:
+        return _response(space)
+    has_conflict = db.scalar(
+        select(
+            exists().where(
+                Reservation.space_id == space.id,
+                Reservation.date == requested_date,
+                Reservation.status == "confirmed",
+                Reservation.start_time < end_time,
+                Reservation.end_time > start_time,
+            )
+        )
+    )
+    return _response(space, bool(has_conflict))

@@ -29,7 +29,10 @@ def list_spaces(
 @router.get("/{space_id}", response_model=SpaceAvailabilityResponse)
 def get_space(
     space_id: str,
+    requested_date: date | None = Query(default=None, alias="date"),
+    start_time: time | None = Query(default=None),
+    end_time: time | None = Query(default=None),
     _user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> SpaceAvailabilityResponse:
-    return service.get_space(space_id, db)
+    return service.get_space(space_id, db, requested_date, start_time, end_time)
