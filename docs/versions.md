@@ -8,6 +8,12 @@ Esta es la **línea base acordada en el repositorio**, no una afirmación de que
 | FastAPI | `0.143.2` | `backend/requirements.txt` |
 | Uvicorn | `0.53.0` | `backend/requirements.txt` |
 | SQLAlchemy | `2.1.3` | `backend/requirements.txt` |
+| argon2-cffi | `25.1.0` | `backend/requirements.txt` |
+| PyJWT | `2.15.1` | `backend/requirements.txt` |
+| httpx | `0.28.1` | `backend/requirements.txt` |
+| email-validator | `2.3.0` | `backend/requirements.txt` |
+| pydantic-settings | `2.15.0` | `backend/requirements.txt` |
+| pytest | `9.1.1` | `backend/requirements.txt` |
 | Node.js + Alpine | `22.23.2-alpine3.24` | `frontend/Dockerfile` |
 | React y React DOM | `19.3.0` | `frontend/package.json` |
 | Vite | `8.3.4` | `frontend/package.json` |
