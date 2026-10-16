@@ -1,4 +1,4 @@
-# Contrato de espacios y disponibilidad (HU-02)
+# Contrato de espacios, disponibilidad y reservas (HU-02 y HU-03)
 
 Todas las rutas requieren `Authorization: Bearer <token>` y conservan el formato de error compartido `{"error":{"code":"...","message":"...","details":...}}`.
 
@@ -40,3 +40,47 @@ Sin parámetros de fecha y hora, la respuesta conserva las diez salas y solo dif
 ## Consultar una sala
 
 `GET /spaces/{space_id}` devuelve la sala persistida con el mismo esquema base. Un identificador inexistente devuelve `404 NOT_FOUND`.
+
+## Crear una reserva
+
+`POST /reservations` requiere un usuario autenticado con rol `admin` o `teacher`. El rol `support` recibe `403 FORBIDDEN`.
+
+Solicitud:
+
+```json
+{
+  "space_id": "SAL-002",
+  "date": "2026-10-20",
+  "start_time": "08:00",
+  "end_time": "10:00",
+  "attendees": 20,
+  "title": "Clase de programación"
+}
+```
+
+Una reserva válida se persiste inmediatamente con estado `confirmed` y responde `201 Created`:
+
+```json
+{
+  "id": 1,
+  "space_id": "SAL-002",
+  "space_name": "Cosmos",
+  "user_id": 2,
+  "date": "2026-10-20",
+  "start_time": "08:00:00",
+  "end_time": "10:00:00",
+  "attendees": 20,
+  "title": "Clase de programación",
+  "status": "confirmed"
+}
+```
+
+Reglas aplicadas dentro de una transacción SQLite:
+
+- La sala debe existir y permanecer habilitada.
+- `start_time` debe ser estrictamente anterior a `end_time`.
+- `attendees` debe ser mayor que cero y no superar el aforo persistido de la sala.
+- No puede existir otra reserva `confirmed` de la misma sala y fecha que se solape con la franja solicitada.
+- La comprobación y la escritura adquieren un bloqueo de escritura SQLite para que dos solicitudes concurrentes incompatibles no se confirmen simultáneamente.
+
+Una sala inexistente devuelve `404 NOT_FOUND`; una sala inhabilitada, aforo excedido o solapamiento devuelve `409 CONFLICT`; entradas con formato o intervalo inválido devuelven `422 VALIDATION_ERROR`.
