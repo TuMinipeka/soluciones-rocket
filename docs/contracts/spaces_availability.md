@@ -1,4 +1,4 @@
-# Contrato de espacios, disponibilidad y reservas (HU-02 y HU-03)
+# Contrato de espacios, disponibilidad y reservas (HU-02 a HU-04)
 
 Todas las rutas requieren `Authorization: Bearer <token>` y conservan el formato de error compartido `{"error":{"code":"...","message":"...","details":...}}`.
 
@@ -84,3 +84,19 @@ Reglas aplicadas dentro de una transacción SQLite:
 - La comprobación y la escritura adquieren un bloqueo de escritura SQLite para que dos solicitudes concurrentes incompatibles no se confirmen simultáneamente.
 
 Una sala inexistente devuelve `404 NOT_FOUND`; una sala inhabilitada, aforo excedido o solapamiento devuelve `409 CONFLICT`; entradas con formato o intervalo inválido devuelven `422 VALIDATION_ERROR`.
+
+## Consultar y gestionar reservas
+
+Las rutas de gestión aceptan únicamente roles `admin` y `teacher`:
+
+| Ruta | Comportamiento |
+| --- | --- |
+| `GET /reservations` | Un docente recibe únicamente sus reservas; un administrador puede consultar todas. Acepta filtros `date`, `space_id`, `user_id` y `status`. |
+| `PUT /reservations/{id}` | Modifica uno o varios campos editables y vuelve a validar sala, aforo, intervalo y solapamientos. |
+| `DELETE /reservations/{id}` | Cancela lógicamente la reserva y devuelve el registro con `status: "cancelled"`; no elimina información. |
+
+Un docente recibe `403 FORBIDDEN` al intentar modificar o cancelar una reserva ajena. Un administrador puede gestionar cualquier reserva. Una reserva cancelada no puede modificarse ni cancelarse de nuevo y devuelve `409 CONFLICT`.
+
+Las modificaciones se ejecutan de forma atómica con la misma serialización SQLite de la creación. Al verificar solapamientos, la reserva que se está modificando se excluye de la consulta. Cambiar de horario o sala vuelve a ejecutar todas las reglas de HU-03.
+
+Cada respuesta de reserva incluye `events`, ordenados cronológicamente, con eventos `created`, `updated` y `cancelled`. La cancelación conserva la reserva y registra quién realizó la acción. Al quedar en estado `cancelled`, deja de bloquear inmediatamente `GET /spaces`.
