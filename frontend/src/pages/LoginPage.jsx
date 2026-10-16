@@ -408,37 +408,14 @@ export default function LoginPage({ initialMode }) {
       </div>
 
       {/* ========================================================= */}
-      {/* COLUMNA DERECHA (50%): Astronauta con Paneles Holográficos*/}
+      {/* COLUMNA DERECHA (50%): Imagen del Astronauta Full Bleed   */}
       {/* ========================================================= */}
-      <div className="hidden lg:flex lg:w-1/2 min-h-screen relative overflow-hidden bg-gradient-to-b from-[#080a0f] via-[#0c0e18] to-[#07080d] items-center justify-center p-8 xl:p-12 select-none">
-        {/* Estrellas decorativas del fondo */}
-        <div className="absolute top-12 left-16 w-1.5 h-1.5 bg-white rounded-full animate-twinkle" style={{ animationDelay: '0.2s' }} />
-        <div className="absolute top-36 left-40 w-1 h-1 bg-cyan-300 rounded-full animate-twinkle" style={{ animationDelay: '1.4s' }} />
-        <div className="absolute top-24 right-20 w-1.5 h-1.5 bg-blue-300 rounded-full animate-twinkle" style={{ animationDelay: '0.8s' }} />
-        <div className="absolute bottom-24 left-24 w-1.5 h-1.5 bg-white rounded-full animate-twinkle" style={{ animationDelay: '2.1s' }} />
-        <div className="absolute bottom-36 right-20 w-1 h-1 bg-cyan-200 rounded-full animate-twinkle" style={{ animationDelay: '1.7s' }} />
-        <div className="absolute top-1/2 right-12 w-1.5 h-1.5 bg-white/70 rounded-full animate-twinkle" style={{ animationDelay: '2.5s' }} />
-
-        {/* Anillos orbitales concéntricos */}
-        <div className="absolute w-[500px] h-[500px] rounded-full border border-blue-500/15 pointer-events-none animate-orbit" />
-        <div className="absolute w-[360px] h-[360px] rounded-full border border-cyan-400/10 pointer-events-none animate-orbit" style={{ animationDirection: 'reverse', animationDuration: '32s' }} />
-
-        {/* Resplandor cósmico difuso */}
-        <div className="absolute w-[460px] h-[460px] rounded-full bg-gradient-to-tr from-blue-600/20 via-cyan-500/15 to-purple-600/10 blur-3xl pointer-events-none" />
-
-        {/* Astronauta interactuando con paneles holográficos limpio y centrado */}
-        <div className="relative z-10 flex items-center justify-center">
-          {/* Resplandor cian reactivo al holograma */}
-          <div className="absolute top-[28%] left-[25%] w-36 h-36 bg-cyan-400/20 rounded-full blur-2xl pointer-events-none animate-pulse-subtle" />
-
-          <div className="relative animate-astronaut group cursor-pointer transition-transform duration-700">
-            <img
-              src="/astronaut_hologram_interactive.png"
-              alt="Astronauta interactuando con consola holográfica"
-              className="max-h-[490px] xl:max-h-[540px] w-auto object-contain drop-shadow-[0_25px_50px_rgba(34,211,238,0.3)] transition-transform duration-500 group-hover:scale-[1.03]"
-            />
-          </div>
-        </div>
+      <div className="hidden lg:block lg:w-1/2 min-h-screen relative overflow-hidden bg-[#08090b]">
+        <img
+          src="/astronaut_cover.jpg"
+          alt="Astronauta Campuslands en el espacio"
+          className="w-full h-full object-cover object-center"
+        />
       </div>
     </div>
   )
