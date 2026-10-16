@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { getSpacesApi } from '../api/spaces'
 import { getResourcesApi } from '../api/resources'
 import { analyzeIncidentApi, createIncidentApi } from '../api/incidents'
@@ -35,10 +36,12 @@ const DEFAULT_OFFICIAL_SPACES = [
 
 export default function IncidentPage() {
   const { user } = useAuth()
+  const location = useLocation()
+  const pre = location.state || {}
 
   // Selección de objetivo afectado
   const [targetType, setTargetType] = useState('space') // 'space' o 'resource'
-  const [targetId, setTargetId] = useState('SAL-002') // Cosmos por defecto
+  const [targetId, setTargetId] = useState(pre.preselectedSpaceId || 'SAL-002') // Cosmos o preseleccionado
   const [description, setDescription] = useState('')
   const [disablesElement, setDisablesElement] = useState(false)
 

@@ -1,36 +1,28 @@
 /**
- * Página: Mapa Interactivo de Salas (HU-18)
- * Área: MAFE (consumidor de api/spaces.js preparado por GUERRA).
+ * Página: Mapa Interactivo de Salas y Espacios del Campus (HU-18, HU-17, HU-21)
+ * Integra el plano arquitectónico 2D de Campuslands con consulta en tiempo real:
+ * - Filtros superiores de Fecha, Hora Inicial y Hora Final conectados a GET /spaces.
+ * - Doble visualización: Plano Arquitectónico Real (Evacuación) y Cuadrícula Resumida.
+ * - Acciones directas para Reservar Sala (HU-22) y Reportar Incidencia con IA (HU-24).
+ * Responsables: GUERRA & MAFE
  */
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getSpacesApi } from '../api/spaces'
-import RoomMap from '../components/spaces/RoomMap'
-import RoomDetails from '../components/spaces/RoomDetails'
+import CampusRealFloorplan, {
+  CAMPUS_FLOORPLAN_SPACES,
+} from '../components/spaces/CampusRealFloorplan'
 import LoadingState from '../components/feedback/LoadingState'
 import ErrorMessage from '../components/feedback/ErrorMessage'
 import Input from '../components/ui/Input'
-import Card from '../components/ui/Card'
-
-// Catálogo oficial de las 10 salas del campus (Fuente: backend/app/services/availability.py)
-const DEFAULT_OFFICIAL_SPACES = [
-  { id: 'SAL-001', code: 'SAL-001', name: 'Auditorio', capacity: 100, status: 'available', resources: ['Proyector láser', 'Sistema de sonido', 'Micrófonos inalámbricos', 'Escenario'] },
-  { id: 'SAL-002', code: 'SAL-002', name: 'Cosmos', capacity: 25, status: 'available', resources: ['Smart TV 75"', 'Cámaras de videoconferencia', 'Pizarra acrílica'] },
-  { id: 'SAL-003', code: 'SAL-003', name: 'Skilab', capacity: 20, status: 'available', resources: ['Estaciones de trabajo iMac', 'Tabletas gráficas', 'Conectividad Gigabit'] },
-  { id: 'SAL-004', code: 'SAL-004', name: 'Spooki', capacity: 38, status: 'available', resources: ['Proyector FHD', 'Aire acondicionado doble', 'Pizarra panorámica'] },
-  { id: 'SAL-005', code: 'SAL-005', name: 'Apolo', capacity: 34, status: 'available', resources: ['Pizarra interactiva', 'Audio distribuido', 'Conexiones HDMI individuales'] },
-  { id: 'SAL-006', code: 'SAL-006', name: 'Blanca', capacity: 12, status: 'available', resources: ['Mesa de directorio', 'Pantalla 55"', 'Cámara 4K'] },
-  { id: 'SAL-007', code: 'SAL-007', name: 'Azul', capacity: 10, status: 'available', resources: ['Pizarra de cristal', 'Videoconferencia Polycom'] },
-  { id: 'SAL-008', code: 'SAL-008', name: 'Amarillas', capacity: 6, status: 'available', resources: ['Monitor 43"', 'Mesa redonda'] },
-  { id: 'SAL-009', code: 'SAL-009', name: 'Verdes', capacity: 6, status: 'available', resources: ['Monitor 43"', 'Pizarra pequeña'] },
-  { id: 'SAL-010', code: 'SAL-010', name: 'Artemis', capacity: 32, status: 'available', resources: ['Laptops de desarrollo', 'Proyector 4K', 'Audio envolvente'] },
-]
 
 export default function SpacesPage() {
   const navigate = useNavigate()
-  const [spaces, setSpaces] = useState(DEFAULT_OFFICIAL_SPACES)
-  const [selectedRoom, setSelectedRoom] = useState(DEFAULT_OFFICIAL_SPACES[1]) // Cosmos preseleccionado
+  const [spaces, setSpaces] = useState(CAMPUS_FLOORPLAN_SPACES)
+  const [selectedSpaceId, setSelectedSpaceId] = useState('SAL-005') // Apolo por defecto
+
+  // Filtros de franja horaria para consulta en tiempo real
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [startTime, setStartTime] = useState('08:00')
   const [endTime, setEndTime] = useState('10:00')
@@ -44,15 +36,18 @@ export default function SpacesPage() {
       const data = await getSpacesApi({ date, start_time: startTime, end_time: endTime })
       const list = Array.isArray(data) ? data : data?.spaces || []
       if (list.length > 0) {
-        setSpaces(list)
-        if (selectedRoom) {
-          const updated = list.find((s) => s.id === selectedRoom.id)
-          if (updated) setSelectedRoom(updated)
-        }
+        // Enriquecer salas recibidas del backend con los metadatos de ubicación del plano
+        const merged = CAMPUS_FLOORPLAN_SPACES.map((floorSpace) => {
+          const apiRoom = list.find((s) => s.id === floorSpace.id)
+          return apiRoom ? { ...floorSpace, ...apiRoom } : floorSpace
+        })
+        setSpaces(merged)
+      } else {
+        setSpaces(CAMPUS_FLOORPLAN_SPACES)
       }
     } catch {
-      // Si la API aún no tiene endpoint de salas montado por Conde, usamos el catálogo oficial como base determinista
-      setSpaces(DEFAULT_OFFICIAL_SPACES)
+      // Fallback determinista con las 10 salas del catálogo oficial
+      setSpaces(CAMPUS_FLOORPLAN_SPACES)
     } finally {
       setIsLoading(false)
     }
@@ -73,26 +68,49 @@ export default function SpacesPage() {
     })
   }
 
+  const handleReportIncident = (room) => {
+    navigate('/incidents', {
+      state: {
+        preselectedSpaceId: room.id,
+      },
+    })
+  }
+
   return (
     <div className="space-y-6">
+      {/* Cabecera Principal con Identidad y Enclave */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <h1 className="text-3xl font-bold tracking-tight text-white">
               Salas y Espacios del Campus
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#1c1c1e] text-[#22d3ee] border border-white/[0.08] uppercase tracking-wider">
-              10 Salas Oficiales
+              Enclave Activo
             </span>
           </div>
           <p className="text-sm text-[#a1a1a6] mt-1">
-            Visualización interactiva tipo cine por fecha y franja horaria.
+            Plano arquitectónico interactivo con evaluación de disponibilidad horaria y aforos en tiempo real.
           </p>
+        </div>
+
+        {/* Acciones Rápidas */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={loadSpaces}
+            className="px-3.5 py-2 rounded-xl bg-[#1c1c1e] hover:bg-[#2c2c2e] border border-white/[0.08] text-xs font-semibold text-zinc-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer select-none"
+          >
+            <svg className="w-3.5 h-3.5 text-[#22d3ee]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>Actualizar</span>
+          </button>
         </div>
       </div>
 
-      {/* Barra de control de horario */}
-      <Card className="shadow-xs">
+      {/* Barra de Control de Disponibilidad Horaria (HU-18) */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-[#16181f] border border-white/[0.08] shadow-lg">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Input
             label="Fecha de consulta"
@@ -113,36 +131,21 @@ export default function SpacesPage() {
             onChange={(e) => setEndTime(e.target.value)}
           />
         </div>
-      </Card>
+      </div>
 
       {error && <ErrorMessage message={error} onRetry={loadSpaces} />}
 
+      {/* Plano Arquitectónico 2D Oficial */}
       {isLoading ? (
-        <LoadingState message="Consultando disponibilidad de salas…" />
+        <LoadingState message="Consultando disponibilidad telemática de salas en tiempo real…" />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          <div className="lg:col-span-2">
-            <RoomMap
-              spaces={spaces}
-              selectedRoomId={selectedRoom?.id}
-              onSelectRoom={setSelectedRoom}
-            />
-          </div>
-          <div className="sticky top-20">
-            {selectedRoom ? (
-              <RoomDetails
-                room={selectedRoom}
-                onBook={handleBookRoom}
-                onClose={() => setSelectedRoom(null)}
-              />
-            ) : (
-              <div className="h-64 flex flex-col items-center justify-center p-8 rounded-[20px] border border-dashed border-white/[0.1] text-center text-xs text-[#8d90a0] bg-[#141416]/60">
-                <span className="text-2xl mb-2 text-[#22d3ee]">🏛️</span>
-                <span>Selecciona una sala del mapa para inspeccionar sus características y aforo.</span>
-              </div>
-            )}
-          </div>
-        </div>
+        <CampusRealFloorplan
+          spaces={spaces}
+          selectedSpaceId={selectedSpaceId}
+          onSelectSpace={(s) => setSelectedSpaceId(s.id)}
+          onBook={handleBookRoom}
+          onReportIncident={handleReportIncident}
+        />
       )}
     </div>
   )

@@ -541,10 +541,25 @@ export default function LoginPage({ initialMode }) {
       {/* ========================================================= */}
       <div className="hidden lg:block lg:w-1/2 min-h-screen relative overflow-hidden bg-[#08090b]">
         <img
-          src="/astronaut_cover.jpg"
+          src="/assets/astronaut-campus.jpg"
           alt="Astronauta Campuslands en el espacio"
           className="w-full h-full object-cover object-center"
         />
+        {/* Degradado radial y lateral oscuro que la funda con el divisor izquierdo */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#121214] via-transparent to-black/40 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(8,9,11,0.7)_100%)] pointer-events-none" />
+
+        {/* Badge flotante superior en glassmorphism */}
+        <div className="absolute top-8 right-8 z-20 flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-xs font-mono text-white/90 shadow-2xl animate-fade-in">
+          <span className="text-sm text-[#22d3ee]">∞</span>
+          <span className="tracking-wide font-medium">Campus Control • Misión Espacial</span>
+        </div>
+
+        {/* Badge flotante inferior en glassmorphism */}
+        <div className="absolute bottom-8 left-8 z-20 flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/50 backdrop-blur-xl border border-white/10 text-xs font-mono shadow-2xl animate-fade-in">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="tracking-wide text-white/90">Sistemas Telemáticos Online • <strong className="text-[#22d3ee] font-semibold">IA Groq Activa</strong></span>
+        </div>
       </div>
     </div>
   )
