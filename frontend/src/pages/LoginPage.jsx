@@ -1,22 +1,31 @@
 /**
- * Página: Iniciar Sesión (HU-12, HU-21)
- * Estructura Split-Screen 50/50:
- * - Lado izquierdo: Blanco puro minimalista, SF Pro, segmented control, banner pastel, toggle iOS
- * - Lado derecho: Atmósfera inmersiva azul cielo con ilustración 3D de la torre de seguridad/enclave
+ * Página: Autenticación Unificada (Iniciar Sesión / Registro) (HU-11, HU-12, HU-21)
+ * Implementa animaciones físicas continuas con Tailwind (sin parpadeos de recarga):
+ * - Segmented control con pastilla deslizante física (CSS transform smooth glide).
+ * - Expansión/colapso animado de campos de registro con cubic-bezier natural.
+ * - Transición de foco con glow neón azul y feedback táctil instantáneo.
+ * - Astronauta 3D con flotación en microgravedad y paneles holográficos.
  * Responsable: GUERRA
  */
 
-import { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 
-export default function LoginPage() {
-  const { login, error: authError, clearError } = useAuth()
+export default function LoginPage({ initialMode }) {
+  const { login, register, error: authError, clearError } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
+  // Determinar modo inicial según prop o ruta actual
+  const isRegisterPath = initialMode === 'register' || location.pathname === '/register'
+  const [mode, setMode] = useState(isRegisterPath ? 'register' : 'login')
+
+  // Campos de formulario
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -24,55 +33,111 @@ export default function LoginPage() {
 
   const from = location.state?.from?.pathname || '/spaces'
 
-  // Validación rápida de email para mostrar el checkmark verde igual a la referencia
+  // Sincronizar estado si la ruta cambia externamente
+  useEffect(() => {
+    if (initialMode) {
+      setMode(initialMode)
+    } else {
+      setMode(location.pathname === '/register' ? 'register' : 'login')
+    }
+  }, [location.pathname, initialMode])
+
+  // Validación reactiva para micro-feedback
   const isEmailValid = email.length > 5 && email.includes('@') && email.includes('.')
+  const passwordsMatch = mode === 'register' && password.length > 0 && password === confirmPassword
+
+  // Cambio de pestaña suave sin recarga ni parpadeo
+  const handleModeSwitch = (newMode) => {
+    if (newMode === mode) return
+    setMode(newMode)
+    setLocalError(null)
+    clearError()
+    // Actualizar URL sin desmontar el componente (elimina el parpadeo de navegación)
+    window.history.replaceState(null, '', newMode === 'register' ? '/register' : '/login')
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     clearError()
     setLocalError(null)
 
-    if (!email || !password) {
-      setLocalError('Por favor ingresa tu correo institucional y contraseña.')
-      return
-    }
+    if (mode === 'login') {
+      if (!email || !password) {
+        setLocalError('Por favor ingresa tu correo institucional y contraseña.')
+        return
+      }
 
-    setIsSubmitting(true)
-    try {
-      await login({ email, password })
-      navigate(from, { replace: true })
-    } catch (err) {
-      setLocalError(err.message || 'Credenciales incorrectas o sesión no autorizada.')
-    } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(true)
+      try {
+        await login({ email, password })
+        navigate(from, { replace: true })
+      } catch (err) {
+        setLocalError(err.message || 'Credenciales incorrectas o sesión no autorizada.')
+      } finally {
+        setIsSubmitting(false)
+      }
+    } else {
+      // Flujo de Registro (HU-11)
+      if (!name.trim()) {
+        setLocalError('Por favor ingresa tu nombre completo.')
+        return
+      }
+      if (!email || !password) {
+        setLocalError('Por favor completa todos los campos requeridos.')
+        return
+      }
+      if (password !== confirmPassword) {
+        setLocalError('Las contraseñas no coinciden. Por favor verifica.')
+        return
+      }
+      if (password.length < 6) {
+        setLocalError('La contraseña debe tener al menos 6 caracteres.')
+        return
+      }
+
+      setIsSubmitting(true)
+      try {
+        await register({ name: name.trim(), email, password })
+        navigate(from, { replace: true })
+      } catch (err) {
+        setLocalError(err.message || 'Error al procesar el registro de la cuenta.')
+      } finally {
+        setIsSubmitting(false)
+      }
     }
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white text-[#1d1d1f] font-sans selection:bg-[#0071e3] selection:text-white antialiased">
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#08090b] text-[#e4e2e4] font-sans selection:bg-[#1d68f2] selection:text-white antialiased overflow-hidden">
       {/* ========================================================= */}
-      {/* COLUMNA IZQUIERDA (50%): Formulario Blanco Impecable     */}
+      {/* COLUMNA IZQUIERDA (50%): Formulario Campus Control        */}
       {/* ========================================================= */}
-      <div className="w-full lg:w-1/2 min-h-screen bg-white flex flex-col justify-between px-6 py-8 sm:px-12 md:px-16 lg:px-12 xl:px-20 z-10">
-        {/* Cabecera de Marca y Badge Enclave Seguro */}
-        <header className="flex items-center justify-between w-full mb-6 sm:mb-8">
-          <div className="flex items-center gap-3">
-            {/* Logo Geométrico Moderno */}
-            <div className="w-8 h-8 rounded-xl bg-[#1d1d1f] flex items-center justify-center text-white shadow-sm">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
+      <div className="w-full lg:w-1/2 min-h-screen bg-[#0d0f12] border-r border-white/[0.04] flex flex-col justify-between px-6 py-8 sm:px-12 md:px-16 lg:px-12 xl:px-20 z-10 relative">
+        {/* Glow sutil en la parte superior */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[380px] h-[160px] bg-gradient-to-b from-[#1d68f2]/10 to-transparent blur-3xl pointer-events-none" />
+
+        {/* Cabecera: Logo Oficial con Casco Astronauta y Badge Enclave */}
+        <header className="flex items-center justify-between w-full mb-6 sm:mb-8 relative z-10">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/campuslands_helmet.png"
+              alt="Emblema Astronauta Campuslands"
+              className="h-8 w-auto object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.25)] transition-transform duration-300 hover:scale-105"
+            />
+            <div className="flex items-center gap-1.5">
+              <img
+                src="/campuslands_wordmark.png"
+                alt="campuslands"
+                className="h-[21px] w-auto object-contain"
+              />
+              <span className="text-lg font-bold tracking-tight text-[#22d3ee] font-sans lowercase">
+                control
+              </span>
             </div>
-            <span className="text-base font-bold tracking-tight text-[#1d1d1f]">
-              Campus Control
-            </span>
           </div>
 
-          {/* Badge Enclave Seguro translúcido con peso visual ínfimo */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50/80 border border-blue-200/50 text-[11px] font-medium text-[#0071e3] backdrop-blur-sm">
-            <svg className="w-3 h-3 text-[#0071e3]" fill="currentColor" viewBox="0 0 20 20">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#131b22] border border-[#1b3445] text-[11px] font-mono text-[#22d3ee] shadow-sm">
+            <svg className="w-3 h-3 text-[#22d3ee]" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
             </svg>
             <span>Enclave Seguro</span>
@@ -80,37 +145,54 @@ export default function LoginPage() {
         </header>
 
         {/* Cuerpo Central del Formulario */}
-        <main className="w-full max-w-[420px] mx-auto my-auto py-2">
-          {/* Título y Subtítulo */}
-          <div className="text-center mb-6">
-            <h1 className="text-3xl sm:text-[34px] font-bold text-[#1d1d1f] tracking-tight">
-              Bienvenido de nuevo
+        <main className="w-full max-w-[420px] mx-auto my-auto py-2 relative z-10">
+          {/* Título y Subtítulo con Transición Suave */}
+          <div key={mode} className="text-center mb-6 animate-tab-fade">
+            <h1 className="text-3xl sm:text-[34px] font-bold text-white tracking-tight">
+              {mode === 'login' ? 'Bienvenido de nuevo' : 'Crear cuenta docente'}
             </h1>
-            <p className="text-xs sm:text-sm text-[#86868b] mt-1.5 font-normal">
-              Ingresa tus credenciales para acceder a la plataforma
+            <p className="text-xs sm:text-sm text-[#8e8e93] mt-1.5 font-normal">
+              {mode === 'login'
+                ? 'Ingresa tus credenciales para acceder a la plataforma'
+                : 'Regístrate para reservar salas y acceder a recursos telemáticos'}
             </p>
           </div>
 
-          {/* Segmented Control iOS Style */}
-          <div className="bg-[#f2f2f7] p-1 rounded-2xl flex items-center mb-6 select-none">
+          {/* Segmented Control iOS Dark con Pastilla Deslizante Física (Cero Parpadeo) */}
+          <div className="relative bg-[#15171d] p-1 rounded-2xl flex items-center mb-6 border border-white/[0.04] select-none">
+            {/* Pastilla deslizante animada */}
+            <div
+              className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-[#262933] border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.5)] transition-transform duration-300"
+              style={{
+                transform: mode === 'register' ? 'translateX(calc(100% + 4px))' : 'translateX(0px)',
+                transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+            />
+
             <button
               type="button"
-              className="flex-1 py-2 rounded-xl bg-white text-[#1d1d1f] text-xs sm:text-sm font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-center transition-all cursor-default"
+              onClick={() => handleModeSwitch('login')}
+              className={`relative z-10 flex-1 py-2 text-xs sm:text-sm font-semibold text-center transition-colors duration-200 cursor-pointer ${
+                mode === 'login' ? 'text-white' : 'text-[#717684] hover:text-[#a1a1a6]'
+              }`}
             >
               Iniciar sesión
             </button>
-            <Link
-              to="/register"
-              className="flex-1 py-2 rounded-xl text-[#86868b] hover:text-[#1d1d1f] text-xs sm:text-sm font-medium text-center transition-all cursor-pointer"
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('register')}
+              className={`relative z-10 flex-1 py-2 text-xs sm:text-sm font-semibold text-center transition-colors duration-200 cursor-pointer ${
+                mode === 'register' ? 'text-white' : 'text-[#717684] hover:text-[#a1a1a6]'
+              }`}
             >
               Registrarse
-            </Link>
+            </button>
           </div>
 
-          {/* Alerta de Error Sutil tono Pastel/Salmón */}
+          {/* Alerta de Error Sutil Pastel */}
           {(localError || authError) && (
-            <div className="bg-[#fff1f0] border border-[#ffccc7] text-[#cf1322] px-4 py-3 rounded-2xl text-xs flex items-center gap-2.5 mb-5 shadow-[0_2px_8px_rgba(207,19,34,0.04)] animate-fluid-enter">
-              <svg className="w-4 h-4 shrink-0 text-[#ff4d4f]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-[#ff453a]/12 border border-[#ff453a]/30 text-[#ff8077] px-4 py-3 rounded-2xl text-xs flex items-center gap-2.5 mb-5 shadow-[0_2px_12px_rgba(255,69,58,0.08)] animate-fluid-enter">
+              <svg className="w-4 h-4 shrink-0 text-[#ff453a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" strokeWidth="2" />
                 <line x1="12" y1="8" x2="12" y2="12" strokeWidth="2" strokeLinecap="round" />
                 <line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="2" strokeLinecap="round" />
@@ -120,17 +202,48 @@ export default function LoginPage() {
           )}
 
           {/* Formulario */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col">
+            {/* Campo Nombre Completo (Animado: se despliega suavemente en modo registro) */}
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-out ${
+                mode === 'register'
+                  ? 'max-h-28 opacity-100 mb-4 transform translate-y-0'
+                  : 'max-h-0 opacity-0 mb-0 transform -translate-y-2 pointer-events-none'
+              }`}
+            >
+              <div className="rounded-2xl border border-white/[0.07] focus-within:border-[#1d68f2] focus-within:ring-2 focus-within:ring-[#1d68f2]/30 focus-within:shadow-[0_0_15px_rgba(29,104,242,0.15)] bg-[#171920] transition-all duration-200 p-3 flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-xl bg-[#20232c] flex items-center justify-center text-[#717684] shrink-0 border border-white/[0.03]">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <label htmlFor="name" className="block text-[10px] uppercase font-bold tracking-wider text-[#717684]">
+                    NOMBRE COMPLETO
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    placeholder="Prof. Carlos Mendoza"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isSubmitting}
+                    className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#52525b] font-medium focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Input Correo */}
-            <div className="rounded-2xl border border-[#e5e5ea] focus-within:border-[#0071e3] focus-within:ring-4 focus-within:ring-[#0071e3]/10 bg-white transition-all p-3 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#f2f2f7] flex items-center justify-center text-[#86868b] shrink-0">
+            <div className="rounded-2xl border border-white/[0.07] focus-within:border-[#1d68f2] focus-within:ring-2 focus-within:ring-[#1d68f2]/30 focus-within:shadow-[0_0_15px_rgba(29,104,242,0.15)] bg-[#171920] transition-all duration-200 p-3 flex items-center gap-3.5 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-[#20232c] flex items-center justify-center text-[#717684] shrink-0 border border-white/[0.03]">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <label htmlFor="email" className="block text-[10px] uppercase font-bold tracking-wider text-[#86868b]">
-                  Correo institucional
+                <label htmlFor="email" className="block text-[10px] uppercase font-bold tracking-wider text-[#717684]">
+                  CORREO INSTITUCIONAL
                 </label>
                 <input
                   id="email"
@@ -141,45 +254,44 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isSubmitting}
-                  className="w-full bg-transparent text-sm text-[#1d1d1f] placeholder:text-[#aeaeb2] font-medium focus:outline-none"
+                  className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#52525b] font-medium focus:outline-none"
                 />
               </div>
-              {/* Checkmark verde dinámico (referencia visual) */}
               {isEmailValid && (
-                <div className="w-5 h-5 rounded-full bg-[#34c759] text-white flex items-center justify-center text-[10px] font-bold shrink-0 animate-modal-pop shadow-sm">
+                <div className="w-5 h-5 rounded-full bg-[#30d158] text-black flex items-center justify-center text-[10px] font-bold shrink-0 animate-modal-pop shadow-[0_0_8px_rgba(48,209,88,0.4)]">
                   ✓
                 </div>
               )}
             </div>
 
             {/* Input Contraseña */}
-            <div className="rounded-2xl border border-[#e5e5ea] focus-within:border-[#0071e3] focus-within:ring-4 focus-within:ring-[#0071e3]/10 bg-white transition-all p-3 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#f2f2f7] flex items-center justify-center text-[#86868b] shrink-0">
+            <div className="rounded-2xl border border-white/[0.07] focus-within:border-[#1d68f2] focus-within:ring-2 focus-within:ring-[#1d68f2]/30 focus-within:shadow-[0_0_15px_rgba(29,104,242,0.15)] bg-[#171920] transition-all duration-200 p-3 flex items-center gap-3.5 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-[#20232c] flex items-center justify-center text-[#717684] shrink-0 border border-white/[0.03]">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <label htmlFor="password" className="block text-[10px] uppercase font-bold tracking-wider text-[#86868b]">
-                  Contraseña
+                <label htmlFor="password" className="block text-[10px] uppercase font-bold tracking-wider text-[#717684]">
+                  {mode === 'register' ? 'CONTRASEÑA (MÍNIMO 6 CARACTERES)' : 'CONTRASEÑA'}
                 </label>
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  autoComplete="current-password"
+                  autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                   placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isSubmitting}
-                  className="w-full bg-transparent text-sm text-[#1d1d1f] placeholder:text-[#aeaeb2] font-mono tracking-wider focus:outline-none"
+                  className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#52525b] font-mono tracking-widest focus:outline-none"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-[#86868b] hover:text-[#1d1d1f] p-1.5 transition-colors cursor-pointer"
-                aria-label="Alternar visibilidad de contraseña"
+                className="text-[#717684] hover:text-white p-1.5 transition-all duration-150 active:scale-90 cursor-pointer"
+                aria-label="Alternar visibilidad"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {showPassword ? (
@@ -191,37 +303,81 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {/* Toggle "Recordar este equipo" estilo iOS Nativo */}
-            <div className="flex items-center justify-between py-1 px-0.5 select-none">
-              <span
-                onClick={() => setRememberMe(!rememberMe)}
-                className="text-xs sm:text-sm text-[#1d1d1f] font-medium cursor-pointer"
-              >
-                Recordar este equipo
-              </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={rememberMe}
-                onClick={() => setRememberMe(!rememberMe)}
-                className={`w-[48px] h-[28px] rounded-full p-0.5 transition-colors duration-200 focus:outline-none cursor-pointer ${
-                  rememberMe ? 'bg-[#0071e3]' : 'bg-[#e5e5ea]'
-                }`}
-              >
-                <span
-                  className={`block w-[24px] h-[24px] bg-white rounded-full shadow-[0_2px_5px_rgba(0,0,0,0.2)] transition-transform duration-200 ${
-                    rememberMe ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
+            {/* Campo Confirmar Contraseña (Animado: se despliega suavemente en modo registro) */}
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-out ${
+                mode === 'register'
+                  ? 'max-h-28 opacity-100 mb-4 transform translate-y-0'
+                  : 'max-h-0 opacity-0 mb-0 transform -translate-y-2 pointer-events-none'
+              }`}
+            >
+              <div className="rounded-2xl border border-white/[0.07] focus-within:border-[#1d68f2] focus-within:ring-2 focus-within:ring-[#1d68f2]/30 focus-within:shadow-[0_0_15px_rgba(29,104,242,0.15)] bg-[#171920] transition-all duration-200 p-3 flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-xl bg-[#20232c] flex items-center justify-center text-[#717684] shrink-0 border border-white/[0.03]">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <label htmlFor="confirmPassword" className="block text-[10px] uppercase font-bold tracking-wider text-[#717684]">
+                    CONFIRMAR CONTRASEÑA
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={isSubmitting}
+                    className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#52525b] font-mono tracking-widest focus:outline-none"
+                  />
+                </div>
+                {passwordsMatch && (
+                  <div className="w-5 h-5 rounded-full bg-[#30d158] text-black flex items-center justify-center text-[10px] font-bold shrink-0 animate-modal-pop shadow-[0_0_8px_rgba(48,209,88,0.4)]">
+                    ✓
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Botón de Acción Principal Apple systemBlue */}
+            {/* Toggle iOS Nativo (Sólo visible en modo login) */}
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-out ${
+                mode === 'login'
+                  ? 'max-h-12 opacity-100 mb-2 transform translate-y-0'
+                  : 'max-h-0 opacity-0 mb-0 transform -translate-y-2 pointer-events-none'
+              }`}
+            >
+              <div className="flex items-center justify-between py-1 px-0.5 select-none">
+                <span
+                  onClick={() => setRememberMe(!rememberMe)}
+                  className="text-xs sm:text-sm text-[#a1a1a6] font-medium cursor-pointer transition-colors hover:text-white"
+                >
+                  Recordar este equipo
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={rememberMe}
+                  onClick={() => setRememberMe(!rememberMe)}
+                  className={`w-[48px] h-[28px] rounded-full p-0.5 transition-colors duration-200 focus:outline-none cursor-pointer ${
+                    rememberMe ? 'bg-[#1d68f2]' : 'bg-[#2b2d35]'
+                  }`}
+                >
+                  <span
+                    className={`block w-[24px] h-[24px] bg-white rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.4)] transition-transform duration-200 ${
+                      rememberMe ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Botón Principal con Transición Suave de Texto y Estado */}
             <div className="pt-2">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-6 rounded-2xl bg-[#0071e3] hover:bg-[#0077ed] active:scale-[0.98] text-white font-semibold text-sm sm:text-base tracking-wide shadow-[0_4px_16px_rgba(0,113,227,0.3)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="w-full py-3.5 px-6 rounded-2xl bg-[#1d68f2] hover:bg-[#1558d6] active:scale-[0.98] text-white font-semibold text-sm sm:text-base tracking-wide shadow-[0_4px_24px_rgba(29,104,242,0.45)] hover:shadow-[0_6px_28px_rgba(29,104,242,0.6)] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 {isSubmitting ? (
                   <>
@@ -229,113 +385,58 @@ export default function LoginPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    <span>Iniciando sesión…</span>
+                    <span>{mode === 'login' ? 'Iniciando sesión…' : 'Creando cuenta…'}</span>
                   </>
                 ) : (
-                  'Continuar'
+                  <span key={mode} className="animate-tab-fade inline-block">
+                    {mode === 'login' ? 'Iniciar sesión' : 'Registrar cuenta docente'}
+                  </span>
                 )}
-              </button>
-            </div>
-
-            {/* Divisor Or Continue With */}
-            <div className="relative flex items-center justify-center my-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#e5e5ea]" />
-              </div>
-              <span className="relative px-3 bg-white text-xs text-[#86868b] font-medium">
-                O continuar con
-              </span>
-            </div>
-
-            {/* Botones Sociales / SSO Apple Style */}
-            <div className="flex items-center justify-center gap-3.5">
-              {/* Google */}
-              <button
-                type="button"
-                className="w-11 h-11 rounded-full border border-[#e5e5ea] hover:border-[#d2d2d7] hover:bg-[#f9f9fb] active:scale-95 flex items-center justify-center transition-all cursor-pointer shadow-sm"
-                aria-label="Iniciar con Google Workspace"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                </svg>
-              </button>
-
-              {/* Apple */}
-              <button
-                type="button"
-                className="w-11 h-11 rounded-full bg-[#1d1d1f] hover:bg-black active:scale-95 flex items-center justify-center text-white transition-all cursor-pointer shadow-sm"
-                aria-label="Iniciar con Apple ID"
-              >
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 170 170">
-                  <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.74 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.6-7.7-11.71-13.98-5.77-8.8-10.45-18.73-14.04-29.77-3.59-11.05-5.39-21.72-5.39-32.01 0-14.24 3.66-26.24 10.99-35.98 7.33-9.74 16.59-14.73 27.79-14.99 4.89 0 10.22 1.25 15.99 3.75 5.76 2.5 9.78 3.86 12.06 4.08 1.96-.22 6.14-1.63 12.55-4.22 6.42-2.59 11.96-3.75 16.63-3.48 12.28.65 22.39 5.38 30.33 14.19-10.87 6.63-16.19 15.76-15.98 27.39.22 9.02 3.69 16.79 10.43 23.32 6.74 6.52 14.95 10.32 23.64 11.41-2.07 6.08-4.68 12.28-7.83 18.59zm-31.42-108.62c0 5.98-2.28 11.85-6.85 17.61-4.57 5.76-10.33 9.45-17.28 11.08-.22-1.3-.33-2.6-.33-3.91 0-6.09 2.45-12.06 7.34-17.93 4.89-5.87 10.65-9.4 17.28-10.59.11 1.24.16 2.34.16 3.74z" />
-                </svg>
-              </button>
-
-              {/* Campuslands Key */}
-              <button
-                type="button"
-                className="w-11 h-11 rounded-full bg-[#0071e3] hover:bg-[#0077ed] active:scale-95 flex items-center justify-center text-white transition-all cursor-pointer shadow-sm"
-                aria-label="Acceso con Token Campuslands"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
               </button>
             </div>
           </form>
         </main>
 
-        {/* Pie de Página Institucional */}
+        {/* Pie de Página */}
         <footer className="w-full text-center py-2 mt-4">
-          <p className="text-[11px] sm:text-xs text-[#86868b] leading-relaxed max-w-sm mx-auto">
-            Accede al sistema telemático del campus para gestionar salas, préstamos de equipos y monitoreo en tiempo real con cifrado de extremo a extremo.
+          <p key={mode} className="text-[11px] text-[#717684] leading-relaxed max-w-sm mx-auto animate-tab-fade">
+            {mode === 'login'
+              ? 'Acceso al sistema telemático del campus para gestionar salas, préstamos de equipos y monitoreo en tiempo real con cifrado de extremo a extremo.'
+              : 'Al registrarte aceptas las políticas de asignación telemática de recursos y normativa institucional de Campuslands.'}
           </p>
         </footer>
       </div>
 
       {/* ========================================================= */}
-      {/* COLUMNA DERECHA (50%): Atmósfera Inmersiva Azul Cielo     */}
-      {/* y Torre 3D de Seguridad (Enclave Seguro)                  */}
+      {/* COLUMNA DERECHA (50%): Astronauta con Paneles Holográficos*/}
       {/* ========================================================= */}
-      <div className="hidden lg:flex lg:w-1/2 min-h-screen relative overflow-hidden bg-gradient-to-br from-[#ebf5ff] via-[#d6ebff] to-[#a3d3ff] items-center justify-center p-8 xl:p-14 select-none">
-        {/* Destellos de luz verticales (igual a la referencia visual) */}
-        <div className="absolute top-12 left-16 w-[2px] h-36 bg-gradient-to-b from-transparent via-white/70 to-transparent blur-[1px] opacity-75" />
-        <div className="absolute top-28 left-40 w-[2px] h-48 bg-gradient-to-b from-transparent via-white/80 to-transparent blur-[1px] opacity-60" />
-        <div className="absolute top-8 right-24 w-[2px] h-52 bg-gradient-to-b from-transparent via-white/80 to-transparent blur-[1px] opacity-70" />
-        <div className="absolute bottom-20 left-28 w-[2px] h-40 bg-gradient-to-b from-transparent via-white/60 to-transparent blur-[1px] opacity-50" />
-        <div className="absolute bottom-16 right-36 w-[2px] h-32 bg-gradient-to-b from-transparent via-white/70 to-transparent blur-[1px] opacity-60" />
+      <div className="hidden lg:flex lg:w-1/2 min-h-screen relative overflow-hidden bg-gradient-to-b from-[#080a0f] via-[#0c0e18] to-[#07080d] items-center justify-center p-8 xl:p-12 select-none">
+        {/* Estrellas decorativas del fondo */}
+        <div className="absolute top-12 left-16 w-1.5 h-1.5 bg-white rounded-full animate-twinkle" style={{ animationDelay: '0.2s' }} />
+        <div className="absolute top-36 left-40 w-1 h-1 bg-cyan-300 rounded-full animate-twinkle" style={{ animationDelay: '1.4s' }} />
+        <div className="absolute top-24 right-20 w-1.5 h-1.5 bg-blue-300 rounded-full animate-twinkle" style={{ animationDelay: '0.8s' }} />
+        <div className="absolute bottom-24 left-24 w-1.5 h-1.5 bg-white rounded-full animate-twinkle" style={{ animationDelay: '2.1s' }} />
+        <div className="absolute bottom-36 right-20 w-1 h-1 bg-cyan-200 rounded-full animate-twinkle" style={{ animationDelay: '1.7s' }} />
+        <div className="absolute top-1/2 right-12 w-1.5 h-1.5 bg-white/70 rounded-full animate-twinkle" style={{ animationDelay: '2.5s' }} />
 
-        {/* Resplandor radial de atmósfera celeste */}
-        <div className="absolute w-[500px] h-[500px] rounded-full bg-white/40 blur-3xl pointer-events-none" />
+        {/* Anillos orbitales concéntricos */}
+        <div className="absolute w-[500px] h-[500px] rounded-full border border-blue-500/15 pointer-events-none animate-orbit" />
+        <div className="absolute w-[360px] h-[360px] rounded-full border border-cyan-400/10 pointer-events-none animate-orbit" style={{ animationDirection: 'reverse', animationDuration: '32s' }} />
 
-        {/* Contenedor de la Ilustración 3D Premium con flotación */}
-        <div className="relative z-10 flex flex-col items-center max-w-[460px] w-full">
-          {/* Micro-badge flotante superior */}
-          <div className="mb-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/70 backdrop-blur-md border border-white/80 shadow-[0_4px_16px_rgba(0,113,227,0.12)] text-xs font-semibold text-[#0071e3] animate-pulse-subtle">
-            <span className="w-2 h-2 rounded-full bg-[#0071e3]" />
-            <span>Campus Control • Enclave Seguro</span>
-          </div>
+        {/* Resplandor cósmico difuso */}
+        <div className="absolute w-[460px] h-[460px] rounded-full bg-gradient-to-tr from-blue-600/20 via-cyan-500/15 to-purple-600/10 blur-3xl pointer-events-none" />
 
-          {/* Imagen de la Torre 3D de Campus / Seguridad */}
-          <div className="relative group cursor-pointer">
+        {/* Astronauta interactuando con paneles holográficos limpio y centrado */}
+        <div className="relative z-10 flex items-center justify-center">
+          {/* Resplandor cian reactivo al holograma */}
+          <div className="absolute top-[28%] left-[25%] w-36 h-36 bg-cyan-400/20 rounded-full blur-2xl pointer-events-none animate-pulse-subtle" />
+
+          <div className="relative animate-astronaut group cursor-pointer transition-transform duration-700">
             <img
-              src="/campus_security_3d.jpg"
-              alt="Torre 3D de Seguridad Campus Control"
-              className="w-full max-w-[400px] xl:max-w-[440px] aspect-square object-contain rounded-[36px] drop-shadow-[0_25px_45px_rgba(37,99,235,0.22)] animate-float transition-transform duration-500 group-hover:scale-[1.02]"
+              src="/astronaut_hologram_interactive.png"
+              alt="Astronauta interactuando con consola holográfica"
+              className="max-h-[490px] xl:max-h-[540px] w-auto object-contain drop-shadow-[0_25px_50px_rgba(34,211,238,0.3)] transition-transform duration-500 group-hover:scale-[1.03]"
             />
-          </div>
-
-          {/* Micro-badge flotante inferior con métricas */}
-          <div className="mt-4 flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/60 backdrop-blur-md border border-white/80 shadow-[0_4px_16px_rgba(0,113,227,0.08)] text-[11px] font-medium text-[#1d1d1f]">
-            <span className="flex items-center gap-1.5 text-[#34c759]">
-              <span className="w-2 h-2 rounded-full bg-[#34c759] animate-pulse" />
-              <span>TLS 1.3 Cifrado</span>
-            </span>
-            <span className="text-[#86868b]">•</span>
-            <span className="text-[#86868b]">FastAPI & Groq Gateway</span>
           </div>
         </div>
       </div>
