@@ -96,10 +96,10 @@ Los nombres y aforos corresponden a los datos proporcionados por el equipo. Los 
 |---|---|---:|
 | SAL-001 | Auditorio | 100 |
 | SAL-002 | Cosmos | 25 |
-| SAL-003 | Skilab | 20 |
-| SAL-004 | Spooki | 38 |
+| SAL-003 | Skylab | 20 |
+| SAL-004 | Sputnik | 38 |
 | SAL-005 | Apolo | 34 |
-| SAL-006 | Blanca | 12 |
+| SAL-006 | Sala Nueva | 12 |
 | SAL-007 | Azul | 10 |
 | SAL-008 | Amarillas | 6 |
 | SAL-009 | Verdes | 6 |

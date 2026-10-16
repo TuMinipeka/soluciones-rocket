@@ -62,9 +62,9 @@ def test_seed_migrates_legacy_room_names_without_breaking_reservations(
     db_session, teacher_user
 ):
     legacy_names = {
-        "SAL-003": "Skylab",
-        "SAL-004": "Sputnik",
-        "SAL-006": "Sala Nueva",
+        "SAL-003": "Skilab",
+        "SAL-004": "Spooki",
+        "SAL-006": "Blanca",
     }
     for space_id, legacy_name in legacy_names.items():
         db_session.get(Space, space_id).name = legacy_name
@@ -84,9 +84,9 @@ def test_seed_migrates_legacy_room_names_without_breaking_reservations(
 
     seed_demo(db_session, [])
 
-    assert db_session.get(Space, "SAL-003").name == "Skilab"
-    assert db_session.get(Space, "SAL-004").name == "Spooki"
-    assert db_session.get(Space, "SAL-006").name == "Blanca"
+    assert db_session.get(Space, "SAL-003").name == "Skylab"
+    assert db_session.get(Space, "SAL-004").name == "Sputnik"
+    assert db_session.get(Space, "SAL-006").name == "Sala Nueva"
     assert db_session.get(Reservation, reservation_id).space_id == "SAL-004"
 
 

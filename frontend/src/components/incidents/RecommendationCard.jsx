@@ -52,7 +52,7 @@ export default function RecommendationCard({
     rec.targetRoomName ||
     rec.target_room_name ||
     alternatives[0]?.name ||
-    'Spooki';
+    'Sputnik';
 
   const targetRoomId =
     rec.targetRoomId ||

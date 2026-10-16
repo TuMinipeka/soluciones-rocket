@@ -56,12 +56,12 @@ const OFFICIAL_SEED_INCIDENTS = [
     recommendation: {
       classification_source: 'ai',
       targetRoomId: 'SAL-004',
-      targetRoomName: 'Spooki',
+      targetRoomName: 'Sputnik',
       reason: 'Aforo compatible (38 PCs disponibles vs 34 requeridas), climatización en estado óptimo y sin reserva agendada en la franja 10:00 - 13:00.',
       confidence: 0.96,
       affectedReservationsCount: 1,
       alternatives: [
-        { kind: 'space', id: 'SAL-004', name: 'Spooki', reason: 'Aforo compatible (38 PCs) y climatización óptima.' }
+        { kind: 'space', id: 'SAL-004', name: 'Sputnik', reason: 'Aforo compatible (38 PCs) y climatización óptima.' }
       ]
     },
   },
@@ -95,7 +95,7 @@ const OFFICIAL_SEED_INCIDENTS = [
     title: 'Pérdida de Conectividad LAN en Switch Principal',
     description: '12 puestos de trabajo sin acceso a la red interna ni a repositorios durante evaluación práctica.',
     space_id: 'SAL-003',
-    spaceName: 'Skilab',
+    spaceName: 'Skylab',
     priority: 'high',
     status: 'open',
     classification_source: 'rules',
@@ -113,7 +113,7 @@ const OFFICIAL_SEED_INCIDENTS = [
     title: 'Mantenimiento Preventivo de Mobiliario y Cableado',
     description: 'Ajuste de canaletas y ergonomía en estaciones de trabajo.',
     space_id: 'SAL-006',
-    spaceName: 'Blanca',
+    spaceName: 'Sala Nueva',
     priority: 'low',
     status: 'in_progress',
     classification_source: 'rules',

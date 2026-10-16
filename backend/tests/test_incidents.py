@@ -89,7 +89,7 @@ def test_incident_status_transitions_and_reopen_permission(client, support_token
     # 1. Crear incidencia
     res_create = client.post(
         "/incidents",
-        json={"description": "Cerradura trabada en sala Spooki", "space_id": "SAL-004", "category": "infrastructure"},
+        json={"description": "Cerradura trabada en sala Sputnik", "space_id": "SAL-004", "category": "infrastructure"},
         headers={"Authorization": f"Bearer {teacher_token}"},
     )
     inc_id = res_create.json()["id"]

@@ -45,7 +45,7 @@ def test_json_dry_run_and_xlsx_import(tmp_path, db_session):
     sheet = workbook.active
     sheet.append(["id", "name", "capacity"])
     sheet.append(["SAL-002", "Cosmos", 25])
-    sheet.append(["SAL-003", "Skilab", 999])
+    sheet.append(["SAL-003", "Skylab", 999])
     excel = tmp_path / "rooms.xlsx"
     workbook.save(excel)
     result = import_dataset(excel, "spaces", db_session)

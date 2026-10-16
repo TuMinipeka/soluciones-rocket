@@ -19,7 +19,7 @@ export const OFFICIAL_CAMPUS_ROOMS = [
   },
   {
     id: 'SAL-004',
-    name: 'Spooki',
+    name: 'Sputnik',
     capacity: 38,
     status: 'available',
     tier: 'major',
@@ -59,7 +59,7 @@ export const OFFICIAL_CAMPUS_ROOMS = [
   // Fila Inferior: Salas de Trabajo Colaborativo, Mentoría y Workshops
   {
     id: 'SAL-003',
-    name: 'Skilab',
+    name: 'Skylab',
     capacity: 20,
     status: 'available',
     tier: 'workshop',
@@ -68,7 +68,7 @@ export const OFFICIAL_CAMPUS_ROOMS = [
   },
   {
     id: 'SAL-006',
-    name: 'Blanca',
+    name: 'Sala Nueva',
     capacity: 12,
     status: 'maintenance',
     tier: 'collab',

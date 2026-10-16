@@ -30,7 +30,7 @@ describe('RoomTile (HU-18)', () => {
 
   const mockRoomDisabled = {
     id: 'SAL-006',
-    name: 'Blanca',
+    name: 'Sala Nueva',
     capacity: 12,
     status: 'disabled',
     is_blocked: true,
@@ -63,7 +63,7 @@ describe('RoomTile (HU-18)', () => {
   it('debe reflejar el estado inhabilitado/bloqueado', () => {
     render(<RoomTile room={mockRoomDisabled} />);
 
-    expect(screen.getByText('Blanca')).toBeInTheDocument();
+    expect(screen.getByText('Sala Nueva')).toBeInTheDocument();
     expect(screen.getByText('Inhabilitada')).toBeInTheDocument();
   });
 

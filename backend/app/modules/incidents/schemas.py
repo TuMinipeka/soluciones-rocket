@@ -29,7 +29,7 @@ class AlternativeItem(BaseModel):
             "example": {
                 "kind": "space",
                 "id": "SAL-003",
-                "name": "Skilab",
+                "name": "Skylab",
                 "reason": "Aforo compatible (20 personas) y disponible en la franja horaria requerida",
             }
         }
@@ -93,7 +93,7 @@ class IncidentAnalysisResponse(BaseModel):
                     {
                         "kind": "space",
                         "id": "SAL-003",
-                        "name": "Skilab",
+                        "name": "Skylab",
                         "reason": "Aforo compatible (20 personas) y disponible sin conflictos.",
                     }
                 ],

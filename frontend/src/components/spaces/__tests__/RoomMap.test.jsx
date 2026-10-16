@@ -10,12 +10,12 @@ describe('RoomMap (HU-18)', () => {
     // Verificar las 10 salas oficiales
     const expectedRooms = [
       { name: 'Auditorio', cap: '100' },
-      { name: 'Spooki', cap: '38' },
+      { name: 'Sputnik', cap: '38' },
       { name: 'Apolo', cap: '34' },
       { name: 'Artemis', cap: '32' },
       { name: 'Cosmos', cap: '25' },
-      { name: 'Skilab', cap: '20' },
-      { name: 'Blanca', cap: '12' },
+      { name: 'Skylab', cap: '20' },
+      { name: 'Sala Nueva', cap: '12' },
       { name: 'Azul', cap: '10' },
       { name: 'Amarillas', cap: '6' },
       { name: 'Verdes', cap: '6' },

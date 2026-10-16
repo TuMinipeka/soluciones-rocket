@@ -18,14 +18,16 @@ La política sobre qué roles pueden reservar salas queda pendiente. No la vamos
 
 ## Capacidad
 
+Nota de coordinación: los nombres de SAL-003, SAL-004 y SAL-006 se corrigieron a Skylab, Sputnik y Sala Nueva tras la transcripción inicial; sus identificadores y aforos no cambiaron.
+
 | ID | Nombre | Aforo |
 | --- | --- | ---: |
 | SAL-001 | Auditorio | 100 |
 | SAL-002 | Cosmos | 25 |
-| SAL-003 | Skilab | 20 |
-| SAL-004 | Spooki | 38 |
+| SAL-003 | Skylab | 20 |
+| SAL-004 | Sputnik | 38 |
 | SAL-005 | Apolo | 34 |
-| SAL-006 | Blanca | 12 |
+| SAL-006 | Sala Nueva | 12 |
 | SAL-007 | Azul | 10 |
 | SAL-008 | Amarillas | 6 |
 | SAL-009 | Verdes | 6 |

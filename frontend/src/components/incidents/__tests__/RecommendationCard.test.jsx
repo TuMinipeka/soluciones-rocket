@@ -7,11 +7,11 @@ describe('RecommendationCard (HU-20)', () => {
   const mockAiRecommendation = {
     classification_source: 'ai',
     targetRoomId: 'SAL-004',
-    targetRoomName: 'Spooki',
+    targetRoomName: 'Sputnik',
     reason: 'Aforo compatible (38 PCs disponibles) y climatización óptima.',
     confidence: 0.96,
     alternatives: [
-      { id: 'SAL-004', name: 'Spooki', reason: 'Aforo compatible' },
+      { id: 'SAL-004', name: 'Sputnik', reason: 'Aforo compatible' },
     ],
   };
 
@@ -39,7 +39,7 @@ describe('RecommendationCard (HU-20)', () => {
 
     expect(screen.getByText('Clasificación IA')).toBeInTheDocument();
     expect(screen.getByText(/Confianza: 96%/i)).toBeInTheDocument();
-    expect(screen.getByText(/Spooki/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sputnik/i)).toBeInTheDocument();
   });
 
   it('debe mostrar el texto de fallback por reglas cuando el origen es "rules"', () => {

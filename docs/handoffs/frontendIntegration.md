@@ -68,7 +68,7 @@ Permite listar las 10 salas del campus. Si se envían los parámetros de fecha y
   },
   {
     "id": "SAL-004",
-    "name": "Spooki",
+    "name": "Sputnik",
     "capacity": 38,
     "status": "disabled",
     "is_blocked": true,

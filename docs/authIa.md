@@ -156,7 +156,7 @@ El modelo de Groq configurado usa esquema JSON estricto para evitar respuestas i
 2. Ejecutar la misma petición a `POST /incidents/analyze`:
    ```json
    {
-     "description": "El aire acondicionado gotea profusamente sobre el piso de Spooki.",
+     "description": "El aire acondicionado gotea profusamente sobre el piso de Sputnik.",
      "space_id": "SAL-004"
    }
    ```

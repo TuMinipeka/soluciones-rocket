@@ -69,7 +69,7 @@ def test_relocation_options_exclude_blocked_occupied_and_small_rooms(
         teacher_token,
         space_id="SAL-003",
         attendees=10,
-        title="Ocupa Skilab",
+        title="Ocupa Skylab",
     )
     block_space(db_session, "SAL-002")
     block_space(db_session, "SAL-010")

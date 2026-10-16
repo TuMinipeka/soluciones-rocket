@@ -201,7 +201,7 @@ Todos estos endpoints requieren cabecera `Authorization: Bearer <token>` y rol *
     {
       "kind": "space",
       "id": "SAL-003",
-      "name": "Skilab",
+      "name": "Skylab",
       "reason": "Aforo compatible (20 personas) y disponible sin conflictos."
     }
   ],
