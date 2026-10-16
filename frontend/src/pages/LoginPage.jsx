@@ -42,9 +42,48 @@ export default function LoginPage({ initialMode }) {
     }
   }, [location.pathname, initialMode])
 
+  // Sanitización y restricción de caracteres en tiempo real
+  const handleNameChange = (e) => {
+    const val = e.target.value
+    // Permitir sólo letras, tildes comunes, puntos, guiones y espacios (máximo 80 caracteres)
+    if (/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ.\-\s]*$/.test(val) && val.length <= 80) {
+      setName(val)
+    }
+  }
+
+  const handleEmailChange = (e) => {
+    // Sanitizar en tiempo real: sin espacios, minúsculas, caracteres válidos para correo, máx 100 caracteres
+    const val = e.target.value.replace(/\s/g, '').toLowerCase()
+    if (/^[a-zA-Z0-9@._+-]*$/.test(val) && val.length <= 100) {
+      setEmail(val)
+    }
+  }
+
+  const handlePasswordChange = (e) => {
+    const val = e.target.value
+    if (val.length <= 128) {
+      setPassword(val)
+    }
+  }
+
+  const handleConfirmPasswordChange = (e) => {
+    const val = e.target.value
+    if (val.length <= 128) {
+      setConfirmPassword(val)
+    }
+  }
+
   // Validación reactiva para micro-feedback
-  const isEmailValid = email.length > 5 && email.includes('@') && email.includes('.')
-  const passwordsMatch = mode === 'register' && password.length > 0 && password === confirmPassword
+  const isEmailValid = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
+  const hasMinLength = password.length >= 8
+  const hasLetter = /[a-zA-Z]/.test(password)
+  const hasNumber = /\d/.test(password)
+  const noSurroundingSpaces = password.trim() === password && password.length > 0
+  const isNotIdentical =
+    (!email || password.toLowerCase() !== email.toLowerCase()) &&
+    (!name || password.toLowerCase() !== name.trim().toLowerCase())
+  const isPasswordSecure = hasMinLength && hasLetter && hasNumber && noSurroundingSpaces && isNotIdentical
+  const passwordsMatch = mode === 'register' && isPasswordSecure && password === confirmPassword
 
   // Cambio de pestaña suave sin recarga ni parpadeo
   const handleModeSwitch = (newMode) => {
@@ -62,14 +101,18 @@ export default function LoginPage({ initialMode }) {
     setLocalError(null)
 
     if (mode === 'login') {
-      if (!email || !password) {
+      if (!email.trim() || !password) {
         setLocalError('Por favor ingresa tu correo institucional y contraseña.')
+        return
+      }
+      if (!isEmailValid) {
+        setLocalError('Por favor ingresa un correo electrónico con formato válido (ej. usuario@campuslands.edu).')
         return
       }
 
       setIsSubmitting(true)
       try {
-        await login({ email, password })
+        await login({ email: email.trim().toLowerCase(), password })
         navigate(from, { replace: true })
       } catch (err) {
         setLocalError(err.message || 'Credenciales incorrectas o sesión no autorizada.')
@@ -77,27 +120,48 @@ export default function LoginPage({ initialMode }) {
         setIsSubmitting(false)
       }
     } else {
-      // Flujo de Registro (HU-11)
-      if (!name.trim()) {
-        setLocalError('Por favor ingresa tu nombre completo.')
+      // Flujo de Registro (HU-11 con validaciones estrictas del backend)
+      const cleanName = name.trim().replace(/\s+/g, ' ')
+      if (!cleanName || cleanName.length < 2) {
+        setLocalError('Por favor ingresa un nombre válido (mínimo 2 caracteres).')
         return
       }
-      if (!email || !password) {
-        setLocalError('Por favor completa todos los campos requeridos.')
+      if (!isEmailValid) {
+        setLocalError('Por favor ingresa un correo electrónico institucional válido.')
+        return
+      }
+      if (password.length < 8) {
+        setLocalError('La contraseña debe tener al menos 8 caracteres.')
+        return
+      }
+      if (!hasLetter) {
+        setLocalError('La contraseña debe contener al menos una letra.')
+        return
+      }
+      if (!hasNumber) {
+        setLocalError('La contraseña debe contener al menos un número.')
+        return
+      }
+      if (password.trim() !== password) {
+        setLocalError('La contraseña no debe iniciar ni terminar con espacios.')
+        return
+      }
+      if (email && password.toLowerCase() === email.toLowerCase()) {
+        setLocalError('La contraseña no puede ser idéntica a tu dirección de correo.')
+        return
+      }
+      if (cleanName && password.toLowerCase() === cleanName.toLowerCase()) {
+        setLocalError('La contraseña no puede ser idéntica a tu nombre.')
         return
       }
       if (password !== confirmPassword) {
         setLocalError('Las contraseñas no coinciden. Por favor verifica.')
         return
       }
-      if (password.length < 6) {
-        setLocalError('La contraseña debe tener al menos 6 caracteres.')
-        return
-      }
 
       setIsSubmitting(true)
       try {
-        await register({ name: name.trim(), email, password })
+        await register({ name: cleanName, email: email.trim().toLowerCase(), password })
         navigate(from, { replace: true })
       } catch (err) {
         setLocalError(err.message || 'Error al procesar el registro de la cuenta.')
@@ -222,13 +286,20 @@ export default function LoginPage({ initialMode }) {
                   <input
                     id="name"
                     type="text"
+                    maxLength={80}
+                    autoComplete="name"
                     placeholder="Prof. Carlos Mendoza"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={handleNameChange}
                     disabled={isSubmitting}
                     className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#52525b] font-medium focus:outline-none"
                   />
                 </div>
+                {name.trim().length >= 2 && (
+                  <div className="w-5 h-5 rounded-full bg-[#30d158] text-black flex items-center justify-center text-[10px] font-bold shrink-0 animate-modal-pop shadow-[0_0_8px_rgba(48,209,88,0.4)]">
+                    ✓
+                  </div>
+                )}
               </div>
             </div>
 
@@ -247,10 +318,11 @@ export default function LoginPage({ initialMode }) {
                   id="email"
                   type="email"
                   required
+                  maxLength={100}
                   autoComplete="email"
                   placeholder="usuario@campuslands.edu"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={handleEmailChange}
                   disabled={isSubmitting}
                   className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#52525b] font-medium focus:outline-none"
                 />
@@ -271,20 +343,26 @@ export default function LoginPage({ initialMode }) {
               </div>
               <div className="flex-1 min-w-0">
                 <label htmlFor="password" className="block text-[10px] uppercase font-bold tracking-wider text-[#717684]">
-                  {mode === 'register' ? 'CONTRASEÑA (MÍNIMO 6 CARACTERES)' : 'CONTRASEÑA'}
+                  {mode === 'register' ? 'CONTRASEÑA (MÍNIMO 8 CARACTERES: LETRAS Y NÚMEROS)' : 'CONTRASEÑA'}
                 </label>
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   required
+                  maxLength={128}
                   autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                   placeholder="••••••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
                   disabled={isSubmitting}
                   className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#52525b] font-mono tracking-widest focus:outline-none"
                 />
               </div>
+              {mode === 'register' && isPasswordSecure && (
+                <div className="w-5 h-5 rounded-full bg-[#30d158] text-black flex items-center justify-center text-[10px] font-bold shrink-0 animate-modal-pop shadow-[0_0_8px_rgba(48,209,88,0.4)] mr-1">
+                  ✓
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -305,11 +383,11 @@ export default function LoginPage({ initialMode }) {
             <div
               className={`overflow-hidden transition-all duration-300 ease-out ${
                 mode === 'register'
-                  ? 'max-h-28 opacity-100 mb-4 transform translate-y-0'
+                  ? 'max-h-28 opacity-100 mb-2 transform translate-y-0'
                   : 'max-h-0 opacity-0 mb-0 transform -translate-y-2 pointer-events-none'
               }`}
             >
-              <div className="rounded-2xl border border-white/[0.07] focus-within:border-[#1d68f2] focus-within:ring-2 focus-within:ring-[#1d68f2]/30 focus-within:shadow-[0_0_15px_rgba(29,104,242,0.15)] bg-[#171920] transition-all duration-200 p-3 flex items-center gap-3.5">
+              <div className="rounded-2xl border border-white/[0.07] focus-within:border-[#1d68f2] focus-within:ring-2 focus-within:ring-[#1d68f2]/30 focus-within:shadow-[0_0_15px_rgba(29,104,242,0.15)] bg-[#171920] transition-all duration-200 p-3 flex items-center gap-3.5 mb-2">
                 <div className="w-9 h-9 rounded-xl bg-[#20232c] flex items-center justify-center text-[#717684] shrink-0 border border-white/[0.03]">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -322,9 +400,11 @@ export default function LoginPage({ initialMode }) {
                   <input
                     id="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
+                    maxLength={128}
+                    autoComplete="new-password"
                     placeholder="••••••••••••"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={handleConfirmPasswordChange}
                     disabled={isSubmitting}
                     className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#52525b] font-mono tracking-widest focus:outline-none"
                   />
@@ -336,6 +416,23 @@ export default function LoginPage({ initialMode }) {
                 )}
               </div>
             </div>
+
+            {/* Checklist sutil de requisitos de contraseña en tiempo real */}
+            {mode === 'register' && password.length > 0 && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] mb-3 px-1">
+                <span className={`inline-flex items-center gap-1 ${hasMinLength ? 'text-[#30d158] font-medium' : 'text-[#717684]'}`}>
+                  <span>{hasMinLength ? '✓' : '•'}</span> 8+ caracteres
+                </span>
+                <span className={`inline-flex items-center gap-1 ${hasLetter && hasNumber ? 'text-[#30d158] font-medium' : 'text-[#717684]'}`}>
+                  <span>{hasLetter && hasNumber ? '✓' : '•'}</span> Letras y números
+                </span>
+                {confirmPassword.length > 0 && (
+                  <span className={`inline-flex items-center gap-1 ${passwordsMatch ? 'text-[#30d158] font-medium' : 'text-[#ff453a]'}`}>
+                    <span>{passwordsMatch ? '✓' : '✕'}</span> {passwordsMatch ? 'Coinciden' : 'No coinciden'}
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Toggle iOS Nativo (Sólo visible en modo login) */}
             <div
