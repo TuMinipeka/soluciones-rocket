@@ -61,18 +61,24 @@ export default function LoginPage() {
 
         {/* Cabecera: Logo de 3 discos y Badge Enclave Seguro */}
         <header className="flex items-center justify-between w-full mb-6 sm:mb-8 relative z-10">
-          <div className="flex items-center gap-3">
-            {/* Logo oficial: cuadro azul con capas de discos */}
-            <div className="w-8 h-8 rounded-xl bg-[#1d68f2] flex items-center justify-center text-white shadow-[0_0_16px_rgba(29,104,242,0.45)]">
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 3.79 2 6s4.48 4 10 4 10-1.79 10-4-4.48-4-10-4zm0 6c-4.41 0-8-1.34-8-2.5S7.59 3 12 3s8 1.34 8 2.5S16.41 8 12 8z" />
-                <path d="M2 9.5v3c0 2.21 4.48 4 10 4s10-1.79 10-4v-3c0 2.21-4.48 4-10 4s-10-1.79-10-4z" />
-                <path d="M2 15.5v3c0 2.21 4.48 4 10 4s10-1.79 10-4v-3c0 2.21-4.48 4-10 4s-10-1.79-10-4z" />
-              </svg>
+          <div className="flex items-center gap-2.5">
+            {/* Casco Oficial de Astronauta Campuslands */}
+            <img
+              src="/campuslands_helmet.png"
+              alt="Emblema Astronauta Campuslands"
+              className="h-8 w-auto object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.25)]"
+            />
+            {/* Tipografía Oficial campuslands + control */}
+            <div className="flex items-center gap-1.5">
+              <img
+                src="/campuslands_wordmark.png"
+                alt="campuslands"
+                className="h-[21px] w-auto object-contain"
+              />
+              <span className="text-lg font-bold tracking-tight text-[#22d3ee] font-sans lowercase">
+                control
+              </span>
             </div>
-            <span className="text-sm sm:text-base font-bold tracking-tight text-white">
-              Campus Control
-            </span>
           </div>
 
           {/* Badge Enclave Seguro */}
