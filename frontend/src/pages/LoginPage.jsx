@@ -22,6 +22,7 @@ export default function LoginPage({ initialMode }) {
   const [mode, setMode] = useState(isRegisterPath ? 'register' : 'login')
 
   // Campos de formulario
+  const [roleType, setRoleType] = useState('teacher')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -161,7 +162,7 @@ export default function LoginPage({ initialMode }) {
 
       setIsSubmitting(true)
       try {
-        await register({ name: cleanName, email: email.trim().toLowerCase(), password })
+        await register({ name: cleanName, email: email.trim().toLowerCase(), password, role: roleType })
         navigate(from, { replace: true })
       } catch (err) {
         setLocalError(err.message || 'Error al procesar el registro de la cuenta.')
@@ -172,13 +173,13 @@ export default function LoginPage({ initialMode }) {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#08090b] text-[#e4e2e4] font-sans selection:bg-[#1d68f2] selection:text-white antialiased overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#0e0e10] text-[#f5f5f7] font-sans selection:bg-[#2563eb] selection:text-white antialiased overflow-hidden">
       {/* ========================================================= */}
       {/* COLUMNA IZQUIERDA (50%): Formulario Campus Control        */}
       {/* ========================================================= */}
-      <div className="w-full lg:w-1/2 min-h-screen bg-[#0d0f12] border-r border-white/[0.04] flex flex-col justify-between px-6 py-8 sm:px-12 md:px-16 lg:px-12 xl:px-20 z-10 relative">
-        {/* Glow sutil en la parte superior */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[380px] h-[160px] bg-gradient-to-b from-[#1d68f2]/10 to-transparent blur-3xl pointer-events-none" />
+      <div className="w-full lg:w-1/2 min-h-screen bg-[#121214] border-r border-white/[0.06] flex flex-col justify-between px-6 py-8 sm:px-12 md:px-16 lg:px-12 xl:px-20 z-10 relative">
+        {/* Glow sutil en la parte superior con Primary #2563EB */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[380px] h-[160px] bg-gradient-to-b from-[#2563eb]/15 to-transparent blur-3xl pointer-events-none" />
 
         {/* Cabecera: Logo Oficial con Casco Astronauta y Badge Enclave */}
         <header className="flex items-center justify-between w-full mb-6 sm:mb-8 relative z-10">
@@ -198,7 +199,7 @@ export default function LoginPage({ initialMode }) {
             </div>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#131b22] border border-[#1b3445] text-[11px] font-mono text-[#22d3ee] shadow-sm">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1c1c1e] border border-[#0891b2]/35 text-[11px] font-mono text-[#22d3ee] shadow-sm">
             <svg className="w-3 h-3 text-[#22d3ee]" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
             </svg>
@@ -211,20 +212,20 @@ export default function LoginPage({ initialMode }) {
           {/* Título y Subtítulo con Transición Suave */}
           <div key={mode} className="text-center mb-6 animate-tab-fade">
             <h1 className="text-3xl sm:text-[34px] font-bold text-white tracking-tight">
-              {mode === 'login' ? 'Bienvenido de nuevo' : 'Crear cuenta docente'}
+              {mode === 'login' ? 'Bienvenido de nuevo' : 'Crear cuenta'}
             </h1>
             <p className="text-xs sm:text-sm text-[#8e8e93] mt-1.5 font-normal">
               {mode === 'login'
                 ? 'Ingresa tus credenciales para acceder a la plataforma'
-                : 'Regístrate para reservar salas y acceder a recursos telemáticos'}
+                : 'Regístrate para acceder a los recursos telemáticos del campus'}
             </p>
           </div>
 
           {/* Segmented Control iOS Dark con Pastilla Deslizante Física (Cero Parpadeo) */}
-          <div className="relative bg-[#15171d] p-1 rounded-2xl flex items-center mb-6 border border-white/[0.04] select-none">
+          <div className="relative bg-[#161618] p-1 rounded-2xl flex items-center mb-6 border border-white/[0.06] select-none">
             {/* Pastilla deslizante animada */}
             <div
-              className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-[#262933] border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.5)] transition-transform duration-300"
+              className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-[#2c2c2e] border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.5)] transition-transform duration-300"
               style={{
                 transform: mode === 'register' ? 'translateX(calc(100% + 4px))' : 'translateX(0px)',
                 transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
@@ -235,7 +236,7 @@ export default function LoginPage({ initialMode }) {
               type="button"
               onClick={() => handleModeSwitch('login')}
               className={`relative z-10 flex-1 py-2 text-xs sm:text-sm font-semibold text-center transition-colors duration-200 cursor-pointer ${
-                mode === 'login' ? 'text-white' : 'text-[#717684] hover:text-[#a1a1a6]'
+                mode === 'login' ? 'text-white' : 'text-[#8e8e93] hover:text-[#f5f5f7]'
               }`}
             >
               Iniciar sesión
@@ -244,7 +245,7 @@ export default function LoginPage({ initialMode }) {
               type="button"
               onClick={() => handleModeSwitch('register')}
               className={`relative z-10 flex-1 py-2 text-xs sm:text-sm font-semibold text-center transition-colors duration-200 cursor-pointer ${
-                mode === 'register' ? 'text-white' : 'text-[#717684] hover:text-[#a1a1a6]'
+                mode === 'register' ? 'text-white' : 'text-[#8e8e93] hover:text-[#f5f5f7]'
               }`}
             >
               Registrarse
@@ -265,6 +266,39 @@ export default function LoginPage({ initialMode }) {
 
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="flex flex-col">
+            {/* Selector de Rol / Perfil Institucional (Docente / Soporte / Admin) */}
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-out ${
+                mode === 'register'
+                  ? 'max-h-24 opacity-100 mb-4 transform translate-y-0'
+                  : 'max-h-0 opacity-0 mb-0 transform -translate-y-2 pointer-events-none'
+              }`}
+            >
+              <label className="block text-[10px] uppercase font-bold tracking-wider text-[#717684] mb-1.5 px-0.5">
+                ROL / PERFIL INSTITUCIONAL
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'teacher', label: 'Docente' },
+                  { id: 'support', label: 'Soporte' },
+                  { id: 'admin', label: 'Admin' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setRoleType(item.id)}
+                    className={`py-2 px-2 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer ${
+                      roleType === item.id
+                        ? 'bg-[#2563eb]/20 border-[#2563eb] text-[#22d3ee] shadow-sm'
+                        : 'bg-[#1c1c1e] border-white/[0.06] text-[#8e8e93] hover:text-[#f5f5f7]'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Campo Nombre Completo (Animado: se despliega suavemente en modo registro) */}
             <div
               className={`overflow-hidden transition-all duration-300 ease-out ${
@@ -273,14 +307,14 @@ export default function LoginPage({ initialMode }) {
                   : 'max-h-0 opacity-0 mb-0 transform -translate-y-2 pointer-events-none'
               }`}
             >
-              <div className="rounded-2xl border border-white/[0.07] focus-within:border-[#1d68f2] focus-within:ring-2 focus-within:ring-[#1d68f2]/30 focus-within:shadow-[0_0_15px_rgba(29,104,242,0.15)] bg-[#171920] transition-all duration-200 p-3 flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-xl bg-[#20232c] flex items-center justify-center text-[#717684] shrink-0 border border-white/[0.03]">
+              <div className="rounded-2xl border border-white/[0.08] focus-within:border-[#2563eb] focus-within:ring-2 focus-within:ring-[#2563eb]/25 focus-within:shadow-[0_0_15px_rgba(37,99,235,0.18)] bg-[#1c1c1e] transition-all duration-200 p-3 flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-xl bg-[#2c2c2e] flex items-center justify-center text-[#8e8e93] shrink-0 border border-white/[0.04]">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <label htmlFor="name" className="block text-[10px] uppercase font-bold tracking-wider text-[#717684]">
+                  <label htmlFor="name" className="block text-[10px] uppercase font-bold tracking-wider text-[#8e8e93]">
                     NOMBRE COMPLETO
                   </label>
                   <input
@@ -288,11 +322,11 @@ export default function LoginPage({ initialMode }) {
                     type="text"
                     maxLength={80}
                     autoComplete="name"
-                    placeholder="Prof. Carlos Mendoza"
+                    placeholder="Carlos Mendoza"
                     value={name}
                     onChange={handleNameChange}
                     disabled={isSubmitting}
-                    className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#52525b] font-medium focus:outline-none"
+                    className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#636366] font-medium focus:outline-none"
                   />
                 </div>
                 {name.trim().length >= 2 && (
@@ -304,14 +338,14 @@ export default function LoginPage({ initialMode }) {
             </div>
 
             {/* Input Correo */}
-            <div className="rounded-2xl border border-white/[0.07] focus-within:border-[#1d68f2] focus-within:ring-2 focus-within:ring-[#1d68f2]/30 focus-within:shadow-[0_0_15px_rgba(29,104,242,0.15)] bg-[#171920] transition-all duration-200 p-3 flex items-center gap-3.5 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-[#20232c] flex items-center justify-center text-[#717684] shrink-0 border border-white/[0.03]">
+            <div className="rounded-2xl border border-white/[0.08] focus-within:border-[#2563eb] focus-within:ring-2 focus-within:ring-[#2563eb]/25 focus-within:shadow-[0_0_15px_rgba(37,99,235,0.18)] bg-[#1c1c1e] transition-all duration-200 p-3 flex items-center gap-3.5 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-[#2c2c2e] flex items-center justify-center text-[#8e8e93] shrink-0 border border-white/[0.04]">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <label htmlFor="email" className="block text-[10px] uppercase font-bold tracking-wider text-[#717684]">
+                <label htmlFor="email" className="block text-[10px] uppercase font-bold tracking-wider text-[#8e8e93]">
                   CORREO INSTITUCIONAL
                 </label>
                 <input
@@ -324,7 +358,7 @@ export default function LoginPage({ initialMode }) {
                   value={email}
                   onChange={handleEmailChange}
                   disabled={isSubmitting}
-                  className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#52525b] font-medium focus:outline-none"
+                  className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#636366] font-medium focus:outline-none"
                 />
               </div>
               {isEmailValid && (
@@ -335,14 +369,14 @@ export default function LoginPage({ initialMode }) {
             </div>
 
             {/* Input Contraseña */}
-            <div className="rounded-2xl border border-white/[0.07] focus-within:border-[#1d68f2] focus-within:ring-2 focus-within:ring-[#1d68f2]/30 focus-within:shadow-[0_0_15px_rgba(29,104,242,0.15)] bg-[#171920] transition-all duration-200 p-3 flex items-center gap-3.5 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-[#20232c] flex items-center justify-center text-[#717684] shrink-0 border border-white/[0.03]">
+            <div className="rounded-2xl border border-white/[0.08] focus-within:border-[#2563eb] focus-within:ring-2 focus-within:ring-[#2563eb]/25 focus-within:shadow-[0_0_15px_rgba(37,99,235,0.18)] bg-[#1c1c1e] transition-all duration-200 p-3 flex items-center gap-3.5 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-[#2c2c2e] flex items-center justify-center text-[#8e8e93] shrink-0 border border-white/[0.04]">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <label htmlFor="password" className="block text-[10px] uppercase font-bold tracking-wider text-[#717684]">
+                <label htmlFor="password" className="block text-[10px] uppercase font-bold tracking-wider text-[#8e8e93]">
                   {mode === 'register' ? 'CONTRASEÑA (MÍNIMO 8 CARACTERES: LETRAS Y NÚMEROS)' : 'CONTRASEÑA'}
                 </label>
                 <input
@@ -355,7 +389,7 @@ export default function LoginPage({ initialMode }) {
                   value={password}
                   onChange={handlePasswordChange}
                   disabled={isSubmitting}
-                  className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#52525b] font-mono tracking-widest focus:outline-none"
+                  className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#636366] font-mono tracking-widest focus:outline-none"
                 />
               </div>
               {mode === 'register' && isPasswordSecure && (
@@ -366,7 +400,7 @@ export default function LoginPage({ initialMode }) {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-[#717684] hover:text-white p-1.5 transition-all duration-150 active:scale-90 cursor-pointer"
+                className="text-[#8e8e93] hover:text-white p-1.5 transition-all duration-150 active:scale-90 cursor-pointer"
                 aria-label="Alternar visibilidad"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -387,14 +421,14 @@ export default function LoginPage({ initialMode }) {
                   : 'max-h-0 opacity-0 mb-0 transform -translate-y-2 pointer-events-none'
               }`}
             >
-              <div className="rounded-2xl border border-white/[0.07] focus-within:border-[#1d68f2] focus-within:ring-2 focus-within:ring-[#1d68f2]/30 focus-within:shadow-[0_0_15px_rgba(29,104,242,0.15)] bg-[#171920] transition-all duration-200 p-3 flex items-center gap-3.5 mb-2">
-                <div className="w-9 h-9 rounded-xl bg-[#20232c] flex items-center justify-center text-[#717684] shrink-0 border border-white/[0.03]">
+              <div className="rounded-2xl border border-white/[0.08] focus-within:border-[#2563eb] focus-within:ring-2 focus-within:ring-[#2563eb]/25 focus-within:shadow-[0_0_15px_rgba(37,99,235,0.18)] bg-[#1c1c1e] transition-all duration-200 p-3 flex items-center gap-3.5 mb-2">
+                <div className="w-9 h-9 rounded-xl bg-[#2c2c2e] flex items-center justify-center text-[#8e8e93] shrink-0 border border-white/[0.04]">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <label htmlFor="confirmPassword" className="block text-[10px] uppercase font-bold tracking-wider text-[#717684]">
+                  <label htmlFor="confirmPassword" className="block text-[10px] uppercase font-bold tracking-wider text-[#8e8e93]">
                     CONFIRMAR CONTRASEÑA
                   </label>
                   <input
@@ -406,7 +440,7 @@ export default function LoginPage({ initialMode }) {
                     value={confirmPassword}
                     onChange={handleConfirmPasswordChange}
                     disabled={isSubmitting}
-                    className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#52525b] font-mono tracking-widest focus:outline-none"
+                    className="w-full bg-transparent text-sm text-[#f5f5f7] placeholder:text-[#636366] font-mono tracking-widest focus:outline-none"
                   />
                 </div>
                 {passwordsMatch && (
@@ -420,10 +454,10 @@ export default function LoginPage({ initialMode }) {
             {/* Checklist sutil de requisitos de contraseña en tiempo real */}
             {mode === 'register' && password.length > 0 && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] mb-3 px-1">
-                <span className={`inline-flex items-center gap-1 ${hasMinLength ? 'text-[#30d158] font-medium' : 'text-[#717684]'}`}>
+                <span className={`inline-flex items-center gap-1 ${hasMinLength ? 'text-[#30d158] font-medium' : 'text-[#8e8e93]'}`}>
                   <span>{hasMinLength ? '✓' : '•'}</span> 8+ caracteres
                 </span>
-                <span className={`inline-flex items-center gap-1 ${hasLetter && hasNumber ? 'text-[#30d158] font-medium' : 'text-[#717684]'}`}>
+                <span className={`inline-flex items-center gap-1 ${hasLetter && hasNumber ? 'text-[#30d158] font-medium' : 'text-[#8e8e93]'}`}>
                   <span>{hasLetter && hasNumber ? '✓' : '•'}</span> Letras y números
                 </span>
                 {confirmPassword.length > 0 && (
@@ -445,7 +479,7 @@ export default function LoginPage({ initialMode }) {
               <div className="flex items-center justify-between py-1 px-0.5 select-none">
                 <span
                   onClick={() => setRememberMe(!rememberMe)}
-                  className="text-xs sm:text-sm text-[#a1a1a6] font-medium cursor-pointer transition-colors hover:text-white"
+                  className="text-xs sm:text-sm text-[#8e8e93] font-medium cursor-pointer transition-colors hover:text-white"
                 >
                   Recordar este equipo
                 </span>
@@ -455,7 +489,7 @@ export default function LoginPage({ initialMode }) {
                   aria-checked={rememberMe}
                   onClick={() => setRememberMe(!rememberMe)}
                   className={`w-[48px] h-[28px] rounded-full p-0.5 transition-colors duration-200 focus:outline-none cursor-pointer ${
-                    rememberMe ? 'bg-[#1d68f2]' : 'bg-[#2b2d35]'
+                    rememberMe ? 'bg-[#2563eb]' : 'bg-[#2c2c2e]'
                   }`}
                 >
                   <span
@@ -472,7 +506,7 @@ export default function LoginPage({ initialMode }) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-6 rounded-2xl bg-[#1d68f2] hover:bg-[#1558d6] active:scale-[0.98] text-white font-semibold text-sm sm:text-base tracking-wide shadow-[0_4px_24px_rgba(29,104,242,0.45)] hover:shadow-[0_6px_28px_rgba(29,104,242,0.6)] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="w-full py-3.5 px-6 rounded-2xl bg-[#2563eb] hover:bg-[#1d4ed8] active:scale-[0.98] text-white font-semibold text-sm sm:text-base tracking-wide shadow-[0_4px_24px_rgba(37,99,235,0.4)] hover:shadow-[0_6px_28px_rgba(37,99,235,0.6)] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 {isSubmitting ? (
                   <>
@@ -484,7 +518,7 @@ export default function LoginPage({ initialMode }) {
                   </>
                 ) : (
                   <span key={mode} className="animate-tab-fade inline-block">
-                    {mode === 'login' ? 'Iniciar sesión' : 'Registrar cuenta docente'}
+                    {mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
                   </span>
                 )}
               </button>

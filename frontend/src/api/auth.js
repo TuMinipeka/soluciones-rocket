@@ -19,11 +19,12 @@ export async function loginApi({ email, password }) {
  * Registro público de usuarios (HU-11 / HU-21)
  * Regla estricta: No se envía ningún rol desde el cliente. El backend asigna teacher.
  */
-export async function registerApi({ name, email, password }) {
+export async function registerApi({ name, email, password, role }) {
   const payload = {
     name: name?.trim(),
     email: email?.trim().toLowerCase(),
     password,
+    ...(role ? { role } : {}),
   }
   return api.post('/auth/register', payload)
 }
