@@ -315,19 +315,19 @@ export default function LoginPage({ initialMode }) {
                 <button
                   type="button"
                   onClick={() => {
-                    setEmail('admin@campuslands.edu')
-                    setPassword('CampusAdmin2026!')
+                    setEmail('admin@campuslands.com')
+                    setPassword('AdminCampus2026!*')
                     setLocalError(null)
                     clearError()
                   }}
                   className={`p-2 rounded-xl border text-center transition-all duration-200 cursor-pointer flex flex-col items-center gap-1 ${
-                    email === 'admin@campuslands.edu'
+                    email === 'admin@campuslands.com'
                       ? 'bg-amber-500/20 border-amber-500/80 text-white shadow-[0_0_12px_rgba(245,158,11,0.25)]'
                       : 'bg-[#1c1c1e] border-white/[0.06] text-[#8e8e93] hover:text-white hover:border-amber-500/40'
                   }`}
                 >
                   <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
-                    email === 'admin@campuslands.edu' ? 'bg-amber-500 text-black' : 'bg-amber-500/10 text-amber-400'
+                    email === 'admin@campuslands.com' ? 'bg-amber-500 text-black' : 'bg-amber-500/10 text-amber-400'
                   }`}>
                     <ShieldCheckIcon className="w-4 h-4" />
                   </div>
@@ -339,19 +339,19 @@ export default function LoginPage({ initialMode }) {
                 <button
                   type="button"
                   onClick={() => {
-                    setEmail('carlos.mendoza@campuslands.edu')
-                    setPassword('DocenteCampus2026!')
+                    setEmail('teacher@campuslands.com')
+                    setPassword('TeacherCampus2026!*')
                     setLocalError(null)
                     clearError()
                   }}
                   className={`p-2 rounded-xl border text-center transition-all duration-200 cursor-pointer flex flex-col items-center gap-1 ${
-                    email === 'carlos.mendoza@campuslands.edu'
+                    email === 'teacher@campuslands.com'
                       ? 'bg-[#2563eb]/20 border-[#2563eb] text-white shadow-[0_0_12px_rgba(37,99,235,0.25)]'
                       : 'bg-[#1c1c1e] border-white/[0.06] text-[#8e8e93] hover:text-white hover:border-[#2563eb]/40'
                   }`}
                 >
                   <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
-                    email === 'carlos.mendoza@campuslands.edu' ? 'bg-[#2563eb] text-white' : 'bg-[#2563eb]/10 text-blue-400'
+                    email === 'teacher@campuslands.com' ? 'bg-[#2563eb] text-white' : 'bg-[#2563eb]/10 text-blue-400'
                   }`}>
                     <AcademicCapIcon className="w-4 h-4" />
                   </div>
@@ -363,19 +363,19 @@ export default function LoginPage({ initialMode }) {
                 <button
                   type="button"
                   onClick={() => {
-                    setEmail('soporte@campuslands.edu')
-                    setPassword('SoporteCampus2026!')
+                    setEmail('support@campuslands.com')
+                    setPassword('SupportCampus2026!*')
                     setLocalError(null)
                     clearError()
                   }}
                   className={`p-2 rounded-xl border text-center transition-all duration-200 cursor-pointer flex flex-col items-center gap-1 ${
-                    email === 'soporte@campuslands.edu'
+                    email === 'support@campuslands.com'
                       ? 'bg-emerald-500/20 border-emerald-500/80 text-white shadow-[0_0_12px_rgba(16,185,129,0.25)]'
                       : 'bg-[#1c1c1e] border-white/[0.06] text-[#8e8e93] hover:text-white hover:border-emerald-500/40'
                   }`}
                 >
                   <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
-                    email === 'soporte@campuslands.edu' ? 'bg-emerald-500 text-black' : 'bg-emerald-500/10 text-emerald-400'
+                    email === 'support@campuslands.com' ? 'bg-emerald-500 text-black' : 'bg-emerald-500/10 text-emerald-400'
                   }`}>
                     <WrenchScrewdriverIcon className="w-4 h-4" />
                   </div>
