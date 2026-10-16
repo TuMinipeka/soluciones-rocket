@@ -7,7 +7,7 @@ Repositorio oficial del hackatón «El campus bajo presión». El sistema unific
 ## Estado Actual del Proyecto
 
 El sistema se encuentra integrado entre los módulos de Diego (autenticación, incidencias, triaje IA y seguridad), Conde (disponibilidad y ciclo de vida de reservas), Mayorga (persistencia, SEED, inventario, importación y Compose) y Guerra/Mafe (frontend React interactivo):
-- **Infraestructura Base (HU-01, HU-06, HU-07, HU-10):** FastAPI, SQLite persistente en volumen, SEED idempotente de las 10 salas oficiales y Docker Compose.
+- **Infraestructura Base (HU-01, HU-06, HU-07, HU-10):** FastAPI, SQLite persistente en `backend/data/`, SEED idempotente de las 10 salas oficiales y Docker Compose.
 - **Autenticación y Permisos (HU-11, HU-12, HU-13):** Registro forzado a `teacher`, contraseñas con Argon2id, JWT con vencimiento, timing-safe login y matriz RBAC centralizada.
 - **Operaciones de Salas y Reservas (HU-02, HU-03, HU-04):** Consulta de disponibilidad en tiempo real por franja horaria, validación atómica de solapamientos (`new_start < existing_end and existing_start < new_end`), control de aforo y ciclo de vida de reservas.
 - **Inventario y Préstamos (HU-08):** Catálogo de recursos y préstamos trazables con estados de devolución.
@@ -35,15 +35,15 @@ docker compose logs db-init backend frontend
 
 # 4. Probar endpoints de salud
 Invoke-RestMethod http://localhost:8000/health
-Invoke-RestMethod http://localhost:5173/api/health
+Invoke-RestMethod http://localhost:5180/api/health
 
 # 5. Ejecutar el SEED idempotente de demostración
 docker compose exec backend python -m app.scripts.seed_demo
 ```
 
-Compose inicia `db-init` para crear las tablas de forma explícita en el volumen `campus_data`. Luego inicia `backend` (FastAPI en `http://localhost:8000`) y `frontend` (React + Vite en `http://localhost:5173`). La documentación interactiva OpenAPI está disponible en `http://localhost:8000/docs`.
+Compose inicia `db-init` para crear las tablas en `backend/data/campus-local.db` cuando `DATABASE_URL=sqlite:///./data/campus-local.db`. Los contenedores montan `backend/data/` desde el equipo, de modo que el archivo puede abrirse en un visor SQLite local. Luego inicia `backend` (FastAPI en `http://localhost:8000`) y `frontend` (React + Vite en `http://localhost:5180`). La documentación OpenAPI está en `http://localhost:8000/docs`.
 
-Para detener preservando datos: `docker compose down`. *(No uses `docker compose down -v` para evitar borrar la base de datos persistida).*
+Para detener preservando datos: `docker compose down`. Conserva `backend/data/` y no elimines el archivo SQLite ni sus posibles archivos `-wal` y `-shm` mientras el backend está activo.
 
 ### Opción 2: Ejecución Local en Windows (sin Docker)
 

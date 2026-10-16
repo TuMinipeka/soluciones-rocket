@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getIncidentsApi } from '../api/incidents';
 import { confirmReallocationApi } from '../api/reservations';
-import * as authModule from '../auth/useAuth';
+import { useAuth } from '../auth/useAuth';
 import IncidentCard from '../components/incidents/IncidentCard';
 import RecommendationCard from '../components/incidents/RecommendationCard';
 import Input from '../components/ui/Input';
@@ -11,138 +11,13 @@ import LoadingState from '../components/feedback/LoadingState';
 import SuccessMessage from '../components/feedback/SuccessMessage';
 import ErrorMessage from '../components/feedback/ErrorMessage';
 
-// Hook defensivo de autenticación para roles y tokens
-function useCurrentAuth() {
-  try {
-    if (typeof authModule.useAuth === 'function') {
-      const auth = authModule.useAuth();
-      if (auth && auth.user) return auth;
-    }
-  } catch (e) {
-    // Si no está dentro de AuthProvider, fallback a storage
-  }
-
-  let user = { role: 'admin', name: 'Mafe Q' };
-  try {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      user = JSON.parse(stored);
-    }
-  } catch (e) {
-    // fallback
-  }
-
-  return {
-    user,
-    role: user?.role || 'admin',
-    token: localStorage.getItem('token'),
-  };
-}
-
-// 5 Escenarios Mínimos del SEED oficial según Especificación Técnica
-const OFFICIAL_SEED_INCIDENTS = [
-  {
-    id: 'INC-001',
-    title: 'Fallo Crítico en Sistema de Aire Acondicionado',
-    description: 'Temperatura ambiental excede los 32°C en el aula técnica; los equipos computacionales corren riesgo de apagado por sobrecalentamiento.',
-    space_id: 'SAL-005',
-    spaceName: 'Apolo',
-    priority: 'high',
-    status: 'open',
-    classification_source: 'ai',
-    created_at: 'Hoy, 08:30 AM',
-    reportedBy: 'Docente Juan Gómez',
-    reservation_id: 101,
-    recommendation: {
-      classification_source: 'ai',
-      targetRoomId: 'SAL-004',
-      targetRoomName: 'Sputnik',
-      reason: 'Aforo compatible (38 PCs disponibles vs 34 requeridas), climatización en estado óptimo y sin reserva agendada en la franja 10:00 - 13:00.',
-      confidence: 0.96,
-      affectedReservationsCount: 1,
-      alternatives: [
-        { kind: 'space', id: 'SAL-004', name: 'Sputnik', reason: 'Aforo compatible (38 PCs) y climatización óptima.' }
-      ]
-    },
-  },
-  {
-    id: 'INC-002',
-    title: 'Daño en Lámpara Principal de Proyector Láser',
-    description: 'La imagen parpadea constantemente e impide la visualización de código en pantalla durante la clase magistral.',
-    space_id: 'SAL-001',
-    spaceName: 'Auditorio',
-    priority: 'medium',
-    status: 'in_progress',
-    classification_source: 'rules',
-    created_at: 'Hoy, 09:10 AM',
-    reportedBy: 'Soporte Audiovisual',
-    reservation_id: 102,
-    recommendation: {
-      classification_source: 'rules',
-      targetRoomId: 'SAL-010',
-      targetRoomName: 'Artemis',
-      reason: 'Regla de contingencia audiovisual R-204: espacio con proyector de repuesto activo y capacidad para dividir el aforo.',
-      ruleName: 'Regla Fallback Audiovisual R-204',
-      confidence: 0.88,
-      affectedReservationsCount: 1,
-      alternatives: [
-        { kind: 'space', id: 'SAL-010', name: 'Artemis', reason: 'Proyector 4K y 32 puestos disponibles.' }
-      ]
-    },
-  },
-  {
-    id: 'INC-003',
-    title: 'Pérdida de Conectividad LAN en Switch Principal',
-    description: '12 puestos de trabajo sin acceso a la red interna ni a repositorios durante evaluación práctica.',
-    space_id: 'SAL-003',
-    spaceName: 'Skylab',
-    priority: 'high',
-    status: 'open',
-    classification_source: 'rules',
-    created_at: 'Ayer, 04:45 PM',
-    reportedBy: 'Docente Carlos Ruiz',
-    reservation_id: 103,
-    recommendation: {
-      classification_source: 'rules',
-      alternatives: [], // Caso borde: Sin alternativas disponibles
-      reason: 'No hay salas alternativas con aforo y equipamiento disponible para este horario.',
-    },
-  },
-  {
-    id: 'INC-004',
-    title: 'Mantenimiento Preventivo de Mobiliario y Cableado',
-    description: 'Ajuste de canaletas y ergonomía en estaciones de trabajo.',
-    space_id: 'SAL-006',
-    spaceName: 'Sala Nueva',
-    priority: 'low',
-    status: 'in_progress',
-    classification_source: 'rules',
-    created_at: 'Ayer, 02:00 PM',
-    reportedBy: 'Mantenimiento General',
-    recommendation: null,
-  },
-  {
-    id: 'INC-005',
-    title: 'Interferencia Eléctrica en Tomas Reguladas',
-    description: 'Fluctuación en regleta lateral; solventado mediante cambio de pastilla térmica.',
-    space_id: 'SAL-002',
-    spaceName: 'Cosmos',
-    priority: 'low',
-    status: 'resolved',
-    classification_source: 'rules',
-    created_at: '15 Oct, 11:20 AM',
-    reportedBy: 'Soporte Eléctrico',
-    recommendation: null,
-  },
-];
-
 /**
  * Incidencias y Triaje con IA y Reglas Deterministas (HU-20).
  * Protege la confirmación de reubicación exclusivamente para rol 'admin'.
  * Área: MAFE & GUERRA
  */
 export default function IncidentsListPage() {
-  const { user } = useCurrentAuth();
+  const { user } = useAuth();
 
   const [incidents, setIncidents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -163,18 +38,17 @@ export default function IncidentsListPage() {
       if (typeof getIncidentsApi === 'function') {
         const response = await getIncidentsApi();
         const data = Array.isArray(response) ? response : response?.data || response?.items || response?.incidents;
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setIncidents(data);
         } else {
-          setIncidents(OFFICIAL_SEED_INCIDENTS);
+          throw new Error('La respuesta de incidencias no tiene el formato esperado.');
         }
       } else {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        setIncidents(OFFICIAL_SEED_INCIDENTS);
+        throw new Error('El cliente de incidencias no está disponible.');
       }
     } catch (err) {
-      // Fallback a incidentes del seed oficial si el endpoint no responde
-      setIncidents(OFFICIAL_SEED_INCIDENTS);
+      setIncidents([]);
+      setErrorMessage(err?.message || 'No se pudieron consultar las incidencias guardadas.');
     } finally {
       setIsLoading(false);
     }
@@ -225,35 +99,25 @@ export default function IncidentsListPage() {
     setErrorMessage(null);
     setFeedbackMessage(null);
 
-    const reservationId = incident?.reservation_id || incident?.affected_reservation_id || incident?.id || 1;
-    const targetSpaceId = recommendation.targetRoomId || recommendation.target_room_id || recommendation.id || 'SAL-004';
+    const reservationId = incident?.reservation_id || incident?.affected_reservation_id;
+    const targetSpaceId = recommendation?.targetRoomId || recommendation?.target_room_id;
+    if (!reservationId || !targetSpaceId) {
+      setErrorMessage('La recomendación no contiene una reserva y una sala verificadas para reubicar.');
+      setIsConfirming(false);
+      return;
+    }
 
     try {
-      if (typeof confirmReallocationApi === 'function') {
-        try {
-          await confirmReallocationApi(reservationId, {
-            new_space_id: targetSpaceId,
-            notes: recommendation.reason || `Reubicación confirmada por administrador ${user?.name || user?.email || 'Admin'}`,
-          });
-        } catch (apiErr) {
-          // Si el endpoint de reubicación responde o aún está en mock, registrar localmente
-        }
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, 600));
-      }
+      await confirmReallocationApi(reservationId, {
+        new_space_id: targetSpaceId,
+        notes: recommendation.reason || `Reubicación confirmada por administrador ${user?.name || user?.email}`,
+      });
 
-      // Actualizar estado local a resuelto
-      setIncidents((prev) =>
-        prev.map((inc) =>
-          inc.id === incident.id
-            ? { ...inc, status: 'resolved', recommendation: null }
-            : inc
-        )
-      );
+      await fetchIncidents();
 
       setFeedbackMessage({
         title: 'Reubicación Confirmada Transaccionalmente',
-        message: `La actividad académica ha sido reubicada a ${recommendation.targetRoomName || targetSpaceId}. El espacio fue liberado y los docentes notificados.`,
+        message: `La reserva #${reservationId} fue reubicada a ${recommendation.targetRoomName || targetSpaceId}.`,
       });
     } catch (err) {
       setErrorMessage(
@@ -318,7 +182,7 @@ export default function IncidentsListPage() {
         <SuccessMessage
           title={feedbackMessage.title}
           message={feedbackMessage.message}
-          onClose={() => setFeedbackMessage(null)}
+          onDismiss={() => setFeedbackMessage(null)}
         />
       )}
 
@@ -326,12 +190,12 @@ export default function IncidentsListPage() {
         <ErrorMessage
           title="Atención Operativa"
           message={errorMessage}
-          onClose={() => setErrorMessage(null)}
+          onDismiss={() => setErrorMessage(null)}
         />
       )}
 
       {/* Tarjeta de Recomendación Activa con Triaje IA vs Reglas */}
-      {incidents.some((i) => i.recommendation && (i.status === 'open' || i.status === 'in_progress')) && (
+      {incidents.some((i) => typeof i.recommendation === 'object' && i.recommendation && i.reservation_id && (i.status === 'open' || i.status === 'in_progress')) && (
         <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#22D3EE] flex items-center gap-2">
@@ -339,12 +203,12 @@ export default function IncidentsListPage() {
               Recomendación de Reubicación Pendiente de Aprobación
             </h3>
             <span className="text-[11px] text-[#A1A1A6]">
-              Sesión activa: <strong className="text-white uppercase font-mono">{user?.role || 'admin'}</strong>
+              Sesión activa: <strong className="text-white uppercase font-mono">{user?.role || 'sin sesión'}</strong>
             </span>
           </div>
 
           {incidents
-            .filter((i) => i.recommendation && (i.status === 'open' || i.status === 'in_progress'))
+            .filter((i) => typeof i.recommendation === 'object' && i.recommendation && i.reservation_id && (i.status === 'open' || i.status === 'in_progress'))
             .slice(0, 1)
             .map((inc) => (
               <RecommendationCard
@@ -422,7 +286,7 @@ export default function IncidentsListPage() {
       {/* Manejo de Estados: Loading, Empty, Lista */}
       {isLoading ? (
         <LoadingState message="Cargando incidencias registradas…" />
-      ) : filteredIncidents.length === 0 ? (
+      ) : errorMessage ? null : filteredIncidents.length === 0 ? (
         <EmptyState
           title="No hay incidencias reportadas"
           description="Todas las instalaciones y equipos operan con normalidad o no coinciden con los filtros aplicados."
@@ -434,21 +298,9 @@ export default function IncidentsListPage() {
               key={incident.id}
               incident={{
                 ...incident,
+                space_name: incident.space_name || incident.spaceName || incident.space_id,
                 spaceName: incident.spaceName || incident.space_name || incident.space_id,
                 hasRecommendation: Boolean(incident.recommendation),
-              }}
-              onResolve={(inc) => {
-                if (inc.recommendation) {
-                  handleConfirmRelocation(inc.recommendation, inc);
-                } else {
-                  setIncidents((prev) =>
-                    prev.map((i) => (i.id === inc.id ? { ...i, status: 'resolved' } : i))
-                  );
-                  setFeedbackMessage({
-                    title: 'Incidencia Solventada',
-                    message: `La falla en ${inc.spaceName || inc.space_id} ha sido resuelta.`,
-                  });
-                }
               }}
             />
           ))}

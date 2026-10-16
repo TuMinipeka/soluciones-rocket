@@ -7,6 +7,8 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5180,
+    // Docker Desktop no siempre propaga eventos de archivos del host al contenedor.
+    watch: { usePolling: true, interval: 1000 },
     proxy: {
       '/api': {
         target: process.env.BACKEND_URL || 'http://localhost:8000',

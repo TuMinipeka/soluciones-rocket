@@ -182,7 +182,8 @@ export default function ReservationPage() {
       }
 
       const result = await createReservationApi(payload)
-      const reservationId = result.id || result.reservation_id || 'RES-' + Math.floor(1000 + Math.random() * 9000)
+      const reservationId = result?.id || result?.reservation_id
+      if (!reservationId) throw new Error('El servidor no confirmó el identificador de la reserva.')
 
       setSuccess(`Reserva confirmada con identificador oficial: #${reservationId}`)
       setTitle('')
@@ -576,12 +577,13 @@ export default function ReservationPage() {
                   </span>
                   <button
                     type="button"
+                    disabled={!spaces.length}
                     onClick={() => {
                       const currIdx = spaces.findIndex((s) => s.id === spaceId)
                       const next = spaces[(currIdx + 1) % spaces.length]
                       setSpaceId(String(next.id))
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-[#2563eb]/20 text-[#22d3ee] hover:bg-[#2563eb]/30 transition-colors cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-[#2563eb]/20 text-[#22d3ee] hover:bg-[#2563eb]/30 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cambiar sala →
                   </button>

@@ -3,9 +3,9 @@ services:
     build: ./backend
     command: ["python", "-m", "app.scripts.init_db"]
     environment:
-      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/campus.db}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:///./data/campus-local.db}
     volumes:
-      - campus_data:/app/data
+      - ./backend/data:/app/data
 
   backend:
     build: ./backend
@@ -14,7 +14,7 @@ services:
         condition: service_completed_successfully
     environment:
       APP_ENV: ${APP_ENV:-development}
-      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/campus.db}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:///./data/campus-local.db}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
@@ -34,7 +34,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
-      - campus_data:/app/data
+      - ./backend/data:/app/data
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
       interval: 10s
@@ -60,6 +60,3 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
-
-volumes:
-  campus_data:
