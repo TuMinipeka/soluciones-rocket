@@ -7,15 +7,15 @@
 
 ## 1. Overview and Responsibility Diagram
 
-![Team Responsibilities Matrix](resources/team-responsibilities.png)
+![Team Responsibilities Matrix](resources/teamResponsibilities.png)
 
-| Developer | Domain Area | Assigned Stories | Early Deliverables | Downstream Consumers |
-| :--- | :--- | :---: | :--- | :--- |
-| **Conde** | Architecture, Backend & Spaces | HU-01 to HU-05 | Space & reservation contracts (`/spaces`, `/reservations`) | Mafe, Guerra |
-| **Mayorga** | Database, Inventory & DevOps | HU-06 to HU-10 | SQLAlchemy Base, database sessions, SEED, resources | Conde, Diego |
-| **Diego** | Auth, Security, Incidents & AI | HU-11 to HU-16 | Auth & incidents API contracts (`docs/contracts/auth_incidents.md`) | Guerra, Conde |
-| **Mafe** | Frontend Visual & UI/UX | HU-17 to HU-20 | Shared layout, interactive room map, dashboard | Guerra |
-| **Guerra** | Frontend Functional & Integration | HU-21 to HU-24 | HTTP client, auth state, reservation & incident forms | Mafe |
+| Developer | Domain Area | Assigned Stories | Status | Downstream Consumers |
+| :--- | :--- | :---: | :---: | :--- |
+| **Conde** | Architecture, Backend & Spaces | HU-01 to HU-05 | HU-01 a HU-04 completados | Mafe, Guerra |
+| **Mayorga** | Database, Inventory & DevOps | HU-06 to HU-10 | HU-06, 07, 08, 10 completados | Conde, Diego |
+| **Diego** | Auth, Security, Incidents & AI | HU-11 to HU-16 | HU-11 a HU-16 completados (100%) | Guerra, Conde |
+| **Mafe** | Frontend Visual & UI/UX | HU-17 to HU-20 | Frontend en desarrollo | Guerra |
+| **Guerra** | Frontend Functional & Integration | HU-21 to HU-24 | Frontend en desarrollo | Mafe |
 
 ---
 
