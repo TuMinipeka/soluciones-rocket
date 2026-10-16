@@ -30,6 +30,7 @@ class UserRegisterRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, description="Nombre completo del usuario")
     email: EmailStr = Field(..., description="Correo electrónico institucional único")
     password: str = Field(..., min_length=8, max_length=128, description="Contraseña segura")
+    role: str | None = Field(default="teacher", description="Rol institucional solicitado (teacher o support)")
 
     @field_validator("name")
     @classmethod

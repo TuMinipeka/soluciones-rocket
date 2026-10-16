@@ -202,7 +202,7 @@ export default function LoginPage({ initialMode }) {
 
       setIsSubmitting(true)
       try {
-        await register({ name: cleanName, email: email.trim().toLowerCase(), password })
+        await register({ name: cleanName, email: email.trim().toLowerCase(), password, role: roleType })
         navigate(from, { replace: true })
       } catch (err) {
         setLocalError(err.message || 'Error al procesar el registro de la cuenta.')
@@ -341,6 +341,74 @@ export default function LoginPage({ initialMode }) {
                     ✓
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Selector de Rol Institucional (Solo visible en modo registro) */}
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-out ${
+                mode === 'register'
+                  ? 'max-h-40 opacity-100 mb-4 transform translate-y-0'
+                  : 'max-h-0 opacity-0 mb-0 transform -translate-y-2 pointer-events-none'
+              }`}
+            >
+              <div className="rounded-2xl border border-white/[0.08] bg-[#1c1c1e] p-3 transition-all duration-200">
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <label className="block text-[10px] uppercase font-bold tracking-wider text-[#8e8e93]">
+                    ROL INSTITUCIONAL
+                  </label>
+                  <span className="text-[10px] font-mono text-[#22d3ee] font-medium">
+                    {roleType === 'teacher' ? 'Docente / Trainer' : 'Soporte Técnico'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRoleType('teacher')}
+                    className={`p-2.5 rounded-xl border text-left transition-all duration-200 flex items-center gap-2.5 cursor-pointer ${
+                      roleType === 'teacher'
+                        ? 'bg-[#2563eb]/20 border-[#2563eb] text-white shadow-[0_0_12px_rgba(37,99,235,0.25)]'
+                        : 'bg-[#2c2c2e]/60 border-white/[0.06] text-[#8e8e93] hover:text-[#f5f5f7] hover:border-white/20'
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                      roleType === 'teacher' ? 'bg-[#2563eb] text-white' : 'bg-[#1c1c1e] text-[#8e8e93]'
+                    }`}>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold leading-tight">Docente</div>
+                      <div className="text-[10px] text-[#8e8e93] truncate">Salas y recursos</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRoleType('support')}
+                    className={`p-2.5 rounded-xl border text-left transition-all duration-200 flex items-center gap-2.5 cursor-pointer ${
+                      roleType === 'support'
+                        ? 'bg-[#2563eb]/20 border-[#2563eb] text-white shadow-[0_0_12px_rgba(37,99,235,0.25)]'
+                        : 'bg-[#2c2c2e]/60 border-white/[0.06] text-[#8e8e93] hover:text-[#f5f5f7] hover:border-white/20'
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                      roleType === 'support' ? 'bg-[#2563eb] text-white' : 'bg-[#1c1c1e] text-[#8e8e93]'
+                    }`}>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold leading-tight">Soporte</div>
+                      <div className="text-[10px] text-[#8e8e93] truncate">Fallas e incidencias</div>
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
 

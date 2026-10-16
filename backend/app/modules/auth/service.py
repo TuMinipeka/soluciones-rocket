@@ -39,11 +39,20 @@ class AuthService:
 
         hashed = hash_password(data.password)
 
+        # Manejo de rol institucional: permite teacher o support.
+        # Seguridad anti-escalamiento: intentos de registrarse como admin se asignan a teacher.
+        req_role = getattr(data, "role", None)
+        raw_role = req_role.value if hasattr(req_role, "value") else str(req_role or "teacher").strip().lower()
+        if raw_role == "support":
+            assigned_role = Role.SUPPORT.value
+        else:
+            assigned_role = Role.TEACHER.value
+
         new_user = User(
             name=data.name,
             email=normalized_email,
             password_hash=hashed,
-            role=Role.TEACHER.value,  # Regla inviolable: registro público crea ÚNICAMENTE docente
+            role=assigned_role,
             is_active=True,
         )
 
