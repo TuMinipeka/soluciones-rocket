@@ -118,19 +118,17 @@ export default function LoginPage({ initialMode }) {
 
         {/* Cabecera: Logo Oficial con Casco Astronauta y Badge Enclave */}
         <header className="flex items-center justify-between w-full mb-6 sm:mb-8 relative z-10">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3 select-none">
             <img
               src="/campuslands_helmet.png"
               alt="Emblema Astronauta Campuslands"
-              className="h-8 w-auto object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.25)] transition-transform duration-300 hover:scale-105"
+              className="h-8 w-auto object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.2)] transition-transform duration-300 hover:scale-105"
             />
-            <div className="flex items-center gap-1.5">
-              <img
-                src="/campuslands_wordmark.png"
-                alt="campuslands"
-                className="h-[21px] w-auto object-contain"
-              />
-              <span className="text-lg font-bold tracking-tight text-[#22d3ee] font-sans lowercase">
+            <div className="flex items-baseline gap-1.5 font-brand leading-none">
+              <span className="text-[22px] font-bold text-white tracking-normal lowercase">
+                campuslands
+              </span>
+              <span className="text-[22px] font-bold text-[#22d3ee] tracking-normal lowercase">
                 control
               </span>
             </div>
