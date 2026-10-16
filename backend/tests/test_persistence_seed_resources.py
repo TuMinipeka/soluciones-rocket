@@ -161,6 +161,35 @@ def test_confirming_and_returning_loan_updates_resource_availability(
     assert client.get("/resources/EQ-STATUS", headers=headers).json()["status"] == "available"
 
 
+def test_teacher_can_list_and_request_support_authorized_resource(
+    client, support_token, teacher_token
+):
+    created = client.post(
+        "/resources",
+        json={"id": "EQ-AUTHORIZED", "name": "Tableta autorizada", "category": "tablet"},
+        headers=auth(support_token),
+    )
+    assert created.status_code == 201
+
+    resources = client.get("/resources", headers=auth(teacher_token))
+    assert resources.status_code == 200
+    assert "EQ-AUTHORIZED" in {resource["id"] for resource in resources.json()}
+
+    start = datetime.now(timezone.utc) + timedelta(minutes=5)
+    requested = client.post(
+        "/resources/loans",
+        json={
+            "resource_id": "EQ-AUTHORIZED",
+            "start_time": start.isoformat(),
+            "expected_return": (start + timedelta(hours=2)).isoformat(),
+            "notes": "Clase autorizada",
+        },
+        headers=auth(teacher_token),
+    )
+    assert requested.status_code == 201
+    assert requested.json()["resource_id"] == "EQ-AUTHORIZED"
+
+
 def test_incident_rejects_unknown_equipment(client, support_token):
     response = client.post(
         "/incidents",
