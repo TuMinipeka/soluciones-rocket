@@ -152,7 +152,7 @@ def create_loan(data: LoanCreate, borrower: User, db: Session) -> LoanResponse:
 
 def list_loans(user: User, db: Session) -> list[LoanResponse]:
     statement = select(Loan).order_by(Loan.id.desc())
-    if user.role == Role.TEACHER.value:
+    if user.role in (Role.TEACHER.value, Role.SUPPORT.value):
         statement = statement.where(Loan.borrower_id == user.id)
     return [loan_response(item) for item in db.scalars(statement).all()]
 

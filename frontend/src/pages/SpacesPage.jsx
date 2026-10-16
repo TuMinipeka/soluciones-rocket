@@ -1,8 +1,8 @@
 /**
- * Página: Mapa Interactivo de Salas y Espacios del Campus (HU-18, HU-17, HU-21)
- * Integra el plano arquitectónico 2D de Campuslands y la vista tipo cine interactiva con consulta en tiempo real:
+ * Página: Mapa Interactivo de Salas y Espacios del Campus (HU-18, HU-17, HU-21, HU-22)
+ * Integra el plano arquitectónico 2D de Campuslands, el visor táctico y la vista tipo cine:
  * - Filtros superiores de Fecha, Hora Inicial y Hora Final conectados a GET /spaces.
- * - Doble vista alternable: Plano Arquitectónico Real & Butacas de Cine.
+ * - Conmutador de vistas: Táctico (Guerra) | Plano 2D (Daniel) | Butacas Cine (Mafe).
  * - Acciones directas para Reservar Sala (HU-22) y Reportar Incidencia con IA (HU-24).
  * Responsables: GUERRA & MAFE & DANIEL
  */
@@ -10,10 +10,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSpacesApi } from '../api/spaces';
+import CampusMap, { INITIAL_ROOMS_SEED } from '../components/spaces/CampusMap';
 import CampusRealFloorplan, {
   CAMPUS_FLOORPLAN_SPACES,
 } from '../components/spaces/CampusRealFloorplan';
-import RoomMap, { OFFICIAL_CAMPUS_ROOMS } from '../components/spaces/RoomMap';
+import RoomMap from '../components/spaces/RoomMap';
 import LoadingState from '../components/feedback/LoadingState';
 import ErrorMessage from '../components/feedback/ErrorMessage';
 import EmptyState from '../components/feedback/EmptyState';
@@ -23,8 +24,8 @@ import Button from '../components/ui/Button';
 export default function SpacesPage() {
   const navigate = useNavigate();
 
-  // Vista activa: 'floorplan' (Plano Arquitectónico) | 'cinema' (Butacas Cine)
-  const [activeView, setActiveView] = useState('floorplan');
+  // Vista activa: 'tactical' (Matriz Táctica) | 'floorplan' (Plano Arquitectónico 2D) | 'cinema' (Butacas Cine)
+  const [activeView, setActiveView] = useState('tactical');
 
   // Filtros de consulta
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -34,7 +35,7 @@ export default function SpacesPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   // Estados de datos
-  const [spaces, setSpaces] = useState(CAMPUS_FLOORPLAN_SPACES);
+  const [spaces, setSpaces] = useState(INITIAL_ROOMS_SEED);
   const [selectedSpaceId, setSelectedSpaceId] = useState('SAL-005');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -54,22 +55,28 @@ export default function SpacesPage() {
         });
         const list = Array.isArray(data) ? data : data?.spaces || data?.data || data?.items || [];
         if (list.length > 0) {
-          // Enriquecer salas recibidas del backend con los metadatos de ubicación del plano
-          const merged = CAMPUS_FLOORPLAN_SPACES.map((floorSpace) => {
-            const apiRoom = list.find((s) => s.id === floorSpace.id || s.name?.toLowerCase() === floorSpace.name?.toLowerCase());
-            return apiRoom ? { ...floorSpace, ...apiRoom } : floorSpace;
+          const merged = INITIAL_ROOMS_SEED.map((seedRoom) => {
+            const apiRoom = list.find((s) => s.id === seedRoom.id || s.name?.toLowerCase() === seedRoom.name?.toLowerCase());
+            if (!apiRoom) return seedRoom;
+            let st = apiRoom.status || 'available';
+            if (st === 'incident') st = 'issue';
+            return {
+              ...seedRoom,
+              ...apiRoom,
+              status: st,
+            };
           });
           setSpaces(merged);
         } else {
-          setSpaces(CAMPUS_FLOORPLAN_SPACES);
+          setSpaces(INITIAL_ROOMS_SEED);
         }
       } else {
         await new Promise((resolve) => setTimeout(resolve, 300));
-        setSpaces(CAMPUS_FLOORPLAN_SPACES);
+        setSpaces(INITIAL_ROOMS_SEED);
       }
     } catch (err) {
       setError(err?.message || 'No se pudo consultar la disponibilidad telemática de salas.');
-      setSpaces(CAMPUS_FLOORPLAN_SPACES);
+      setSpaces(INITIAL_ROOMS_SEED);
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +90,7 @@ export default function SpacesPage() {
   const handleBookRoom = (room) => {
     navigate('/reservations', {
       state: {
-        preselectedSpaceId: room.id,
+        preselectedSpaceId: room?.id || room,
         preselectedDate: date,
         preselectedStartTime: startTime,
         preselectedEndTime: endTime,
@@ -94,7 +101,7 @@ export default function SpacesPage() {
   const handleReportIncident = (room) => {
     navigate('/incidents', {
       state: {
-        preselectedSpaceId: room.id,
+        preselectedSpaceId: room?.id || room,
       },
     });
   };
@@ -111,7 +118,7 @@ export default function SpacesPage() {
         statusFilter === 'ALL' ||
         (statusFilter === 'available' && normStatus === 'available') ||
         (statusFilter === 'occupied' && (normStatus === 'occupied' || normStatus === 'busy')) ||
-        (statusFilter === 'disabled' && (normStatus === 'disabled' || normStatus === 'maintenance'));
+        (statusFilter === 'disabled' && (normStatus === 'disabled' || normStatus === 'maintenance' || normStatus === 'issue'));
 
       return matchSearch && matchStatus;
     });
@@ -119,7 +126,7 @@ export default function SpacesPage() {
 
   const availableCount = spaces.filter((r) => r.status === 'available' && !r.is_blocked).length;
   const occupiedCount = spaces.filter((r) => r.status === 'occupied' || r.status === 'busy').length;
-  const disabledCount = spaces.filter((r) => r.status === 'disabled' || r.is_blocked).length;
+  const disabledCount = spaces.filter((r) => r.status === 'disabled' || r.status === 'issue' || r.is_blocked).length;
   const totalCapacity = spaces.reduce((acc, r) => acc + (r.capacity || 0), 0);
 
   return (
@@ -136,7 +143,7 @@ export default function SpacesPage() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-[#A1A1A6] mt-1">
-            Plano arquitectónico interactivo con evaluación de disponibilidad horaria y aforos ({totalCapacity} plazas) en tiempo real.
+            Matriz de disponibilidad en tiempo real con consulta de aforos ({totalCapacity} plazas) y programación telemática.
           </p>
         </div>
 
@@ -144,6 +151,17 @@ export default function SpacesPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Tabs de Vista */}
           <div className="flex items-center bg-[#1C1C1E] p-1 rounded-xl border border-white/[0.08]">
+            <button
+              type="button"
+              onClick={() => setActiveView('tactical')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeView === 'tactical'
+                  ? 'bg-[#2563EB] text-white shadow-sm'
+                  : 'text-[#A1A1A6] hover:text-white'
+              }`}
+            >
+              Táctico
+            </button>
             <button
               type="button"
               onClick={() => setActiveView('floorplan')}
@@ -192,8 +210,8 @@ export default function SpacesPage() {
         </div>
       </div>
 
-      {/* Barra de Control de Disponibilidad Horaria (HU-18) */}
-      <div className="p-4 rounded-[1.25rem] bg-[#16181F] border border-white/[0.08] shadow-lg">
+      {/* Barra de Control de Disponibilidad Horaria (HU-02 / HU-18) */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-[#121215] border border-white/[0.08] shadow-lg">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Input
             label="Fecha de consulta"
@@ -251,39 +269,23 @@ export default function SpacesPage() {
         </div>
       </div>
 
-      {/* Estados de Carga, Error y Vistas */}
+      {/* Mensaje de Error si la consulta falla */}
+      {error && <ErrorMessage message={error} onRetry={loadSpaces} />}
+
+      {/* Estados de Carga y Vistas Alternables */}
       {isLoading ? (
         <LoadingState message="Consultando disponibilidad telemática de salas en tiempo real…" />
-      ) : error ? (
-        <div className="space-y-4">
-          <ErrorMessage message={error} onRetry={loadSpaces} />
-          {activeView === 'floorplan' ? (
-            <CampusRealFloorplan
-              spaces={spaces}
-              selectedSpaceId={selectedSpaceId}
-              onSelectSpace={(s) => setSelectedSpaceId(s.id)}
-              onBook={handleBookRoom}
-              onReportIncident={handleReportIncident}
-            />
-          ) : (
-            <RoomMap
-              rooms={spaces}
-              loading={false}
-              error={null}
-              onRetry={loadSpaces}
-            />
-          )}
-        </div>
-      ) : spaces.length === 0 ? (
-        <EmptyState
-          title="Sin salas registradas"
-          description="No se encontraron salas en el catálogo del campus."
+      ) : activeView === 'tactical' ? (
+        <CampusMap
+          rooms={spaces}
+          onReserveSpace={handleBookRoom}
+          onReportIncident={handleReportIncident}
         />
       ) : activeView === 'floorplan' ? (
         <CampusRealFloorplan
           spaces={spaces}
           selectedSpaceId={selectedSpaceId}
-          onSelectSpace={(room) => setSelectedSpaceId(room.id)}
+          onSelectSpace={(room) => setSelectedSpaceId(room?.id || room)}
           onBook={handleBookRoom}
           onReportIncident={handleReportIncident}
         />
